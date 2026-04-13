@@ -36,6 +36,9 @@ module.exports = {
             console.error('Error registering slash commands:', error);
         }
 
-        client.user.setActivity('Everest Hub', { type: 'WATCHING' });
+        client.user.setPresence({
+            activities: [{ name: 'Everest Hub', type: 3 }],
+            status: 'idle',
+        });
     },
 };
