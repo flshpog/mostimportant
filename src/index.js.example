@@ -1,0 +1,115 @@
+require('dotenv').config();
+
+const { Client, GatewayIntentBits, Partials, Collection } = require('discord.js');
+const fs = require('fs');
+const path = require('path');
+
+const client = new Client({
+    intents: [
+        GatewayIntentBits.Guilds,
+        GatewayIntentBits.GuildMessages,
+        GatewayIntentBits.MessageContent,
+        GatewayIntentBits.GuildMembers,
+        GatewayIntentBits.GuildVoiceStates,
+        GatewayIntentBits.GuildMessageReactions
+    ],
+    partials: [Partials.Message, Partials.Channel, Partials.Reaction]
+});
+
+client.commands = new Collection();
+client.slashCommands = new Collection();
+
+client.config = {
+    prefix: '?',
+    token: 'PUT_YOUR_BOT_TOKEN_HERE',
+};
+
+// Load custom commands from JSON
+client.customCommands = new Collection();
+try {
+    const customCommandsData = fs.readFileSync('./data/customCommands.json', 'utf8');
+    const customCommands = JSON.parse(customCommandsData);
+    for (const [name, response] of Object.entries(customCommands)) {
+        client.customCommands.set(name, response);
+    }
+} catch (error) {
+    console.log('No custom commands file found, starting fresh');
+    if (!fs.existsSync('./data')) {
+        fs.mkdirSync('./data');
+    }
+    fs.writeFileSync('./data/customCommands.json', '{}');
+}
+
+// Load stopwatch data
+client.stopwatches = new Collection();
+try {
+    const stopwatchData = fs.readFileSync('./data/stopwatches.json', 'utf8');
+    const stopwatches = JSON.parse(stopwatchData);
+    for (const [userId, data] of Object.entries(stopwatches)) {
+        client.stopwatches.set(userId, data);
+    }
+} catch (error) {
+    console.log('No stopwatch data found, starting fresh');
+    fs.writeFileSync('./data/stopwatches.json', '{}');
+}
+
+// Load commands
+const commandFolders = ['org', 'util', 'mod', 'system', 'custom'];
+for (const folder of commandFolders) {
+    const commandsPath = path.join(__dirname, 'commands', folder);
+    if (fs.existsSync(commandsPath)) {
+        const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('.js'));
+
+        for (const file of commandFiles) {
+            const filePath = path.join(commandsPath, file);
+            const command = require(filePath);
+
+            if ('data' in command && 'execute' in command) {
+                client.slashCommands.set(command.data.name, command);
+            }
+
+            if ('name' in command && 'execute' in command) {
+                client.commands.set(command.name, command);
+            }
+        }
+    }
+}
+
+// Load events
+const eventsPath = path.join(__dirname, 'events');
+const eventFiles = fs.readdirSync(eventsPath).filter(file => file.endsWith('.js'));
+
+for (const file of eventFiles) {
+    const filePath = path.join(eventsPath, file);
+    const event = require(filePath);
+    if (event.once) {
+        client.once(event.name, (...args) => event.execute(...args));
+    } else {
+        client.on(event.name, (...args) => event.execute(...args));
+    }
+}
+
+process.on('unhandledRejection', error => {
+    console.error('Unhandled promise rejection:', error);
+});
+
+process.on('uncaughtException', error => {
+    console.error('Uncaught exception:', error);
+});
+
+// Load reaction roles data
+client.reactionRoles = new Collection();
+try {
+    const reactionRolesData = fs.readFileSync('./data/reactionRoles.json', 'utf8');
+    const reactionRoles = JSON.parse(reactionRolesData);
+    for (const [name, data] of Object.entries(reactionRoles)) {
+        client.reactionRoles.set(name, data);
+    }
+} catch (error) {
+    console.log('No reaction roles data found, starting fresh');
+    fs.writeFileSync('./data/reactionRoles.json', '{}');
+}
+
+client.snipedMessages = new Collection();
+
+client.login(client.config.token);
