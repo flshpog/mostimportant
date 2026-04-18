@@ -1,5 +1,6 @@
 const { Events, EmbedBuilder } = require('discord.js');
 const { LOG_CHANNEL_ID, COLORS } = require('../config/logging');
+const { getSticky, resendSticky } = require('../handlers/stickyManager');
 const https = require('https');
 
 // Voice message flag (1 << 13)
@@ -24,6 +25,10 @@ module.exports = {
     async execute(message) {
         // Ignore bot messages
         if (message.author.bot) return;
+
+        if (message.guild && getSticky(message.channel.id)) {
+            resendSticky(message.channel).catch(() => {});
+        }
 
         // Voice message transcription
         if (message.flags.has(VOICE_MESSAGE_FLAG)) {

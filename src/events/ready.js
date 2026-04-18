@@ -1,4 +1,5 @@
 const { Events, REST, Routes } = require('discord.js');
+const { startPeriodicCheck } = require('../handlers/stickyManager');
 
 const GUILD_ID = '1414321682025545822';
 
@@ -40,5 +41,7 @@ module.exports = {
             activities: [{ name: 'Everest Hub', type: 3 }],
             status: 'idle',
         });
+
+        startPeriodicCheck(client);
     },
 };
