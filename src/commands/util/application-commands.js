@@ -46,7 +46,7 @@ To finish your application, say \`?app-done\``,
     },
 
     'app-done': {
-        message1: `Thank you for taking time to apply! EIther ping Producers or don't, it's up to you. Just kidding I'm going to. <@1414321682415357962> HIIIIIIIIIIII`,
+        message1: `Thank you for taking time to apply! EIther ping Mike that you're done or don't, it's up to you. Just kidding I'm going to. <@308057662082514945> HIIIIIIIIIIII`,
         message2: `https://tenor.com/view/twin-peaks-fire-walk-with-gif-9672236`
     },
 };
