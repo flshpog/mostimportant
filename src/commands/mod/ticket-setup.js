@@ -2,9 +2,9 @@ const { SlashCommandBuilder, EmbedBuilder, ButtonBuilder, ButtonStyle, ActionRow
 
 // CONFIG - Update these IDs for your server
 const CONFIG = {
-    APPLY_HERE_CHANNEL_ID: "1414335390005068046", // Replace with your apply-here channel ID
-    TICKETS_CATEGORY_ID: "1414764245660467280",   // Replace with your tickets category ID
-    STAFF_ROLE_ID: "1414334067926761656",         // Replace with your staff role ID
+    APPLY_HERE_CHANNEL_ID: "1414336443660107857",
+    TICKETS_CATEGORY_ID: "1496235029800681555",
+    STAFF_ROLE_ID: "1414321682415357962",
 };
 
 module.exports = {
@@ -117,7 +117,7 @@ module.exports = {
             // Send welcome message in ticket
             const welcomeEmbed = new EmbedBuilder()
                 .setTitle('🎫 Ticket Created')
-                .setDescription(`Hello ${interaction.user}! Welcome to your application!.\n\nTo get started, run !player-app or !invitation depending on your status [here](https://discord.com/channels/1413999322676203602/1414335390005068046/1414388532474019972).`)
+                .setDescription(`Hello ${interaction.user}! Welcome to your application!\n\nTo get started, run \`?app-start\`.`)
                 .setColor(0x00FF00)
                 .addFields(
                     { name: '📋 Ticket Information', value: `**User:** ${interaction.user.tag}\n**Channel:** ${ticketChannel}\n**Created:** <t:${Math.floor(Date.now() / 1000)}:F>`, inline: false },
