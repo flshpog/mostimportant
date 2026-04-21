@@ -4,7 +4,7 @@ const { SlashCommandBuilder, EmbedBuilder, ButtonBuilder, ButtonStyle, ActionRow
 const CONFIG = {
     APPLY_HERE_CHANNEL_ID: "1414336443660107857",
     TICKETS_CATEGORY_ID: "1496235029800681555",
-    STAFF_ROLE_ID: "1414321682415357962",
+    STAFF_ROLE_IDS: ["1414321682415357962", "1494420321250574336"],
 };
 
 module.exports = {
@@ -82,7 +82,18 @@ module.exports = {
                 });
             }
 
-            const staffRole = interaction.guild.roles.cache.get(CONFIG.STAFF_ROLE_ID);
+            const staffOverwrites = CONFIG.STAFF_ROLE_IDS
+                .map(id => interaction.guild.roles.cache.get(id))
+                .filter(Boolean)
+                .map(role => ({
+                    id: role.id,
+                    allow: [
+                        PermissionFlagsBits.ViewChannel,
+                        PermissionFlagsBits.SendMessages,
+                        PermissionFlagsBits.ReadMessageHistory,
+                        PermissionFlagsBits.ManageChannels
+                    ],
+                }));
 
             // Create ticket channel
             const ticketChannel = await interaction.guild.channels.create({
@@ -102,15 +113,7 @@ module.exports = {
                             PermissionFlagsBits.ReadMessageHistory
                         ],
                     },
-                    ...(staffRole ? [{
-                        id: staffRole.id,
-                        allow: [
-                            PermissionFlagsBits.ViewChannel,
-                            PermissionFlagsBits.SendMessages,
-                            PermissionFlagsBits.ReadMessageHistory,
-                            PermissionFlagsBits.ManageChannels
-                        ],
-                    }] : [])
+                    ...staffOverwrites
                 ],
             });
 
