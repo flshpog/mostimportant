@@ -1,15 +1,6 @@
 const applicationData = {
     'app-start': {
-        message1: `## To get started, give us your basic information to keep track of throughout the season!
-
-> - Age
-> - Timezone
-> - Pronouns`,
-        message2: `https://tenor.com/view/twin-peaks-dance-moves-shake-gif-4602867`
-    },
-
-    'app-1': {
-        message1: `To get started, give us your **basic information** to keep track of throughout the season!
+        message1: `To get started, give us your basic information to keep track of throughout the season!
 
 > - Age
 > - Timezone

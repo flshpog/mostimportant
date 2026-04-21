@@ -26,9 +26,9 @@ module.exports = {
 
             const embed = new EmbedBuilder()
                 .setTitle('🎫 Create a Ticket')
-                .setDescription('Click the button below if you wish to apply for Everest Hub!')
+                .setDescription('Click the button below if you wish to apply for Everest Survivor S1: Twin Peaks!')
                 .setColor(0x5865F2)
-                .setFooter({ text: 'Everest Hub Applications' })
+                .setFooter({ text: 'Everest Survivor Applications' })
                 .setTimestamp();
 
             const button = new ButtonBuilder()
@@ -122,7 +122,7 @@ module.exports = {
                 .addFields(
                     { name: '📋 Ticket Information', value: `**User:** ${interaction.user.tag}\n**Channel:** ${ticketChannel}\n**Created:** <t:${Math.floor(Date.now() / 1000)}:F>`, inline: false },
                 )
-                .setFooter({ text: 'To close this ticket, contact a staff member' })
+                .setFooter({ text: 'To close this ticket, contact a Producer.' })
                 .setTimestamp();
 
             await ticketChannel.send({
