@@ -31,7 +31,7 @@ module.exports = {
             const existing = stickyManager.getSticky(channel.id);
             const modal = new ModalBuilder()
                 .setCustomId(`sticky_add_modal_${channel.id}`)
-                .setTitle(`Sticky message for #${channel.name.slice(0, 30)}`);
+                .setTitle(`Sticky for #${channel.name}`.slice(0, 45));
 
             const input = new TextInputBuilder()
                 .setCustomId('sticky_content')
