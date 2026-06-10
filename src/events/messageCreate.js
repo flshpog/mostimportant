@@ -58,10 +58,17 @@ module.exports = {
 
                 const text = transcription.text?.trim();
                 if (text) {
-                    await message.reply({
-                        content: `\`\`\`${text}\`\`\``,
-                        allowedMentions: { repliedUser: false },
-                    });
+                    // Discord caps messages at 2000 chars; the ``` ``` wrapping adds 6,
+                    // so chunk at 1994 and chain each chunk as a reply to the previous one.
+                    const MAX = 1994;
+                    let previous = message;
+                    for (let i = 0; i < text.length; i += MAX) {
+                        const chunk = text.slice(i, i + MAX);
+                        previous = await previous.reply({
+                            content: `\`\`\`${chunk}\`\`\``,
+                            allowedMentions: { repliedUser: false },
+                        });
+                    }
                 }
             } catch (error) {
                 console.error('Error transcribing voice message:', error.message || error);
