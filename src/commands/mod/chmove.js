@@ -143,12 +143,7 @@ module.exports = {
                     reason: `Channel moved by ${user.tag} using chmove command`
                 });
 
-                const successMessage = `✅ Successfully moved ${channel} to the **${category.name}** category!\n\n` +
-                                      `**📊 Move Details:**\n` +
-                                      `• **Channel:** ${channel.name}\n` +
-                                      `• **From:** ${oldCategory}\n` +
-                                      `• **To:** ${category.name}\n` +
-                                      `• **Category Usage:** ${categoryChannelCount + 1}/50 channels`;
+                const successMessage = `✅ Successfully moved ${channel} to the **${category.name}** category!`;
 
                 if (isSlashCommand) {
                     await interaction.editReply(successMessage);

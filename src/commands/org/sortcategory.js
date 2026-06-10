@@ -72,30 +72,16 @@ module.exports = {
                 ...forumChannels
             ];
 
-            // Update positions
-            let position = 0;
-            const promises = [];
+            // Bulk-update all positions in a single atomic API call.
+            // Positions are relative within the category here, so 0..N gives the sorted order.
+            const positionUpdates = sortedChannels.map((channel, index) => ({
+                channel: channel.id,
+                position: index,
+            }));
 
-            for (const channel of sortedChannels) {
-                promises.push(
-                    channel.setPosition(position, { relative: false })
-                        .catch(error => {
-                            console.error(`Failed to move channel ${channel.name}:`, error);
-                            return null;
-                        })
-                );
-                position++;
-            }
-
-            // Wait for all position updates to complete
-            const results = await Promise.allSettled(promises);
-            const failures = results.filter(result => result.status === 'rejected').length;
+            await interaction.guild.channels.setPositions(positionUpdates);
 
             let responseMessage = `✅ Successfully sorted ${sortedChannels.length} channels in **${category.name}** alphabetically!`;
-
-            if (failures > 0) {
-                responseMessage += `\n\n⚠️ Warning: ${failures} channels could not be moved due to permission issues.`;
-            }
 
             // Show the new order
             const channelList = sortedChannels
