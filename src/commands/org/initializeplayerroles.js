@@ -1,37 +1,18 @@
-const { SlashCommandBuilder, PermissionFlagsBits, ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder } = require('discord.js');
-const { getPlayerRoles, setPlayerRoles, parsePlayerRoleIds } = require('../../handlers/playerRoles');
+const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
+const { setPlayerRoles, parsePlayerRoleIds } = require('../../handlers/playerRoles');
 
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('initializeplayerroles')
         .setDescription('Set the full list of player roles (replaces the existing list)')
+        .addStringOption(option =>
+            option.setName('roles')
+                .setDescription('All player roles as mentions or IDs, space-separated')
+                .setRequired(true))
         .setDefaultMemberPermissions(PermissionFlagsBits.ManageRoles),
 
     async execute(interaction) {
-        const existing = getPlayerRoles(interaction.guild.id);
-
-        const modal = new ModalBuilder()
-            .setCustomId('initialize_player_roles_modal')
-            .setTitle('Initialize Player Roles');
-
-        const input = new TextInputBuilder()
-            .setCustomId('player_roles')
-            .setLabel('Player roles (mentions or IDs)')
-            .setStyle(TextInputStyle.Paragraph)
-            .setPlaceholder('@Player1 @Player2 @Player3 ...')
-            .setMaxLength(4000)
-            .setRequired(true);
-
-        if (existing.length) {
-            input.setValue(existing.map(id => `<@&${id}>`).join(' '));
-        }
-
-        modal.addComponents(new ActionRowBuilder().addComponents(input));
-        await interaction.showModal(modal);
-    },
-
-    async handleModalSubmit(interaction) {
-        const raw = interaction.fields.getTextInputValue('player_roles');
+        const raw = interaction.options.getString('roles');
         const ids = parsePlayerRoleIds(raw);
 
         const valid = [];
