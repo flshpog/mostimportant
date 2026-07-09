@@ -132,7 +132,7 @@ const steps = {
                 "title": "Interview 2",
                 "description": "*Now let's get into this.*\n\n*What's your reasoning for applying to this season? Are you interested in the theme? Were you in and around season 1 of Everest and wanted to take a crack at season 2? Let us know!*\n\nTo continue, **`!interview-3`**.",
                 "image": {
-                    "url": "https://static2.klipy.com/ii/4e7bea9f7a3371424e6c16ebc93252fe/d7/61/hoCyoJpewOEGDMjE.gif"
+                    "url": "https://static2.klipy.com/ii/4e7bea9f7a3371424e6c16ebc93252fe/fa/7c/LUoNVl1d5Fas00BLHH.gif"
                 }
             }
         ]
