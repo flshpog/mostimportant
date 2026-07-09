@@ -26,8 +26,8 @@ module.exports = {
 
             const embed = new EmbedBuilder()
                 .setTitle('🎫 Create a Ticket')
-                .setDescription('Click the button below if you wish to apply for Everest Survivor S1: Twin Peaks!')
-                .setColor(0x5865F2)
+                .setDescription('Click the button below if you wish to apply for Everest Survivor S2: New Horizons!')
+                .setColor(0x7CBB3F)
                 .setFooter({ text: 'Everest Survivor Applications' })
                 .setTimestamp();
 
@@ -117,21 +117,15 @@ module.exports = {
                 ],
             });
 
-            // Send welcome message in ticket
-            const welcomeEmbed = new EmbedBuilder()
-                .setTitle('🎫 Ticket Created')
-                .setDescription(`Hello ${interaction.user}! Welcome to your application!\n\nTo get started, run \`?app-start\`.`)
-                .setColor(0x00FF00)
-                .addFields(
-                    { name: '📋 Ticket Information', value: `**User:** ${interaction.user.tag}\n**Channel:** ${ticketChannel}\n**Created:** <t:${Math.floor(Date.now() / 1000)}:F>`, inline: false },
-                )
-                .setFooter({ text: 'To close this ticket, contact a Producer.' })
-                .setTimestamp();
-
-            await ticketChannel.send({
-                content: `${interaction.user}`,
-                embeds: [welcomeEmbed]
-            });
+            // Send the season welcome (Orville) as a webhook character, pinging the applicant.
+            const appCommands = require('../util/application-commands');
+            try {
+                await appCommands.sendWelcome(ticketChannel, interaction.user);
+            } catch (welcomeError) {
+                console.error('Error sending welcome message:', welcomeError);
+                // Fall back to a plain ping so the ticket isn't left empty.
+                await ticketChannel.send({ content: `${interaction.user}` });
+            }
 
             await interaction.reply({
                 content: `Ticket created: ${ticketChannel}`,

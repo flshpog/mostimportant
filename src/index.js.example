@@ -20,7 +20,7 @@ client.commands = new Collection();
 client.slashCommands = new Collection();
 
 client.config = {
-    prefix: '?',
+    prefix: '!',
     token: 'PUT_YOUR_BOT_TOKEN_HERE',
 };
 

@@ -10,8 +10,8 @@ module.exports = {
         try {
             const embed = new EmbedBuilder()
                 .setTitle('🎫 Create a Ticket')
-                .setDescription('Click the button below if you wish to apply for Everest Survivor S1: Twin Peaks!')
-                .setColor(0x5865F2)
+                .setDescription('Click the button below if you wish to apply for Everest Survivor S2: New Horizons!')
+                .setColor(0x7CBB3F)
                 .setFooter({ text: 'Everest Survivor Applications' })
                 .setTimestamp();
 
