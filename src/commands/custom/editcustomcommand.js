@@ -69,10 +69,12 @@ module.exports = {
             const newName = interaction.fields.getTextInputValue('commandName').toLowerCase();
             const newResponse = interaction.fields.getTextInputValue('commandResponse');
 
-            // Validate new name
-            if (!/^[a-z0-9_-]+$/i.test(newName)) {
+            // Reject only empty or multi-token names — a name with spaces can never
+            // match, since command lookup only uses the first space-delimited token.
+            // Everything else (emoji, colons, etc.) is allowed.
+            if (!newName || /\s/.test(newName)) {
                 return await interaction.reply({
-                    content: 'Command name can only contain letters, numbers, underscores, and dashes.',
+                    content: 'Command name cannot be empty or contain spaces.',
                     ephemeral: true
                 });
             }
