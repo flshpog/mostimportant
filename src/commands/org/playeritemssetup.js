@@ -1,13 +1,14 @@
 const { SlashCommandBuilder, PermissionFlagsBits, ChannelType } = require('discord.js');
 const { MEMBER_PLUS_ROLE_ID } = require('../../config/roles');
 
-// Turn a display name into a valid Discord channel name.
+// Turn a display name into the base of a valid Discord channel name.
+// Capped at 80 so the "-confessional" / "-submissions" suffix still fits in 100.
 function toChannelName(name) {
     return name
         .toLowerCase()
         .replace(/[^a-z0-9]+/g, '-')
         .replace(/^-+|-+$/g, '')
-        .slice(0, 100);
+        .slice(0, 80);
 }
 
 // Parse the optional exclude option, e.g. "roles, submissions".
@@ -98,11 +99,14 @@ module.exports = {
             const failed = [];
 
             for (const name of names) {
-                const channelName = toChannelName(name);
-                if (!channelName) {
+                const base = toChannelName(name);
+                if (!base) {
                     failed.push(`${name} (name has no usable characters)`);
                     continue;
                 }
+
+                const confessionalName = `${base}-confessional`;
+                const submissionsName = `${base}-submissions`;
 
                 // Custom role — created but not assigned to anyone.
                 if (!exclude.roles) {
@@ -127,13 +131,13 @@ module.exports = {
 
                 // Confessional — @everyone denied, member+ can view.
                 if (!exclude.confessionals) {
-                    const existing = confessionalCategory.children.cache.find(c => c.name === channelName);
+                    const existing = confessionalCategory.children.cache.find(c => c.name === confessionalName);
                     if (existing) {
-                        skipped.push(`confessional ${channelName}`);
+                        skipped.push(confessionalName);
                     } else {
                         try {
                             await interaction.guild.channels.create({
-                                name: channelName,
+                                name: confessionalName,
                                 type: ChannelType.GuildText,
                                 parent: confessionalCategory,
                                 permissionOverwrites: [
@@ -154,21 +158,21 @@ module.exports = {
                             });
                             created.confessionals++;
                         } catch (err) {
-                            console.error(`Failed to create confessional ${channelName}:`, err);
-                            failed.push(`confessional ${channelName}`);
+                            console.error(`Failed to create ${confessionalName}:`, err);
+                            failed.push(confessionalName);
                         }
                     }
                 }
 
                 // Submissions — fully private. Only Administrators, who bypass overwrites.
                 if (!exclude.submissions) {
-                    const existing = submissionsCategory.children.cache.find(c => c.name === channelName);
+                    const existing = submissionsCategory.children.cache.find(c => c.name === submissionsName);
                     if (existing) {
-                        skipped.push(`submissions ${channelName}`);
+                        skipped.push(submissionsName);
                     } else {
                         try {
                             await interaction.guild.channels.create({
-                                name: channelName,
+                                name: submissionsName,
                                 type: ChannelType.GuildText,
                                 parent: submissionsCategory,
                                 permissionOverwrites: [
@@ -181,8 +185,8 @@ module.exports = {
                             });
                             created.submissions++;
                         } catch (err) {
-                            console.error(`Failed to create submissions ${channelName}:`, err);
-                            failed.push(`submissions ${channelName}`);
+                            console.error(`Failed to create ${submissionsName}:`, err);
+                            failed.push(submissionsName);
                         }
                     }
                 }
