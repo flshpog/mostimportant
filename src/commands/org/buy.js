@@ -1,7 +1,7 @@
 const { SlashCommandBuilder } = require('discord.js');
 const eco = require('../../handlers/economy');
 const { getConfig, formatBells, slotCap } = require('../../config/economy');
-const { getBuyableItems } = require('../../handlers/shop');
+const { getBuyableItems, consumeUnit } = require('../../handlers/shop');
 const { logToHost, hostPing } = require('../../handlers/economyLog');
 
 // Permanent-reduction upgrade items → the player.reductions flag they set.
@@ -106,6 +106,9 @@ module.exports = {
             player.bought_once.push(item.id);
         }
         eco.savePlayer(guildId, userId, player);
+
+        // Deplete shop stock (no-op for unlimited items; testers don't deplete).
+        if (!isTester) consumeUnit(guildId, item.id);
 
         // Silent to players — ephemeral only, no public message.
         await interaction.reply({

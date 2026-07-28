@@ -131,6 +131,22 @@ module.exports = {
                     }
                 }
             }
+            else if (interaction.customId.startsWith('editinv_modal_')) {
+                const command = interaction.client.slashCommands.get('editinventory');
+                if (command && command.handleModalSubmit) {
+                    try {
+                        await command.handleModalSubmit(interaction);
+                    } catch (error) {
+                        console.error('Error handling editinventory modal:', error);
+                        if (!interaction.replied && !interaction.deferred) {
+                            await interaction.reply({
+                                content: 'There was an error saving the inventory edit.',
+                                ephemeral: true,
+                            });
+                        }
+                    }
+                }
+            }
             else if (interaction.customId.startsWith('editCustomCommandModal_')) {
                 const oldName = interaction.customId.replace('editCustomCommandModal_', '');
                 const command = interaction.client.slashCommands.get('editcustomcommand');

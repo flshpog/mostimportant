@@ -73,6 +73,23 @@
     "bells": "<:Bells:1530232089021124711>"
   },
 
+  "shop": {
+    "color": 16775075,
+    "banner_url": null,
+    "headers": {
+      "special": "## ✨ __STORE SPECIALS__ ✨",
+      "golden": "## 🌟 __GOLDEN TOOLS__ 🌟",
+      "standard": "## 🔨 __STANDARD TOOLS__ 🔨",
+      "cabinet": "## 🗄️ __THE CABINET__ 🗄️",
+      "loan": "## 🏠 __LOAN REPAYMENT__ 🏠"
+    },
+    "flourish": "⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘"
+  },
+
+  "delivery": {
+    "shipping_fee": 250
+  },
+
   "items": [
     { "id": 1,  "name": "Nook Family Tax Returns", "description": "The Nook family's finest paperwork.",        "price": 7500, "category": "special",  "stock": null, "refreshes": false, "stackable": false, "occupies_slot": true,  "once_per_player": false },
     { "id": 2,  "name": "Resetti's Do-Over",       "description": "Mr. Resetti offers a fresh start.",           "price": 7000, "category": "special",  "stock": null, "refreshes": false, "stackable": false, "occupies_slot": true,  "once_per_player": false },

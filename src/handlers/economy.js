@@ -71,6 +71,14 @@ function savePlayer(guildId, userId, player) {
     save(data);
 }
 
+// All stored players in a guild, normalized: { userId: player }.
+function allPlayers(guildId) {
+    const guild = load()[guildId] || {};
+    const out = {};
+    for (const userId of Object.keys(guild)) out[userId] = getPlayer(guildId, userId);
+    return out;
+}
+
 // ---- Pure mutators (operate on a player object; caller saves once) -----------
 
 function addBalance(player, amount) {
@@ -179,6 +187,7 @@ module.exports = {
     defaultPlayer,
     getPlayer,
     savePlayer,
+    allPlayers,
     addBalance,
     setBalance,
     addItem,
