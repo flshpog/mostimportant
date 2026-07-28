@@ -1,0 +1,105 @@
+{
+  "income": {
+    "wasp_multiplier": 2,
+    "rock": {
+      "label": "Rock",
+      "flavor": "You give the rocks a good whack",
+      "base_cooldown_hours": 8,
+      "outcomes": [
+        { "chance": 1.0, "min": 180, "max": 220, "wasps": false }
+      ]
+    },
+    "tree": {
+      "label": "Tree",
+      "flavor": "You give a tree a good shake",
+      "wasp_flavor": "A swarm of wasps bursts out of the tree",
+      "base_cooldown_hours": 12,
+      "outcomes": [
+        { "chance": 0.6, "min": 700, "max": 800, "wasps": false },
+        { "chance": 0.4, "min": 0, "max": 0, "wasps": true }
+      ]
+    },
+    "bottle": {
+      "label": "Bottle",
+      "flavor": "You find a message in a bottle on the shore",
+      "base_cooldown_hours": 24,
+      "outcomes": [
+        { "chance": 0.8, "min": 90, "max": 110, "wasps": false },
+        { "chance": 0.2, "min": 2400, "max": 2600, "wasps": false }
+      ]
+    }
+  },
+
+  "reductions": {
+    "golden_wc": 0.50,
+    "watering_can": 0.25,
+    "flimsy_wc": 0.10,
+    "flimsy_wc_uses": 10,
+    "flimsy_wc_stacks": true,
+    "max_reduction": 0.85
+  },
+
+  "inventory": {
+    "slot_cap": 3
+  },
+
+  "house": {
+    "pre_swap": 725,
+    "swap": 1000,
+    "early_merge": 850,
+    "late_merge": 275
+  },
+
+  "rotation": {
+    "specials": 2,
+    "golden": 3,
+    "standard": 4,
+    "post_time": "00:00",
+    "timezone": "America/New_York"
+  },
+
+  "channels": {
+    "shop": "1531460665481625681",
+    "host_log": "1531494704712122603",
+    "host_category": "1414321682415357964",
+    "host_ping_role": null
+  },
+
+  "flags": {
+    "log_income_commands": false
+  },
+
+  "emoji": {
+    "bells": "<:Bells:1530232089021124711>"
+  },
+
+  "items": [
+    { "id": 1,  "name": "Nook Family Tax Returns", "description": "The Nook family's finest paperwork.",        "price": 7500, "category": "special",  "stock": null, "refreshes": false, "stackable": false, "occupies_slot": true,  "once_per_player": false },
+    { "id": 2,  "name": "Resetti's Do-Over",       "description": "Mr. Resetti offers a fresh start.",           "price": 7000, "category": "special",  "stock": null, "refreshes": false, "stackable": false, "occupies_slot": true,  "once_per_player": false },
+    { "id": 3,  "name": "Redd's Counterfeit",      "description": "One of Redd's genuine, authentic treasures.", "price": 6500, "category": "special",  "stock": null, "refreshes": false, "stackable": false, "occupies_slot": true,  "once_per_player": false },
+    { "id": 4,  "name": "Isabelle's Briefing",     "description": "Isabelle has prepared a briefing for you.",   "price": 5000, "category": "special",  "stock": null, "refreshes": false, "stackable": false, "occupies_slot": true,  "once_per_player": false },
+    { "id": 5,  "name": "Kapp'n's Island Tour",    "description": "Set sail on a Kapp'n island tour.",           "price": 5000, "category": "special",  "stock": null, "refreshes": false, "stackable": false, "occupies_slot": true,  "once_per_player": false },
+    { "id": 6,  "name": "May Day Ticket",          "description": "A ticket to a special Mystery Island tour.",  "price": 3500, "category": "special",  "stock": 1,    "refreshes": false, "stackable": false, "occupies_slot": true,  "once_per_player": false },
+    { "id": 7,  "name": "Pete's Special Delivery", "description": "Pete's ready to deliver, for a fee.",         "price": 250,  "category": "special",  "stock": null, "refreshes": false, "stackable": false, "occupies_slot": true,  "once_per_player": false },
+
+    { "id": 8,  "name": "Golden Shovel",           "description": "A gleaming Golden Shovel.",                   "price": 7500, "category": "golden",   "stock": 1,    "refreshes": true,  "stackable": false, "occupies_slot": true,  "once_per_player": false },
+    { "id": 9,  "name": "Golden Axe",              "description": "A gleaming Golden Axe.",                      "price": 7000, "category": "golden",   "stock": 1,    "refreshes": true,  "stackable": false, "occupies_slot": true,  "once_per_player": false },
+    { "id": 10, "name": "Golden Slingshot",        "description": "A gleaming Golden Slingshot.",               "price": 6500, "category": "golden",   "stock": 2,    "refreshes": false, "stackable": false, "occupies_slot": true,  "once_per_player": false },
+    { "id": 11, "name": "Golden Rod",              "description": "A gleaming Golden Fishing Rod.",              "price": 6000, "category": "golden",   "stock": 3,    "refreshes": false, "stackable": false, "occupies_slot": true,  "once_per_player": false },
+    { "id": 12, "name": "Golden Watering Can",     "description": "Permanently reduces your income cooldowns by 50%. Once per player.", "price": 4000, "category": "golden", "stock": null, "refreshes": false, "stackable": false, "occupies_slot": false, "once_per_player": true },
+
+    { "id": 13, "name": "Shovel",                  "description": "A sturdy shovel.",                            "price": 4000, "category": "standard", "stock": 3,    "refreshes": false, "stackable": false, "occupies_slot": true,  "once_per_player": false },
+    { "id": 14, "name": "Axe",                     "description": "A sturdy axe.",                               "price": 4000, "category": "standard", "stock": 3,    "refreshes": false, "stackable": false, "occupies_slot": true,  "once_per_player": false },
+    { "id": 15, "name": "Slingshot",               "description": "A trusty slingshot.",                         "price": 3500, "category": "standard", "stock": 3,    "refreshes": false, "stackable": false, "occupies_slot": true,  "once_per_player": false },
+    { "id": 16, "name": "Vaulting Pole",           "description": "A vaulting pole for crossing rivers.",        "price": 3500, "category": "standard", "stock": null, "refreshes": false, "stackable": false, "occupies_slot": true,  "once_per_player": false },
+    { "id": 17, "name": "Stone Axe",               "description": "A rugged stone axe.",                         "price": 3000, "category": "standard", "stock": 3,    "refreshes": false, "stackable": false, "occupies_slot": true,  "once_per_player": false },
+    { "id": 18, "name": "Ladder",                  "description": "A ladder for scaling cliffs.",                "price": 2500, "category": "standard", "stock": 5,    "refreshes": false, "stackable": false, "occupies_slot": true,  "once_per_player": false },
+    { "id": 19, "name": "Star Wand",               "description": "A magical Star Wand. Stackable.",             "price": 2000, "category": "standard", "stock": null, "refreshes": false, "stackable": true,  "occupies_slot": true,  "once_per_player": false },
+    { "id": 20, "name": "Watering Can",            "description": "Permanently reduces your income cooldowns by 25%.", "price": 2000, "category": "standard", "stock": null, "refreshes": false, "stackable": false, "occupies_slot": false, "once_per_player": false },
+
+    { "id": 21, "name": "Flimsy Shovel",           "description": "A flimsy shovel. It won't last long.",        "price": 1000, "category": "cabinet",  "stock": null, "refreshes": false, "stackable": false, "occupies_slot": true,  "once_per_player": false },
+    { "id": 22, "name": "Flimsy Axe",              "description": "A flimsy axe. Handle with care.",             "price": 750,  "category": "cabinet",  "stock": null, "refreshes": false, "stackable": false, "occupies_slot": true,  "once_per_player": false },
+    { "id": 23, "name": "Flimsy Slingshot",        "description": "A flimsy slingshot. One good shot.",          "price": 750,  "category": "cabinet",  "stock": null, "refreshes": false, "stackable": false, "occupies_slot": true,  "once_per_player": false },
+    { "id": 24, "name": "Flimsy Watering Can",     "description": "Reduces your income cooldowns by 10% for your next 10 income commands.", "price": 400, "category": "cabinet", "stock": null, "refreshes": false, "stackable": false, "occupies_slot": false, "once_per_player": false }
+  ]
+}
