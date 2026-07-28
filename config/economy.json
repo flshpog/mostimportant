@@ -75,7 +75,7 @@
 
   "shop": {
     "color": 16775075,
-    "banner_url": null,
+    "banner_url": "https://fishpog.lol/evst.png",
     "headers": {
       "special": "## ✨ __STORE SPECIALS__ ✨",
       "golden": "## 🌟 __GOLDEN TOOLS__ 🌟",
