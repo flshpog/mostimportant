@@ -40,6 +40,9 @@ function defaultPlayer() {
         // Global income lock: { until: epochMs, source: 'rock'|'tree'|'bottle' } | null
         cooldown: null,
         eliminated: false,
+        // God-mode test toggle (see /twisttester): no cooldowns, all items buyable,
+        // free purchases, no slot cap.
+        tester: false,
     };
 }
 
@@ -56,6 +59,7 @@ function getPlayer(guildId, userId) {
         player.flimsy_wc = Array.isArray(stored.flimsy_wc) ? stored.flimsy_wc : [];
         player.cooldown = stored.cooldown ?? null;
         player.eliminated = stored.eliminated ?? false;
+        player.tester = stored.tester ?? false;
     }
     return player;
 }
@@ -111,6 +115,15 @@ function clearCooldown(player) {
 
 function isEliminated(player) {
     return !!player.eliminated;
+}
+
+function isTester(player) {
+    return !!player.tester;
+}
+
+function setTester(player, value) {
+    player.tester = !!value;
+    return player;
 }
 
 // Additive total reduction, capped by config.max_reduction (SPEC §1).
@@ -174,6 +187,8 @@ module.exports = {
     cooldownRemainingMs,
     clearCooldown,
     isEliminated,
+    isTester,
+    setTester,
     totalReduction,
     decrementFlimsy,
     countSlotsUsed,

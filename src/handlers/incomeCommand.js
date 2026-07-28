@@ -30,18 +30,21 @@ async function executeIncome(interaction, key) {
     }
 
     const unlock = Math.floor(result.untilMs / 1000);
+    const nextLine = result.noCooldown
+        ? '_(tester: no cooldown)_'
+        : `Next income available <t:${unlock}:R>.`;
     let content;
     if (result.wasps) {
         content =
             `🐝 ${incomeCfg.wasp_flavor || 'You got stung by wasps'}! ` +
             `You earned **${formatBells(0)}** and your cooldown is **doubled**.\n` +
             `Balance: **${formatBells(result.balance)}**\n` +
-            `Next income available <t:${unlock}:R>.`;
+            nextLine;
     } else {
         content =
             `${incomeCfg.flavor} and earn **${formatBells(result.payout)}**!\n` +
             `Balance: **${formatBells(result.balance)}**\n` +
-            `Next income available <t:${unlock}:R>.`;
+            nextLine;
     }
 
     await interaction.reply({ content, ephemeral: true });

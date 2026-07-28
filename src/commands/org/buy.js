@@ -22,7 +22,7 @@ module.exports = {
     // truth for what's purchasable. Never hardcode the buyable set here.
     async autocomplete(interaction) {
         const focused = interaction.options.getFocused().toLowerCase();
-        const choices = getBuyableItems(interaction.guildId)
+        const choices = getBuyableItems(interaction.guildId, interaction.user.id)
             .filter(item => item.name.toLowerCase().includes(focused))
             .slice(0, 25)
             .map(item => ({
@@ -38,7 +38,7 @@ module.exports = {
         }
 
         const cfg = getConfig();
-        const buyable = getBuyableItems(interaction.guildId);
+        const buyable = getBuyableItems(interaction.guildId, interaction.user.id);
         const raw = interaction.options.getString('item').trim();
 
         // Resolve by id (autocomplete value) or by typed name — but only within the
@@ -54,43 +54,47 @@ module.exports = {
         const guildId = interaction.guildId;
         const userId = interaction.user.id;
         const player = eco.getPlayer(guildId, userId);
-
-        if (eco.isEliminated(player)) {
-            return interaction.reply({ content: "You've been eliminated — you can't buy anything.", ephemeral: true });
-        }
-
-        if (item.once_per_player && player.bought_once.includes(item.id)) {
-            return interaction.reply({ content: `You can only buy **${item.name}** once.`, ephemeral: true });
-        }
-
+        const isTester = eco.isTester(player);
         const reductionFlag = REDUCTION_FLAG_BY_ITEM[item.id];
-        if (reductionFlag && player.reductions[reductionFlag]) {
-            return interaction.reply({ content: `You already own the **${item.name}** upgrade.`, ephemeral: true });
-        }
 
-        if (player.balance < item.price) {
-            return interaction.reply({
-                content: `You can't afford **${item.name}** — it costs ${formatBells(item.price)}, and you have ${formatBells(player.balance)}.`,
-                ephemeral: true,
-            });
-        }
+        // Testers bypass every restriction (see /twisttester).
+        if (!isTester) {
+            if (eco.isEliminated(player)) {
+                return interaction.reply({ content: "You've been eliminated — you can't buy anything.", ephemeral: true });
+            }
 
-        // Slot cap — hard block. Stackable item you already own adds no slot.
-        if (item.occupies_slot) {
-            const alreadyHasStackable = item.stackable && player.items.some(i => i.id === item.id);
-            if (!alreadyHasStackable && eco.countSlotsUsed(player) >= slotCap()) {
+            if (item.once_per_player && player.bought_once.includes(item.id)) {
+                return interaction.reply({ content: `You can only buy **${item.name}** once.`, ephemeral: true });
+            }
+
+            if (reductionFlag && player.reductions[reductionFlag]) {
+                return interaction.reply({ content: `You already own the **${item.name}** upgrade.`, ephemeral: true });
+            }
+
+            if (player.balance < item.price) {
                 return interaction.reply({
-                    content: `Your inventory is full (${slotCap()} slots). Free a slot before buying.`,
+                    content: `You can't afford **${item.name}** — it costs ${formatBells(item.price)}, and you have ${formatBells(player.balance)}.`,
                     ephemeral: true,
                 });
+            }
+
+            // Slot cap — hard block. Stackable item you already own adds no slot.
+            if (item.occupies_slot) {
+                const alreadyHasStackable = item.stackable && player.items.some(i => i.id === item.id);
+                if (!alreadyHasStackable && eco.countSlotsUsed(player) >= slotCap()) {
+                    return interaction.reply({
+                        content: `Your inventory is full (${slotCap()} slots). Free a slot before buying.`,
+                        ephemeral: true,
+                    });
+                }
             }
         }
 
         // NOTE: finite-stock enforcement arrives with the shop state machine
         // (Phase 4). Cabinet items are unlimited, so nothing to check here yet.
 
-        // Apply the purchase.
-        eco.addBalance(player, -item.price);
+        // Apply the purchase. Testers buy free.
+        if (!isTester) eco.addBalance(player, -item.price);
         if (item.id === FLIMSY_WC_ID) {
             player.flimsy_wc.push(cfg.reductions.flimsy_wc_uses);
         } else if (reductionFlag) {

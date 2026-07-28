@@ -33,14 +33,19 @@ function runIncome(guildId, userId, commandKey) {
     }
 
     const now = Date.now();
-    const remainingMs = eco.cooldownRemainingMs(player, now);
-    if (remainingMs > 0) {
-        return {
-            status: 'cooldown',
-            remainingMs,
-            source: player.cooldown.source,
-            untilMs: player.cooldown.until,
-        };
+    const tester = eco.isTester(player);
+
+    // Testers never get locked out.
+    if (!tester) {
+        const remainingMs = eco.cooldownRemainingMs(player, now);
+        if (remainingMs > 0) {
+            return {
+                status: 'cooldown',
+                remainingMs,
+                source: player.cooldown.source,
+                untilMs: player.cooldown.until,
+            };
+        }
     }
 
     // Reduction is read from CURRENT state (before the decrement below) so the run
@@ -59,7 +64,11 @@ function runIncome(guildId, userId, commandKey) {
     eco.decrementFlimsy(player);
 
     if (payout > 0) eco.addBalance(player, payout);
-    eco.setCooldown(player, commandKey, untilMs);
+    if (tester) {
+        eco.clearCooldown(player);
+    } else {
+        eco.setCooldown(player, commandKey, untilMs);
+    }
     eco.savePlayer(guildId, userId, player);
 
     return {
@@ -69,6 +78,7 @@ function runIncome(guildId, userId, commandKey) {
         balance: player.balance,
         reduction,
         untilMs,
+        noCooldown: tester,
     };
 }
 
