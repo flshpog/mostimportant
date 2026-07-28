@@ -43,12 +43,12 @@
     "slot_cap": 3
   },
 
-  "house": {
-    "pre_swap": 725,
-    "swap": 1000,
-    "early_merge": 850,
-    "late_merge": 275
-  },
+  "house": [
+    { "name": "Pre-Swap Payment", "amount": 725, "description": "Cast a vote for a **Pre-Swap** Tribal Council." },
+    { "name": "Swap Payment", "amount": 1000, "description": "Cast a vote for a Tribal Council *following* an eventual **Tribe Swap.**" },
+    { "name": "Early Merge Payment", "amount": 850, "description": "Cast a vote for a Tribal Council *following* the **Merge** phase." },
+    { "name": "Late Merge Payment", "amount": 275, "description": "Cast a vote for a Tribal Council from the **F7 onward.**" }
+  ],
 
   "rotation": {
     "specials": 2,
@@ -76,14 +76,34 @@
   "shop": {
     "color": 16775075,
     "banner_url": "https://fishpog.lol/evst.png",
-    "headers": {
-      "special": "## ✨ __STORE SPECIALS__ ✨",
-      "golden": "## 🌟 __GOLDEN TOOLS__ 🌟",
-      "standard": "## 🔨 __STANDARD TOOLS__ 🔨",
-      "cabinet": "## 🗄️ __THE CABINET__ 🗄️",
-      "loan": "## 🏠 __LOAN REPAYMENT__ 🏠"
-    },
-    "flourish": "⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘"
+    "sections": {
+      "special": {
+        "header": "## ✨ __STORE SPECIALS__ ✨",
+        "flourish": "⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘⫘",
+        "intro": "**Two** Store Specials will be in rotation each round."
+      },
+      "golden": {
+        "header": "## 🌟 __GOLDEN TOOLS__ 🌟",
+        "flourish": "【═════════════════】",
+        "intro": "**Three** Golden Tools will be in rotation each round."
+      },
+      "standard": {
+        "header": "## ⚒️ __STANDARD TOOLS__ ⚒️",
+        "flourish": "✶⭑✶⭑✶⭑✶⭑✶⭑✶⭑✶⭑✶",
+        "intro": "**Four** Standard Tools will be in rotation each round."
+      },
+      "cabinet": {
+        "header": "## 🗄️ __THE CABINET__ 🗄️",
+        "flourish": "- ····•··•••○○•••··•····•",
+        "intro": "**All** items available 24/7... but cheap tools ain't reliable!",
+        "footer": "*Watering Can effects stack.*"
+      },
+      "loan": {
+        "header": "## 🏡 __LOAN REPAYMENT__ 🏡",
+        "flourish": "꒷꒦꒷꒦꒷꒦꒷꒦꒷꒦꒷꒦꒷",
+        "intro": "Every time you wish to cast a vote in this game, you must make a **House Payment.**"
+      }
+    }
   },
 
   "delivery": {
@@ -91,32 +111,32 @@
   },
 
   "items": [
-    { "id": 1,  "name": "Nook Family Tax Returns", "description": "The Nook family's finest paperwork.",        "price": 7500, "category": "special",  "stock": null, "refreshes": false, "stackable": false, "occupies_slot": true,  "once_per_player": false },
-    { "id": 2,  "name": "Resetti's Do-Over",       "description": "Mr. Resetti offers a fresh start.",           "price": 7000, "category": "special",  "stock": null, "refreshes": false, "stackable": false, "occupies_slot": true,  "once_per_player": false },
-    { "id": 3,  "name": "Redd's Counterfeit",      "description": "One of Redd's genuine, authentic treasures.", "price": 6500, "category": "special",  "stock": null, "refreshes": false, "stackable": false, "occupies_slot": true,  "once_per_player": false },
-    { "id": 4,  "name": "Isabelle's Briefing",     "description": "Isabelle has prepared a briefing for you.",   "price": 5000, "category": "special",  "stock": null, "refreshes": false, "stackable": false, "occupies_slot": true,  "once_per_player": false },
-    { "id": 5,  "name": "Kapp'n's Island Tour",    "description": "Set sail on a Kapp'n island tour.",           "price": 5000, "category": "special",  "stock": null, "refreshes": false, "stackable": false, "occupies_slot": true,  "once_per_player": false },
-    { "id": 6,  "name": "May Day Ticket",          "description": "A ticket to a special Mystery Island tour.",  "price": 3500, "category": "special",  "stock": 1,    "refreshes": false, "stackable": false, "occupies_slot": true,  "once_per_player": false },
-    { "id": 7,  "name": "Pete's Special Delivery", "description": "Pete's ready to deliver, for a fee.",         "price": 250,  "category": "special",  "stock": null, "refreshes": false, "stackable": false, "occupies_slot": true,  "once_per_player": false },
+    { "id": 1,  "name": "Nook Family Tax Returns", "description": "See EVERY Nook's Cranny item currently owned by people in the game. No names attached.", "price": 7500, "category": "special", "stock": null, "refreshes": false, "stackable": false, "occupies_slot": true, "once_per_player": false },
+    { "id": 2,  "name": "Resetti's Do-Over", "description": "Sets your current challenge score to **0.** Next round, your challenge result is **doubled** — time halved, or score doubled.", "price": 7000, "category": "special", "stock": null, "refreshes": false, "stackable": false, "occupies_slot": true, "once_per_player": false },
+    { "id": 3,  "name": "Redd's Counterfeit", "description": "Send a fake shop advantage to another player. They won't know it's fake until they try to use it.", "price": 6500, "category": "special", "stock": null, "refreshes": false, "stackable": false, "occupies_slot": true, "once_per_player": false },
+    { "id": 4,  "name": "Isabelle's Briefing", "description": "Full vote reveal breakdown from any past Tribal Council, with all names.", "price": 5000, "category": "special", "stock": null, "refreshes": false, "stackable": false, "occupies_slot": true, "once_per_player": false },
+    { "id": 5,  "name": "Kapp'n's Island Tour", "description": "Spend one round with viewing access to another tribe's chat, including Tribal Council if they attend.\nAt the end of the cycle, you may opt to **mutiny** to this tribe with Immunity for ONE episode.", "price": 5000, "category": "special", "stock": null, "refreshes": false, "stackable": false, "occupies_slot": true, "once_per_player": false },
+    { "id": 6,  "name": "May Day Ticket", "description": "???", "price": 3500, "category": "special", "stock": 1, "refreshes": false, "stackable": false, "occupies_slot": true, "once_per_player": false },
+    { "id": 7,  "name": "Pete's Special Delivery", "description": "Deliver bells or an item to another player. Pay 250 in shipping, plus whatever you're sending.\nThe angel to Redd's devil.", "price": 250, "price_label": "250 + deposit", "category": "special", "stock": null, "refreshes": false, "stackable": false, "occupies_slot": true, "once_per_player": false },
 
-    { "id": 8,  "name": "Golden Shovel",           "description": "A gleaming Golden Shovel.",                   "price": 7500, "category": "golden",   "stock": 1,    "refreshes": true,  "stackable": false, "occupies_slot": true,  "once_per_player": false },
-    { "id": 9,  "name": "Golden Axe",              "description": "A gleaming Golden Axe.",                      "price": 7000, "category": "golden",   "stock": 1,    "refreshes": true,  "stackable": false, "occupies_slot": true,  "once_per_player": false },
-    { "id": 10, "name": "Golden Slingshot",        "description": "A gleaming Golden Slingshot.",               "price": 6500, "category": "golden",   "stock": 2,    "refreshes": false, "stackable": false, "occupies_slot": true,  "once_per_player": false },
-    { "id": 11, "name": "Golden Rod",              "description": "A gleaming Golden Fishing Rod.",              "price": 6000, "category": "golden",   "stock": 3,    "refreshes": false, "stackable": false, "occupies_slot": true,  "once_per_player": false },
-    { "id": 12, "name": "Golden Watering Can",     "description": "Permanently reduces your income cooldowns by 50%. Once per player.", "price": 4000, "category": "golden", "stock": null, "refreshes": false, "stackable": false, "occupies_slot": false, "once_per_player": true },
+    { "id": 8,  "name": "Golden Shovel", "description": "Negates **SIX** votes cast against you.", "price": 7500, "category": "golden", "stock": 1, "refreshes": true, "stackable": false, "occupies_slot": true, "once_per_player": false },
+    { "id": 9,  "name": "Golden Axe", "description": "**Steal** another player's vote **AND** cast one **extra vote.** Cannot be blocked or negated.", "price": 7000, "category": "golden", "stock": 1, "refreshes": true, "stackable": false, "occupies_slot": true, "once_per_player": false },
+    { "id": 10, "name": "Golden Slingshot", "description": "**Pre-Play** (in Submissions) on someone else to attempt an **advantage interception** as it's being used. You **take** it for yourself.", "price": 6500, "category": "golden", "stock": 2, "refreshes": false, "stackable": false, "occupies_slot": true, "once_per_player": false },
+    { "id": 11, "name": "Golden Rod", "description": "Negate anywhere between **3 to 5** votes against you. (Random chance)", "price": 6000, "category": "golden", "stock": 3, "refreshes": false, "stackable": false, "occupies_slot": true, "once_per_player": false },
+    { "id": 12, "name": "Golden Watering Can", "description": "**Permanently** reduces all of your command cooldowns by **50%.**\nYou can only buy this **once.**", "price": 4000, "category": "golden", "stock": null, "refreshes": false, "stackable": false, "occupies_slot": false, "once_per_player": true },
 
-    { "id": 13, "name": "Shovel",                  "description": "A sturdy shovel.",                            "price": 4000, "category": "standard", "stock": 3,    "refreshes": false, "stackable": false, "occupies_slot": true,  "once_per_player": false },
-    { "id": 14, "name": "Axe",                     "description": "A sturdy axe.",                               "price": 4000, "category": "standard", "stock": 3,    "refreshes": false, "stackable": false, "occupies_slot": true,  "once_per_player": false },
-    { "id": 15, "name": "Slingshot",               "description": "A trusty slingshot.",                         "price": 3500, "category": "standard", "stock": 3,    "refreshes": false, "stackable": false, "occupies_slot": true,  "once_per_player": false },
-    { "id": 16, "name": "Vaulting Pole",           "description": "A vaulting pole for crossing rivers.",        "price": 3500, "category": "standard", "stock": null, "refreshes": false, "stackable": false, "occupies_slot": true,  "once_per_player": false },
-    { "id": 17, "name": "Stone Axe",               "description": "A rugged stone axe.",                         "price": 3000, "category": "standard", "stock": 3,    "refreshes": false, "stackable": false, "occupies_slot": true,  "once_per_player": false },
-    { "id": 18, "name": "Ladder",                  "description": "A ladder for scaling cliffs.",                "price": 2500, "category": "standard", "stock": 5,    "refreshes": false, "stackable": false, "occupies_slot": true,  "once_per_player": false },
-    { "id": 19, "name": "Star Wand",               "description": "A magical Star Wand. Stackable.",             "price": 2000, "category": "standard", "stock": null, "refreshes": false, "stackable": true,  "occupies_slot": true,  "once_per_player": false },
-    { "id": 20, "name": "Watering Can",            "description": "Permanently reduces your income cooldowns by 25%.", "price": 2000, "category": "standard", "stock": null, "refreshes": false, "stackable": false, "occupies_slot": false, "once_per_player": false },
+    { "id": 13, "name": "Shovel", "description": "Negates **TWO** votes cast against you.", "price": 4000, "category": "standard", "stock": 3, "refreshes": false, "stackable": false, "occupies_slot": true, "once_per_player": false },
+    { "id": 14, "name": "Axe", "description": "Allows you to **steal** another player's vote.", "price": 4000, "category": "standard", "stock": 3, "refreshes": false, "stackable": false, "occupies_slot": true, "once_per_player": false },
+    { "id": 15, "name": "Slingshot", "description": "Target a player at Tribal Council — they will be **stunned** and cannot use Regular & Golden Tools that round.\nCannot stack with other Slingshots & variants.", "price": 3500, "category": "standard", "stock": 3, "refreshes": false, "stackable": false, "occupies_slot": true, "once_per_player": false },
+    { "id": 16, "name": "Vaulting Pole", "description": "**+25%** to your score in the next challenge.", "price": 3500, "category": "standard", "stock": null, "refreshes": false, "stackable": false, "occupies_slot": true, "once_per_player": false },
+    { "id": 17, "name": "Stone Axe", "description": "**Guarantees** vote-blocking power.", "price": 3000, "category": "standard", "stock": 3, "refreshes": false, "stackable": false, "occupies_slot": true, "once_per_player": false },
+    { "id": 18, "name": "Ladder", "description": "Cast an **extra vote** at Tribal Council. Carries over to a re-vote.", "price": 2500, "category": "standard", "stock": 5, "refreshes": false, "stackable": false, "occupies_slot": true, "once_per_player": false },
+    { "id": 19, "name": "Star Wand", "description": "Roll for a **1 in 6** chance at Immunity.\nYou may buy/use multiple of these to **stack** and increase your odds.", "price": 2000, "category": "standard", "stock": null, "refreshes": false, "stackable": true, "occupies_slot": true, "once_per_player": false },
+    { "id": 20, "name": "Watering Can", "description": "**Permanently** reduces all of your command cooldowns by **25%.**", "price": 2000, "category": "standard", "stock": null, "refreshes": false, "stackable": false, "occupies_slot": false, "once_per_player": false },
 
-    { "id": 21, "name": "Flimsy Shovel",           "description": "A flimsy shovel. It won't last long.",        "price": 1000, "category": "cabinet",  "stock": null, "refreshes": false, "stackable": false, "occupies_slot": true,  "once_per_player": false },
-    { "id": 22, "name": "Flimsy Axe",              "description": "A flimsy axe. Handle with care.",             "price": 750,  "category": "cabinet",  "stock": null, "refreshes": false, "stackable": false, "occupies_slot": true,  "once_per_player": false },
-    { "id": 23, "name": "Flimsy Slingshot",        "description": "A flimsy slingshot. One good shot.",          "price": 750,  "category": "cabinet",  "stock": null, "refreshes": false, "stackable": false, "occupies_slot": true,  "once_per_player": false },
-    { "id": 24, "name": "Flimsy Watering Can",     "description": "Reduces your income cooldowns by 10% for your next 10 income commands.", "price": 400, "category": "cabinet", "stock": null, "refreshes": false, "stackable": false, "occupies_slot": false, "once_per_player": false }
+    { "id": 21, "name": "Flimsy Shovel", "description": "Negates 1 vote against you. **25% chance** it snaps first.", "price": 1000, "category": "cabinet", "stock": null, "refreshes": false, "stackable": false, "occupies_slot": true, "once_per_player": false },
+    { "id": 22, "name": "Flimsy Axe", "description": "Has a **25% chance** to block a player from voting.", "price": 750, "category": "cabinet", "stock": null, "refreshes": false, "stackable": false, "occupies_slot": true, "once_per_player": false },
+    { "id": 23, "name": "Flimsy Slingshot", "description": "Has a **25% chance** to **stun** a player from using Regular Tools.\nCannot stack with other Slingshots & variants.", "price": 750, "category": "cabinet", "stock": null, "refreshes": false, "stackable": false, "occupies_slot": true, "once_per_player": false },
+    { "id": 24, "name": "Flimsy Watering Can", "description": "Reduces all of your command cooldowns by **10%** for your next **10 commands.**", "price": 400, "category": "cabinet", "stock": null, "refreshes": false, "stackable": false, "occupies_slot": false, "once_per_player": false }
   ]
 }

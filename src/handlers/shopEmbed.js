@@ -2,31 +2,40 @@ const { EmbedBuilder } = require('discord.js');
 const { getConfig, getItem } = require('../config/economy');
 const { availableUnits } = require('./shop');
 
-// One item line: "**Name** — 7,500 <:Bells:> · 2 left\ndescription"
-function itemLine(guildId, item, showStock) {
+// One item block:
+//   **Name** - 7,500 <:Bells:> | **STOCK : 2 (Refreshes)**
+//   > description line 1
+//   > description line 2
+function itemBlock(guildId, item, showStock) {
     const cfg = getConfig();
-    const price = `${item.price.toLocaleString('en-US')} ${cfg.emoji.bells}`;
-    let head = `**${item.name}** — ${price}`;
+    const priceLabel = item.price_label || item.price.toLocaleString('en-US');
+    let head = `**${item.name}** - ${priceLabel} ${cfg.emoji.bells}`;
+
     if (showStock && item.stock !== null) {
         const left = availableUnits(guildId, item.id);
-        head += ` · ${left === Infinity ? '∞' : left} left`;
+        const n = left === Infinity ? '∞' : left;
+        head += ` | **STOCK : ${n}${item.refreshes ? ' (Refreshes)' : ''}**`;
     }
-    return `${head}\n${item.description}`;
+
+    const desc = String(item.description || '')
+        .split('\n')
+        .map(line => `> ${line}`)
+        .join('\n');
+    return `${head}\n${desc}`;
 }
 
-// Build one section embed: header (## on its own line), flourish (normal line),
-// then the item lines.
-function sectionEmbed(guildId, headerKey, items, { showStock = true } = {}) {
+// header \n flourish \n intro \n\n items \n\n [footer]
+function sectionEmbed(guildId, key, items, { showStock = true } = {}) {
     const cfg = getConfig();
-    const header = cfg.shop.headers[headerKey];
-    const body = items.length
-        ? items.map(item => itemLine(guildId, item, showStock)).join('\n\n')
+    const section = cfg.shop.sections[key];
+    const blocks = items.length
+        ? items.map(item => itemBlock(guildId, item, showStock)).join('\n\n')
         : '*Nothing here right now.*';
 
-    const embed = new EmbedBuilder()
-        .setColor(cfg.shop.color)
-        .setDescription(`${header}\n${cfg.shop.flourish}\n\n${body}`);
+    let body = `${section.header}\n${section.flourish}\n${section.intro}\n\n${blocks}`;
+    if (section.footer) body += `\n\n${section.footer}`;
 
+    const embed = new EmbedBuilder().setColor(cfg.shop.color).setDescription(body);
     if (cfg.shop.banner_url) embed.setImage(cfg.shop.banner_url);
     return embed;
 }
@@ -34,28 +43,24 @@ function sectionEmbed(guildId, headerKey, items, { showStock = true } = {}) {
 // The static Loan Repayment embed (house payments — display only, SPEC §4).
 function loanEmbed() {
     const cfg = getConfig();
-    const h = cfg.house;
-    const lines = [
-        `**Pre-Swap** — ${h.pre_swap.toLocaleString('en-US')} ${cfg.emoji.bells}`,
-        `**Swap** — ${h.swap.toLocaleString('en-US')} ${cfg.emoji.bells}`,
-        `**Early Merge** — ${h.early_merge.toLocaleString('en-US')} ${cfg.emoji.bells}`,
-        `**Late Merge (F7+)** — ${h.late_merge.toLocaleString('en-US')} ${cfg.emoji.bells}`,
-    ];
+    const section = cfg.shop.sections.loan;
+    const blocks = cfg.house
+        .map(h => `**${h.name}** - ${h.amount.toLocaleString('en-US')} ${cfg.emoji.bells}\n> ${h.description}`)
+        .join('\n\n');
+
     const embed = new EmbedBuilder()
         .setColor(cfg.shop.color)
-        .setDescription(`${cfg.shop.headers.loan}\n${cfg.shop.flourish}\n\n${lines.join('\n')}\n\n*Ping a host to pay your loan.*`);
+        .setDescription(`${section.header}\n${section.flourish}\n${section.intro}\n\n${blocks}`);
     if (cfg.shop.banner_url) embed.setImage(cfg.shop.banner_url);
     return embed;
 }
 
-// Build the five shop embeds for a rotation. `itemIds` are the 9 rotation items
+// The five shop embeds for a rotation. `itemIds` are the 9 rotation items
 // (2 special, 3 golden, 4 standard); Cabinet + Loan are static from config.
 function buildShopEmbeds(guildId, itemIds) {
     const items = itemIds.map(id => getItem(id)).filter(Boolean);
     const byCat = cat => items.filter(item => item.category === cat);
-
-    const cfg = getConfig();
-    const cabinet = cfg.items.filter(item => item.category === 'cabinet');
+    const cabinet = getConfig().items.filter(item => item.category === 'cabinet');
 
     return [
         sectionEmbed(guildId, 'special', byCat('special')),
