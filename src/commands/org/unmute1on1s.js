@@ -2,15 +2,21 @@ const { SlashCommandBuilder, PermissionFlagsBits, ChannelType } = require('disco
 const { processCategory } = require('../../handlers/oneOnOneMute');
 
 module.exports = {
-    data: new SlashCommandBuilder()
-        .setName('unmute1on1s')
-        .setDescription('Re-allow view/speak for involved player roles in every channel of a category')
-        .addChannelOption(option =>
-            option.setName('category')
-                .setDescription('The category whose 1-1 channels to unmute')
-                .addChannelTypes(ChannelType.GuildCategory)
-                .setRequired(true))
-        .setDefaultMemberPermissions(PermissionFlagsBits.ManageChannels),
+    data: (() => {
+        const builder = new SlashCommandBuilder()
+            .setName('unmute1on1s')
+            .setDescription('Re-allow view/speak for involved player roles across one or more categories');
+
+        for (let i = 1; i <= 10; i++) {
+            builder.addChannelOption(option =>
+                option.setName(i === 1 ? 'category' : `category${i}`)
+                    .setDescription(i === 1 ? 'The category whose 1-1 channels to unmute' : `Additional category ${i} (optional)`)
+                    .addChannelTypes(ChannelType.GuildCategory)
+                    .setRequired(i === 1));
+        }
+
+        return builder.setDefaultMemberPermissions(PermissionFlagsBits.ManageChannels);
+    })(),
 
     async execute(interaction) {
         try {
