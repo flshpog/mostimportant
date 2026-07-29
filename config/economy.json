@@ -66,7 +66,7 @@
   },
 
   "flags": {
-    "log_income_commands": false
+    "log_command_usage": true
   },
 
   "emoji": {

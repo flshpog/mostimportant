@@ -22,4 +22,12 @@ function hostPing() {
     return role ? `<@&${role}>` : '';
 }
 
-module.exports = { logToHost, hostPing };
+// Logs player command usage to the host channel, gated on the log_command_usage
+// flag so hosts can silence the firehose without a code change.
+async function logUsage(client, text) {
+    if (getConfig().flags.log_command_usage) {
+        await logToHost(client, text);
+    }
+}
+
+module.exports = { logToHost, hostPing, logUsage };

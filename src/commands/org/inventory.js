@@ -2,6 +2,7 @@ const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const eco = require('../../handlers/economy');
 const { getConfig, getItem, formatBells } = require('../../config/economy');
 const { getPlayerRoles } = require('../../handlers/playerRoles');
+const { logUsage } = require('../../handlers/economyLog');
 
 const AC_GREEN = 0x7CBB3F;
 
@@ -70,5 +71,11 @@ module.exports = {
         if (player.eliminated) embed.setFooter({ text: 'You have been eliminated.' });
 
         await interaction.reply({ embeds: [embed], ephemeral: true });
+
+        await logUsage(
+            interaction.client,
+            `📖 **${interaction.user.tag}** checked \`/inventory\` — ` +
+            `balance ${player.balance.toLocaleString('en-US')}, ${slotsUsed}/${cfg.inventory.slot_cap} slots.`
+        );
     },
 };

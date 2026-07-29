@@ -1,6 +1,6 @@
 const { runIncome, formatDuration } = require('./incomeEngine');
 const { getConfig, formatBells } = require('../config/economy');
-const { logToHost } = require('./economyLog');
+const { logUsage } = require('./economyLog');
 
 // Shared executor for /rock /tree /bottle — the commands differ only by `key`.
 async function executeIncome(interaction, key) {
@@ -10,23 +10,31 @@ async function executeIncome(interaction, key) {
 
     const cfg = getConfig();
     const incomeCfg = cfg.income[key];
+    const tag = interaction.user.tag;
     const result = runIncome(interaction.guildId, interaction.user.id, key);
 
     if (result.status === 'eliminated') {
-        return interaction.reply({
+        await interaction.reply({
             content: "You've been eliminated — you can no longer earn bells.",
             ephemeral: true,
         });
+        await logUsage(interaction.client, `🚫 **${tag}** ran \`/${key}\` — blocked (eliminated).`);
+        return;
     }
 
     if (result.status === 'cooldown') {
         const unlock = Math.floor(result.untilMs / 1000);
-        return interaction.reply({
+        await interaction.reply({
             content:
                 `⏳ You're on cooldown (set by **/${result.source}**).\n` +
                 `Available <t:${unlock}:R> — in **${formatDuration(result.remainingMs)}**.`,
             ephemeral: true,
         });
+        await logUsage(
+            interaction.client,
+            `⏳ **${tag}** ran \`/${key}\` — blocked, on cooldown (${formatDuration(result.remainingMs)} left, set by /${result.source}).`
+        );
+        return;
     }
 
     const unlock = Math.floor(result.untilMs / 1000);
@@ -49,13 +57,11 @@ async function executeIncome(interaction, key) {
 
     await interaction.reply({ content, ephemeral: true });
 
-    if (cfg.flags.log_income_commands) {
-        const detail = result.wasps ? 'WASPS (0 bells)' : `+${result.payout} bells`;
-        await logToHost(
-            interaction.client,
-            `💰 **${interaction.user.tag}** ran \`/${key}\` — ${detail}. Balance: ${result.balance.toLocaleString('en-US')}.`
-        );
-    }
+    const detail = result.wasps ? 'WASPS (0 bells)' : `+${result.payout} bells`;
+    await logUsage(
+        interaction.client,
+        `💰 **${tag}** ran \`/${key}\` — ${detail}. Balance: ${result.balance.toLocaleString('en-US')}.`
+    );
 }
 
 module.exports = { executeIncome };

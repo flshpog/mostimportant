@@ -2,7 +2,7 @@ const { SlashCommandBuilder } = require('discord.js');
 const eco = require('../../handlers/economy');
 const { getConfig, formatBells, slotCap } = require('../../config/economy');
 const { getBuyableItems, consumeUnit } = require('../../handlers/shop');
-const { logToHost, hostPing } = require('../../handlers/economyLog');
+const { logToHost, hostPing, logUsage } = require('../../handlers/economyLog');
 
 // Permanent-reduction upgrade items → the player.reductions flag they set.
 const REDUCTION_FLAG_BY_ITEM = { 12: 'golden_wc', 20: 'watering_can' };
@@ -50,6 +50,8 @@ module.exports = {
         if (!item) {
             return interaction.reply({ content: "That item isn't available to buy right now.", ephemeral: true });
         }
+
+        await logUsage(interaction.client, `🛒 **${interaction.user.tag}** ran \`/buy\` for **${item.name}**.`);
 
         const guildId = interaction.guildId;
         const userId = interaction.user.id;

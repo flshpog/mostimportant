@@ -1,6 +1,7 @@
 const { SlashCommandBuilder } = require('discord.js');
 const eco = require('../../handlers/economy');
 const { formatDuration } = require('../../handlers/incomeEngine');
+const { logUsage } = require('../../handlers/economyLog');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -31,5 +32,13 @@ module.exports = {
         }
 
         await interaction.reply({ content: lines.join('\n'), ephemeral: true });
+
+        const state = remaining > 0
+            ? `${formatDuration(remaining)} left (/${player.cooldown.source})`
+            : 'no cooldown';
+        await logUsage(
+            interaction.client,
+            `⏱️ **${interaction.user.tag}** checked \`/cooldown\` — ${state}, reduction ${reductionPct}%.`
+        );
     },
 };
