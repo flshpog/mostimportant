@@ -108,7 +108,9 @@ These make a player's earning **timers shorter**, forever (except the flimsy one
 - **Watering Can** — cuts timers by **25%**, forever.
 - **Flimsy Watering Can** — cuts timers by **10%**, but only for their **next 10** earns.
 
-They stack together (the more they own, the shorter the timer — up to a cap).
+Players can only hold **one** watering can at a time — they don't stack. To switch to a
+different one, they trade in their current can with a host (no refund). A watering can
+only shortens **future** timers, never one that's already counting down.
 
 ---
 

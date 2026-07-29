@@ -8,6 +8,15 @@ const { logToHost, hostPing, logUsage } = require('../../handlers/economyLog');
 const REDUCTION_FLAG_BY_ITEM = { 12: 'golden_wc', 20: 'watering_can' };
 const FLIMSY_WC_ID = 24;
 
+// All watering cans. A player may hold only ONE at a time — they don't stack.
+const WATERING_CAN_IDS = new Set([12, 20, 24]);
+
+function hasWateringCan(player) {
+    return player.reductions.golden_wc
+        || player.reductions.watering_can
+        || (player.flimsy_wc && player.flimsy_wc.length > 0);
+}
+
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('buy')
@@ -69,8 +78,13 @@ module.exports = {
                 return interaction.reply({ content: `You can only buy **${item.name}** once.`, ephemeral: true });
             }
 
-            if (reductionFlag && player.reductions[reductionFlag]) {
-                return interaction.reply({ content: `You already own the **${item.name}** upgrade.`, ephemeral: true });
+            // Watering cans don't stack — only one at a time. To switch, trade in
+            // the current one with a host (no refund) before buying another.
+            if (WATERING_CAN_IDS.has(item.id) && hasWateringCan(player)) {
+                return interaction.reply({
+                    content: "You already have a watering can, and they don't stack. Trade in your current one with a host (you won't be refunded), or skip this purchase.",
+                    ephemeral: true,
+                });
             }
 
             if (player.balance < item.price) {

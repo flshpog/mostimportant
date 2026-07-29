@@ -149,7 +149,7 @@ Stock `∞` = unlimited.
 | 21 | Flimsy Shovel | 1,000 | |
 | 22 | Flimsy Axe | 750 | |
 | 23 | Flimsy Slingshot | 750 | |
-| 24 | Flimsy Watering Can | 400 | no slot · −10% for next 10 commands · stacks |
+| 24 | Flimsy Watering Can | 400 | no slot · −10% for next 10 commands |
 | 25 | +1 Islander | 2,500 | no slot · adds a buddy to your confessional · buy multiple |
 
 ### Special flags at a glance
@@ -162,12 +162,14 @@ Stock `∞` = unlimited.
 
 ## Cooldown reductions (Watering Cans)
 
-Additive, capped at −85%:
+You can hold only **one** watering can at a time — they do **not** stack. To switch,
+trade in your current one with a host (no refund) before buying another.
 - Golden Watering Can (ID 12): **−50%**, permanent, once per player.
 - Watering Can (ID 20): **−25%**, permanent.
-- Flimsy Watering Can (ID 24): **−10%** for your next 10 income commands (stacks).
+- Flimsy Watering Can (ID 24): **−10%** for your next 10 income commands.
 
-None of them take an inventory slot.
+None of them take an inventory slot. A reduction only applies to cooldowns set
+*after* you own the can — it never shrinks a cooldown that's already running.
 
 ---
 

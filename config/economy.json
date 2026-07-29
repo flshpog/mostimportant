@@ -35,7 +35,7 @@
     "watering_can": 0.25,
     "flimsy_wc": 0.10,
     "flimsy_wc_uses": 10,
-    "flimsy_wc_stacks": true,
+    "flimsy_wc_stacks": false,
     "max_reduction": 0.85
   },
 
@@ -96,7 +96,7 @@
         "header": "## 🗄️ __THE CABINET__ 🗄️",
         "flourish": "- ····•··•••○○•••··•····•",
         "intro": "**All** items available 24/7... but cheap tools ain't reliable!",
-        "footer": "*Watering Can effects stack.*"
+        "footer": "*You can only hold one watering can at a time — they don't stack. Trade in with a host to switch (no refund).*"
       },
       "loan": {
         "header": "## 🏡 __LOAN REPAYMENT__ 🏡",
