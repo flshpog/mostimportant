@@ -108,6 +108,19 @@ module.exports = {
             // Wait a moment before starting each player's turn
             await this.sleep(1000);
 
+            // Final player: everyone else drew white, so the last rock MUST be
+            // purple. They don't draw — announce it and eliminate.
+            if (i === players.length - 1) {
+                await message.channel.send('There is only one rock left, it has to be purple. 🟣');
+                await this.sleep(1500);
+                await message.channel.send(
+                    `I'm sorry ${player}, you've been eliminated in the worst way possible.\n\n**Goodbye.**`
+                );
+                await message.edit({ content: message.content, components: [] });
+                message.client.rocksGames.delete(userId);
+                return;
+            }
+
             // Send NEW message: Player draws a rock
             const drawMessage = await message.channel.send(`${player} draws a rock.`);
 
@@ -140,13 +153,10 @@ module.exports = {
             await this.sleep(1500);
 
             if (isEliminated) {
-                // Every player — including the final one — draws a rock and has its
-                // colour revealed above before we announce the elimination. Same
-                // suspenseful reveal for everyone; no "only rock left" auto-call.
+                // A player who actually drew the purple rock (never the last player,
+                // who is handled above without drawing).
                 const eliminationMessage =
-                    `${player}, you live to fight another day...\n\n` +
-                    `**...NOT!** You drew the purple rock — you've been eliminated in the worst way possible.\n\n` +
-                    `**Goodbye.**`;
+                    `I'm sorry ${player}, you've been eliminated in the worst way possible.\n\n**Goodbye.**`;
 
                 await message.channel.send(eliminationMessage);
 
