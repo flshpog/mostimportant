@@ -140,19 +140,13 @@ module.exports = {
             await this.sleep(1500);
 
             if (isEliminated) {
-                // Send NEW message: Player eliminated
-                let eliminationMessage;
-
-                if (i === players.length - 1) {
-                    // Last player - only rock left is purple
-                    eliminationMessage = `${player}, You live to fight another day... NOT!\n` +
-                                       `I'm sorry ${player}, the only rock left is purple. You have been eliminated in the worst way possible.\n\n` +
-                                       `**Goodbye.**`;
-                } else {
-                    // Eliminated before last draw
-                    eliminationMessage = `I'm sorry ${player}, you've been eliminated in the worst way possible.\n\n` +
-                                       `**Goodbye.**`;
-                }
+                // Every player — including the final one — draws a rock and has its
+                // colour revealed above before we announce the elimination. Same
+                // suspenseful reveal for everyone; no "only rock left" auto-call.
+                const eliminationMessage =
+                    `${player}, you live to fight another day...\n\n` +
+                    `**...NOT!** You drew the purple rock — you've been eliminated in the worst way possible.\n\n` +
+                    `**Goodbye.**`;
 
                 await message.channel.send(eliminationMessage);
 
