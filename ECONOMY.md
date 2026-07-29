@@ -76,6 +76,7 @@ All require Manage Server + the host category.
 
 | Command | What it does | Usage |
 |---|---|---|
+| `/balances` | Private list of **every** player's balance, sorted high to low, with the total. | `/balances` |
 | `/grant` | Add bells to a player. | `/grant user:@p amount:5000 [reason:…]` |
 | `/deduct` | Remove bells — **the house-payment tool**. | `/deduct user:@p amount:1000 [reason:…]` |
 | `/resetcooldown` | Clears a player's income cooldown. | `/resetcooldown user:@p` |

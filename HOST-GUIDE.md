@@ -72,6 +72,7 @@ When in doubt, run host stuff in a host channel and you're fine.
 
 | Command | What it does, in plain words |
 |---|---|
+| `/balances` | See a **private list of everyone's bell count**, richest to poorest, plus the total in the game. Great for a quick money check. |
 | `/grant` | **Give** a player bells. `user`, `amount`, and an optional note. |
 | `/deduct` | **Take** bells from a player. This is your **house-payment / voting-fee** tool — you'll use it a lot at tribal. |
 | `/resetcooldown` | **Clear a player's timer** so they can earn again right away. |
