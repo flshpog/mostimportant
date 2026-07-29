@@ -137,6 +137,7 @@
     { "id": 21, "name": "Flimsy Shovel", "description": "Negates 1 vote against you. **25% chance** it snaps first.", "price": 1000, "category": "cabinet", "stock": null, "refreshes": false, "stackable": false, "occupies_slot": true, "once_per_player": false },
     { "id": 22, "name": "Flimsy Axe", "description": "Has a **25% chance** to block a player from voting.", "price": 750, "category": "cabinet", "stock": null, "refreshes": false, "stackable": false, "occupies_slot": true, "once_per_player": false },
     { "id": 23, "name": "Flimsy Slingshot", "description": "Has a **25% chance** to **stun** a player from using Regular Tools.\nCannot stack with other Slingshots & variants.", "price": 750, "category": "cabinet", "stock": null, "refreshes": false, "stackable": false, "occupies_slot": true, "once_per_player": false },
-    { "id": 24, "name": "Flimsy Watering Can", "description": "Reduces all of your command cooldowns by **10%** for your next **10 commands.**", "price": 400, "category": "cabinet", "stock": null, "refreshes": false, "stackable": false, "occupies_slot": false, "once_per_player": false }
+    { "id": 24, "name": "Flimsy Watering Can", "description": "Reduces all of your command cooldowns by **10%** for your next **10 commands.**", "price": 400, "category": "cabinet", "stock": null, "refreshes": false, "stackable": false, "occupies_slot": false, "once_per_player": false },
+    { "id": 25, "name": "+1 Islander", "description": "Add another buddy to your confessional channel.", "price": 2500, "category": "cabinet", "stock": null, "refreshes": false, "stackable": false, "occupies_slot": false, "once_per_player": false }
   ]
 }

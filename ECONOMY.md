@@ -149,10 +149,11 @@ Stock `∞` = unlimited.
 | 22 | Flimsy Axe | 750 | |
 | 23 | Flimsy Slingshot | 750 | |
 | 24 | Flimsy Watering Can | 400 | no slot · −10% for next 10 commands · stacks |
+| 25 | +1 Islander | 2,500 | no slot · adds a buddy to your confessional · buy multiple |
 
 ### Special flags at a glance
 - **Stackable:** 19 (Star Wand) only.
-- **Don't occupy a slot:** 12, 20, 24 (the Watering Cans).
+- **Don't occupy a slot:** 12, 20, 24 (the Watering Cans) and 25 (+1 Islander).
 - **Once per player:** 12 (Golden Watering Can).
 - **Refreshes** (returns to the pool when a host removes it): 8, 9.
 
