@@ -1,14 +1,24 @@
 const { ChannelType, OverwriteType, PermissionFlagsBits } = require('discord.js');
 const { getPlayerRoles } = require('./playerRoles');
 
-// Mute or unmute every involved player role across all channels in a category.
-// "Involved" = the player role already has a permission overwrite in that channel.
+// Mute or unmute every involved player role across all channels in one or more
+// categories. "Involved" = the player role already has a permission overwrite in
+// that channel. Reads options `category`, `category2` … `category10` (a command
+// only needs to define as many as it offers).
 async function processCategory(interaction, mode) {
-    const category = interaction.options.getChannel('category');
+    const categories = [];
+    const seen = new Set();
+    for (let i = 1; i <= 10; i++) {
+        const cat = interaction.options.getChannel(i === 1 ? 'category' : `category${i}`);
+        if (cat && cat.type === ChannelType.GuildCategory && !seen.has(cat.id)) {
+            categories.push(cat);
+            seen.add(cat.id);
+        }
+    }
 
-    if (!category || category.type !== ChannelType.GuildCategory) {
+    if (!categories.length) {
         return interaction.reply({
-            content: 'Please select a valid category channel.',
+            content: 'Please select at least one valid category channel.',
             ephemeral: true,
         });
     }
@@ -25,48 +35,56 @@ async function processCategory(interaction, mode) {
 
     await interaction.deferReply({ ephemeral: true });
 
-    const channels = [...category.children.cache.values()];
-    let channelsAffected = 0;
-    let rolesChanged = 0;
-    let failures = 0;
+    let totalChannels = 0;
+    let totalRoles = 0;
+    let totalFailures = 0;
+    const perCategory = [];
 
-    for (const channel of channels) {
-        // Player roles that already have an overwrite in this channel.
-        const involved = [...channel.permissionOverwrites.cache.values()]
-            .filter(ow => ow.type === OverwriteType.Role && playerRoleSet.has(ow.id))
-            .map(ow => ow.id);
+    for (const category of categories) {
+        let channelsAffected = 0;
+        let rolesChanged = 0;
+        let failures = 0;
 
-        if (!involved.length) continue;
+        for (const channel of category.children.cache.values()) {
+            // Player roles that already have an overwrite in this channel.
+            const involved = [...channel.permissionOverwrites.cache.values()]
+                .filter(ow => ow.type === OverwriteType.Role && playerRoleSet.has(ow.id))
+                .map(ow => ow.id);
 
-        let changedHere = false;
-        for (const roleId of involved) {
-            try {
-                if (mode === 'mute') {
-                    await channel.permissionOverwrites.edit(roleId, {
-                        [PermissionFlagsBits.ViewChannel]: false,
-                        [PermissionFlagsBits.SendMessages]: false,
-                    });
-                } else {
-                    await channel.permissionOverwrites.edit(roleId, {
-                        [PermissionFlagsBits.ViewChannel]: true,
-                        [PermissionFlagsBits.SendMessages]: true,
-                    });
+            if (!involved.length) continue;
+
+            let changedHere = false;
+            for (const roleId of involved) {
+                try {
+                    await channel.permissionOverwrites.edit(roleId, mode === 'mute'
+                        ? { [PermissionFlagsBits.ViewChannel]: false, [PermissionFlagsBits.SendMessages]: false }
+                        : { [PermissionFlagsBits.ViewChannel]: true, [PermissionFlagsBits.SendMessages]: true });
+                    rolesChanged++;
+                    changedHere = true;
+                } catch (err) {
+                    console.error(`Failed to ${mode} role ${roleId} in #${channel.name}:`, err);
+                    failures++;
                 }
-                rolesChanged++;
-                changedHere = true;
-            } catch (err) {
-                console.error(`Failed to ${mode} role ${roleId} in #${channel.name}:`, err);
-                failures++;
             }
+            if (changedHere) channelsAffected++;
         }
-        if (changedHere) channelsAffected++;
+
+        totalChannels += channelsAffected;
+        totalRoles += rolesChanged;
+        totalFailures += failures;
+        perCategory.push(
+            `• **${category.name}** — ${channelsAffected} channel(s), ${rolesChanged} overwrite(s)` +
+            (failures ? `, ⚠️ ${failures} failed` : '')
+        );
     }
 
     const verb = mode === 'mute' ? 'Muted' : 'Unmuted';
-    let msg = `✅ ${verb} player roles across **${category.name}**.\n` +
-        `• Channels affected: ${channelsAffected}\n` +
-        `• Role overwrites changed: ${rolesChanged}`;
-    if (failures) msg += `\n• ⚠️ Failures: ${failures}`;
+    let msg = `✅ ${verb} player roles across **${categories.length}** categor${categories.length === 1 ? 'y' : 'ies'}.\n` +
+        `${perCategory.join('\n')}\n\n` +
+        `**Totals:** ${totalChannels} channel(s), ${totalRoles} overwrite(s)` +
+        (totalFailures ? `, ⚠️ ${totalFailures} failure(s)` : '');
+
+    if (msg.length > 1900) msg = msg.slice(0, 1900) + '\n…(truncated)';
 
     await interaction.editReply(msg);
 }
