@@ -71,6 +71,10 @@ module.exports = {
                 });
             }
 
+            // Sort members alphabetically so the channel name is consistent no matter
+            // what order the roles were given in.
+            validRoles.sort((a, b) => a.name.toLowerCase().localeCompare(b.name.toLowerCase()));
+
             // Create channel name based on role names
             const channelName = validRoles.map(r => r.name.toLowerCase().replace(/[^a-z0-9]/g, '-')).join('-');
 
