@@ -13,8 +13,12 @@ function itemBlock(guildId, item, showStock) {
 
     if (showStock && item.stock !== null) {
         const left = availableUnits(guildId, item.id);
-        const n = left === Infinity ? '∞' : left;
-        head += ` | **STOCK : ${n}${item.refreshes ? ' (Refreshes)' : ''}**`;
+        if (left <= 0) {
+            head += ' | **SOLD OUT**';
+        } else {
+            const n = left === Infinity ? '∞' : left;
+            head += ` | **STOCK : ${n}${item.refreshes ? ' (Refreshes)' : ''}**`;
+        }
     }
 
     const desc = String(item.description || '')

@@ -2,6 +2,7 @@ const { SlashCommandBuilder } = require('discord.js');
 const eco = require('../../handlers/economy');
 const { getConfig, formatBells, slotCap } = require('../../config/economy');
 const { getBuyableItems, consumeUnit } = require('../../handlers/shop');
+const { updatePostedShop } = require('../../handlers/shopService');
 const { logToHost, hostPing, logUsage } = require('../../handlers/economyLog');
 
 // Permanent-reduction upgrade items → the player.reductions flag they set.
@@ -144,5 +145,10 @@ module.exports = {
                 `Balance: ${player.balance.toLocaleString('en-US')}.`,
             allowedMentions: { parse: ['roles'] },
         });
+
+        // Keep the live shop post's stock counts current (finite-stock buys only).
+        if (!isTester && item.stock !== null) {
+            await updatePostedShop(interaction.client, guildId);
+        }
     },
 };

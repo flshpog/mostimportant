@@ -33,4 +33,21 @@ async function postShop(client, guildId, itemIds) {
     return message;
 }
 
-module.exports = { postShop };
+// Edits the currently-posted shop message in place with freshly-rendered embeds,
+// so stock counts (and SOLD OUT) stay live as items sell. No-op if no shop is
+// posted. Never throws — a failed stock refresh must not break a purchase.
+async function updatePostedShop(client, guildId) {
+    const current = shop.getCurrentShop(guildId);
+    if (!current || !current.messageId) return;
+    try {
+        const channelId = current.channelId || getConfig().channels.shop;
+        const channel = await client.channels.fetch(channelId);
+        if (!channel || !channel.isTextBased()) return;
+        const message = await channel.messages.fetch(current.messageId);
+        await message.edit({ embeds: buildShopEmbeds(guildId, current.items) });
+    } catch (err) {
+        console.error('Failed to update posted shop:', err);
+    }
+}
+
+module.exports = { postShop, updatePostedShop };
