@@ -1,5 +1,5 @@
 const shop = require('./shop');
-const { getItem } = require('../config/economy');
+const { getItem, getItemByName } = require('../config/economy');
 
 // The 9 rotation slots: 2 Specials, 3 Golden, 4 Standard. Each maps to a category
 // the option's autocomplete draws from. Cabinet + Loan are appended automatically.
@@ -37,7 +37,10 @@ async function handleRotationAutocomplete(interaction) {
     const choices = shop.offerableItems(interaction.guildId, slot.category)
         .filter(item => item.name.toLowerCase().includes(query))
         .slice(0, 25)
-        .map(item => ({ name: `${item.name} (${item.price.toLocaleString('en-US')})`, value: String(item.id) }));
+        // Store the NAME as the value (not the ID) so the filled-in option stays
+        // human-readable when Discord re-renders the command — otherwise it shows
+        // the raw ID number after you leave and return to the channel.
+        .map(item => ({ name: `${item.name} (${item.price.toLocaleString('en-US')})`, value: item.name }));
     await interaction.respond(choices);
 }
 
@@ -46,21 +49,22 @@ function collectRotationIds(interaction) {
     const ids = [];
     const seen = new Set();
     for (const slot of SLOTS) {
-        const raw = interaction.options.getString(slot.name);
-        const id = Number(raw);
-        const item = Number.isInteger(id) ? getItem(id) : null;
+        const raw = (interaction.options.getString(slot.name) || '').trim();
+        // Value is the item name (from autocomplete). Fall back to ID for safety.
+        let item = getItemByName(raw);
+        if (!item && Number.isInteger(Number(raw))) item = getItem(Number(raw));
 
         if (!item || item.category !== slot.category) {
             return { error: `**${slot.label}** must be a valid ${slot.category} item (pick from autocomplete).` };
         }
-        if (seen.has(id)) {
+        if (seen.has(item.id)) {
             return { error: `Duplicate item selected: **${item.name}**. Each slot must be a different item.` };
         }
-        if (!shop.isAvailable(interaction.guildId, id)) {
+        if (!shop.isAvailable(interaction.guildId, item.id)) {
             return { error: `**${item.name}** is no longer available to offer.` };
         }
-        seen.add(id);
-        ids.push(id);
+        seen.add(item.id);
+        ids.push(item.id);
     }
     return { ids };
 }
