@@ -27,6 +27,12 @@ module.exports = {
         // Ignore bot messages
         if (message.author.bot) return;
 
+        // Bug Frenzy catch handling (no-op unless a frenzy is active in this channel).
+        if (message.guild) {
+            require('../handlers/bugFrenzy').handleMessage(message).catch(err =>
+                console.error('Bug Frenzy catch error:', err));
+        }
+
         if (message.guild && getSticky(message.channel.id)) {
             resendSticky(message.channel).catch(() => {});
         }
