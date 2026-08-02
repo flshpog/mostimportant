@@ -17,6 +17,7 @@ const USAGE = [
     '`!bugfrenzy standings` — current totals + top catchers',
     '`!bugfrenzy status` — active? time left, spawn count, next spawn ETA',
     '`!bugfrenzy spawn <bug name>` — force a specific bug now (QA)',
+    '`!bugfrenzy test [on|off]` — toggle fast test spawns (seconds instead of minutes)',
 ].join('\n');
 
 module.exports = {
@@ -97,10 +98,26 @@ module.exports = {
             const nextLine = state.nextSpawnAt
                 ? `Next spawn <t:${Math.floor(state.nextSpawnAt / 1000)}:R>`
                 : 'Next spawn: pending';
+            const testLine = frenzy.getConfig().test_mode ? '\n🧪 **Test mode is ON**' : '';
             return message.reply(
                 `🪲 **Active.** Ends <t:${endUnix}:R>.\n` +
-                `Spawns so far: **${state.spawnCount || 0}**\n${nextLine}`
+                `Spawns so far: **${state.spawnCount || 0}**\n${nextLine}${testLine}`
             );
+        }
+
+        // ---- test mode toggle ----
+        if (sub === 'test') {
+            const arg = (args[1] || '').toLowerCase();
+            let on;
+            if (['on', 'true', 'enable'].includes(arg)) on = true;
+            else if (['off', 'false', 'disable'].includes(arg)) on = false;
+            else on = !frenzy.getConfig().test_mode; // no arg = toggle
+
+            frenzy.setTestMode(on);
+            const cfg = frenzy.getConfig();
+            return message.reply(on
+                ? `🧪 Test mode **ON** — bugs now spawn every **${cfg.test_interval_seconds.min}–${cfg.test_interval_seconds.max}s** (applies to the next spawn). Turn off with \`!bugfrenzy test off\`.`
+                : `Test mode **OFF** — back to normal **${cfg.min_interval_minutes}–${cfg.max_interval_minutes} min** spawns.`);
         }
 
         // ---- spawn (QA) ----

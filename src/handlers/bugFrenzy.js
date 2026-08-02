@@ -10,13 +10,38 @@ const path = require('path');
 
 const CONFIG_PATH = path.join(__dirname, '../../config/bugfrenzy.json');
 const STATE_PATH = path.join(__dirname, '../../data/bugfrenzy.json');
+// Runtime overrides toggled by command (gitignored) so hosts don't edit config.
+const OVERRIDE_PATH = path.join(__dirname, '../../data/bugfrenzyRuntime.json');
 
 // In-memory timers (not persisted — rebuilt on resume).
 const spawnTimers = new Map();
 const endTimers = new Map();
 
+function loadOverride() {
+    try {
+        return JSON.parse(fs.readFileSync(OVERRIDE_PATH, 'utf8'));
+    } catch {
+        return {};
+    }
+}
+
+// Config = committed defaults with any runtime overrides layered on top.
 function getConfig() {
-    return JSON.parse(fs.readFileSync(CONFIG_PATH, 'utf8'));
+    const config = JSON.parse(fs.readFileSync(CONFIG_PATH, 'utf8'));
+    const override = loadOverride();
+    if (typeof override.test_mode === 'boolean') config.test_mode = override.test_mode;
+    return config;
+}
+
+// Toggle test mode without editing the config file. Returns the new value.
+function setTestMode(on) {
+    const override = loadOverride();
+    override.test_mode = !!on;
+    if (!fs.existsSync(path.dirname(OVERRIDE_PATH))) {
+        fs.mkdirSync(path.dirname(OVERRIDE_PATH), { recursive: true });
+    }
+    fs.writeFileSync(OVERRIDE_PATH, JSON.stringify(override, null, 2));
+    return override.test_mode;
 }
 
 function load() {
@@ -387,6 +412,7 @@ function resumeAll(client) {
 
 module.exports = {
     getConfig,
+    setTestMode,
     getState,
     startFrenzy,
     endFrenzy,
