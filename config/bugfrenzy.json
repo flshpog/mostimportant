@@ -12,16 +12,16 @@
   "default_labels": { "A": "Tribe A", "B": "Tribe B" },
   "default_flavor": "appears",
   "bugs": [
-    { "name": "Common Butterfly", "rarity": "Common", "window": 20, "points": 1, "weight": 36, "flavor": "flutters by" },
-    { "name": "Pill Bug", "rarity": "Common", "window": 20, "points": 1, "weight": 36, "flavor": "rolls out" },
-    { "name": "Mosquito", "rarity": "Common", "window": 20, "points": 1, "weight": 36, "flavor": "buzzes past" },
-    { "name": "Ladybug", "rarity": "Uncommon", "window": 13, "points": 3, "weight": 20, "flavor": "crawls along a leaf" },
-    { "name": "Grasshopper", "rarity": "Uncommon", "window": 13, "points": 3, "weight": 20, "flavor": "leaps up" },
-    { "name": "Praying Mantis", "rarity": "Uncommon", "window": 13, "points": 3, "weight": 20, "flavor": "strikes a pose" },
-    { "name": "Emperor Butterfly", "rarity": "Rare", "window": 7, "points": 8, "weight": 8, "flavor": "glides gracefully" },
-    { "name": "Scarab Beetle", "rarity": "Rare", "window": 7, "points": 8, "weight": 8, "flavor": "gleams in the light" },
-    { "name": "Tarantula", "rarity": "Rare", "window": 7, "points": 8, "weight": 8, "flavor": "skitters out" },
-    { "name": "Golden Stag", "rarity": "Legendary", "window": 5, "points": 25, "weight": 3, "flavor": "lands on the tree" },
-    { "name": "Horned Hercules", "rarity": "Legendary", "window": 5, "points": 25, "weight": 3, "flavor": "crashes down" }
+    { "name": "Common Butterfly", "rarity": "Common", "window": 10, "points": 1, "weight": 36, "flavor": "flutters by" },
+    { "name": "Pill Bug", "rarity": "Common", "window": 10, "points": 1, "weight": 36, "flavor": "rolls out" },
+    { "name": "Mosquito", "rarity": "Common", "window": 10, "points": 1, "weight": 36, "flavor": "buzzes past" },
+    { "name": "Ladybug", "rarity": "Uncommon", "window": 7, "points": 3, "weight": 20, "flavor": "crawls along a leaf" },
+    { "name": "Grasshopper", "rarity": "Uncommon", "window": 7, "points": 3, "weight": 20, "flavor": "leaps up" },
+    { "name": "Praying Mantis", "rarity": "Uncommon", "window": 7, "points": 3, "weight": 20, "flavor": "strikes a pose" },
+    { "name": "Emperor Butterfly", "rarity": "Rare", "window": 5, "points": 8, "weight": 8, "flavor": "glides gracefully" },
+    { "name": "Scarab Beetle", "rarity": "Rare", "window": 5, "points": 8, "weight": 8, "flavor": "gleams in the light" },
+    { "name": "Tarantula", "rarity": "Rare", "window": 5, "points": 8, "weight": 8, "flavor": "skitters out" },
+    { "name": "Golden Stag", "rarity": "Legendary", "window": 3, "points": 25, "weight": 3, "flavor": "lands on the tree" },
+    { "name": "Horned Hercules", "rarity": "Legendary", "window": 3, "points": 25, "weight": 3, "flavor": "crashes down" }
   ]
 }
