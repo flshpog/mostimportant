@@ -150,7 +150,7 @@ async function doSpawn(client, guildId, forcedBugName) {
 
     const windowMs = Math.max(config.min_window_seconds || 3, bug.window) * 1000;
     const flavor = bug.flavor || config.default_flavor || 'appears';
-    const content = `🪲 A **${bug.name}** ${flavor}! Type \`I catch the ${bug.name}!\` to catch it!`;
+    const content = `🪲 A **${bug.name}** ${flavor}!`;
 
     // Post to both channels as close to simultaneously as possible (fairness).
     const messageIds = {};
