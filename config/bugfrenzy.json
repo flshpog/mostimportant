@@ -8,6 +8,7 @@
   "test_interval_seconds": { "min": 5, "max": 10 },
   "min_window_seconds": 3,
   "default_channels": { "A": "1533508022494822510", "B": "1533508060973367356" },
+  "results_channel": "1414321682415357965",
   "default_labels": { "A": "Tribe A", "B": "Tribe B" },
   "default_flavor": "appears",
   "bugs": [

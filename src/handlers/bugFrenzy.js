@@ -373,12 +373,24 @@ async function endFrenzy(client, guildId) {
     save(data);
 
     const text = tallyText(state);
-    for (const tribe of ['A', 'B']) {
+    const config = getConfig();
+    if (config.results_channel) {
+        // Post the tally to the configured host results channel only.
         try {
-            const channel = await client.channels.fetch(state.channels[tribe].id);
+            const channel = await client.channels.fetch(config.results_channel);
             if (channel && channel.isTextBased()) await sendChunked(channel, text);
         } catch (err) {
-            console.error(`Bug Frenzy: failed tally post for tribe ${tribe}:`, err.message);
+            console.error('Bug Frenzy: failed tally post to results channel:', err.message);
+        }
+    } else {
+        // Fallback: post to both tribe channels.
+        for (const tribe of ['A', 'B']) {
+            try {
+                const channel = await client.channels.fetch(state.channels[tribe].id);
+                if (channel && channel.isTextBased()) await sendChunked(channel, text);
+            } catch (err) {
+                console.error(`Bug Frenzy: failed tally post for tribe ${tribe}:`, err.message);
+            }
         }
     }
     return state;
