@@ -55,7 +55,8 @@
     "golden": 3,
     "standard": 4,
     "post_time": "00:00",
-    "timezone": "America/New_York"
+    "timezone": "America/New_York",
+    "auto_reroll": true
   },
 
   "channels": {

@@ -55,6 +55,12 @@ The Cabinet, and Loan Repayment. Each round we choose which items are on offer.
 - **`/queueshop`** — same thing, but instead of posting now, it **saves** the shop and
   posts it automatically at **midnight (New York time).** Use this to line up tomorrow's
   shop tonight.
+- **`/refreshshop`** — re-posts the shop that's already up with the latest wording/prices.
+- **`/rerollshop`** — posts a brand-new **random** shop right now.
+
+**You don't have to remember to post a shop.** If nobody has queued one by midnight, the
+bot **automatically rolls a random shop** and posts it — so the shop always refreshes on
+time. (If you *did* queue one, that's what posts instead.)
 
 You don't set the Cabinet or the loan payments — those are always the same and appear on
 their own.

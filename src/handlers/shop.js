@@ -107,11 +107,42 @@ function guildsWithQueue() {
     return Object.keys(data).filter(gid => data[gid] && data[gid].queued);
 }
 
+// Guilds that have a shop currently posted (i.e. the economy is live there).
+function guildsWithShop() {
+    const data = load();
+    return Object.keys(data).filter(gid => data[gid] && data[gid].current);
+}
+
 // --- For command autocomplete ------------------------------------------------
 
 // Items in a category that are still available to be slotted into a rotation.
 function offerableItems(guildId, category) {
     return itemsByCategory(category).filter(item => isAvailable(guildId, item.id));
+}
+
+// Build a random rotation from the currently-available items: the configured
+// number of Specials / Golden / Standard, shuffled. If a category has fewer
+// available than its target count, it simply contributes what's available.
+// Returns an array of item IDs (Cabinet + Loan are appended by rendering).
+function randomRotation(guildId) {
+    const rotation = getConfig().rotation;
+    const plan = [
+        ['special', rotation.specials],
+        ['golden', rotation.golden],
+        ['standard', rotation.standard],
+    ];
+
+    const ids = [];
+    for (const [category, count] of plan) {
+        const pool = offerableItems(guildId, category);
+        // Fisher–Yates shuffle.
+        for (let i = pool.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [pool[i], pool[j]] = [pool[j], pool[i]];
+        }
+        for (const item of pool.slice(0, count)) ids.push(item.id);
+    }
+    return ids;
 }
 
 // --- The single buyable-set seam ---------------------------------------------
@@ -145,6 +176,8 @@ module.exports = {
     setQueuedShop,
     clearQueuedShop,
     guildsWithQueue,
+    guildsWithShop,
     offerableItems,
+    randomRotation,
     getBuyableItems,
 };

@@ -68,6 +68,20 @@ time (**00:00 America/New_York** by default), replacing the previous post.
 
 **Usage:** same options as `/setupshop`.
 
+### `/refreshshop`
+Re-posts the **current** rotation with the latest config — use it after editing an
+item's text/price or adding a Cabinet item so the change shows on the live shop.
+
+### `/rerollshop`
+Posts a new shop built from a **random** rotation of currently-available items (2
+Specials / 3 Golden / 4 Standard). Handy for a manual reroll or to test the auto-reroll.
+
+### Auto-reroll (no command)
+If **no shop is queued** by the scheduled post time, the bot **auto-rerolls** a random
+rotation and posts it — so the shop never fails to refresh if hosts forget to queue one.
+Controlled by `rotation.auto_reroll` in config (default **on**). A queued shop always
+takes priority over the auto-reroll.
+
 ---
 
 ## 🔴 Host tools

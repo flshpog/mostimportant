@@ -39,6 +39,8 @@ Host commands need "Manage Server" AND must be run inside the host category.
 - `/setupshop` — post a new shop NOW (2 Specials, 3 Golden, 4 Standard; Cabinet + Loan auto-added)
 - `/queueshop` — queue a shop to auto-post at midnight (ET) and replace the old one
 - `/refreshshop` — re-post the current shop with the latest config (after editing an item)
+- `/rerollshop` — post a random rotation right now
+- Auto-reroll: if NObody queues a shop by midnight, the bot posts a random rotation automatically (so it never fails to refresh)
 
 **Host tools**
 - `/grant` — give a player Bells

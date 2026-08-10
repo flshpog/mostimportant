@@ -36,12 +36,30 @@ function msUntilNextPost() {
 
 async function fire(client) {
     try {
-        for (const guildId of shop.guildsWithQueue()) {
-            const queued = shop.getQueuedShop(guildId);
-            if (!queued) continue;
+        const autoReroll = getConfig().rotation.auto_reroll;
+
+        // Every guild with a queued shop OR (when auto-reroll is on) a live shop.
+        const guildIds = new Set([
+            ...shop.guildsWithQueue(),
+            ...(autoReroll ? shop.guildsWithShop() : []),
+        ]);
+
+        for (const guildId of guildIds) {
             try {
-                await postShop(client, guildId, queued.items);
-                shop.clearQueuedShop(guildId);
+                const queued = shop.getQueuedShop(guildId);
+                if (queued) {
+                    // A shop was queued — post it as scheduled.
+                    await postShop(client, guildId, queued.items);
+                    shop.clearQueuedShop(guildId);
+                } else if (autoReroll && shop.getCurrentShop(guildId)) {
+                    // Nobody queued a shop — auto-reroll a random rotation so the
+                    // shop never silently fails to refresh at midnight.
+                    const items = shop.randomRotation(guildId);
+                    if (items.length) {
+                        await postShop(client, guildId, items);
+                        await logToHost(client, `🎲 No shop was queued — auto-rerolled a random rotation (${items.length} items).`);
+                    }
+                }
             } catch (err) {
                 console.error(`Scheduled shop post failed for guild ${guildId}:`, err);
                 await logToHost(client, `⚠️ Scheduled shop post failed: ${err.message}`);
