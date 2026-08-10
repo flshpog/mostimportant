@@ -40,7 +40,10 @@ Host commands need "Manage Server" AND must be run inside the host category.
 - `/queueshop` — queue a shop to auto-post at midnight (ET) and replace the old one
 - `/refreshshop` — re-post the current shop with the latest config (after editing an item)
 - `/rerollshop` — post a random rotation right now
+- `/restockshop` — reset ALL shop stock to full (sold-out items become available again)
 - Auto-reroll: if NObody queues a shop by midnight, the bot posts a random rotation automatically (so it never fails to refresh)
+
+Note: a stock-1 item (like Golden Shovel) disappears from `/setupshop` once bought — that's intended. It returns when a host removes it from the owner via `/editinventory`, or use `/restockshop` to reset everything.
 
 **Host tools**
 - `/grant` — give a player Bells

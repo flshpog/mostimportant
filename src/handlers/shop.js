@@ -113,6 +113,14 @@ function guildsWithShop() {
     return Object.keys(data).filter(gid => data[gid] && data[gid].current);
 }
 
+// Reset all stock to the config defaults — every finite item becomes fully
+// available again. (Clears the per-item unit overrides.)
+function restockAll(guildId) {
+    const data = load();
+    getGuild(data, guildId).units = {};
+    save(data);
+}
+
 // --- For command autocomplete ------------------------------------------------
 
 // Items in a category that are still available to be slotted into a rotation.
@@ -177,6 +185,7 @@ module.exports = {
     clearQueuedShop,
     guildsWithQueue,
     guildsWithShop,
+    restockAll,
     offerableItems,
     randomRotation,
     getBuyableItems,

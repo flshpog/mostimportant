@@ -76,6 +76,12 @@ item's text/price or adding a Cabinet item so the change shows on the live shop.
 Posts a new shop built from a **random** rotation of currently-available items (2
 Specials / 3 Golden / 4 Standard). Handy for a manual reroll or to test the auto-reroll.
 
+### `/restockshop`
+Resets **all** shop stock to the config defaults, so any sold-out finite item (Golden
+Shovel, May Day Ticket, etc.) becomes offerable and buyable again. Use for a season reset
+or to clear stock depleted during testing. (Per-item: remove an owned copy via
+`/editinventory` to refresh a single refreshing item instead.)
+
 ### Auto-reroll (no command)
 If **no shop is queued** by the scheduled post time, the bot **auto-rerolls** a random
 rotation and posts it — so the shop never fails to refresh if hosts forget to queue one.
