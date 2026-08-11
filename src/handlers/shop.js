@@ -124,8 +124,9 @@ function restockAll(guildId) {
 // --- For command autocomplete ------------------------------------------------
 
 // Items in a category that are still available to be slotted into a rotation.
+// Disabled items (enabled === false) are excluded from both selection and random pools.
 function offerableItems(guildId, category) {
-    return itemsByCategory(category).filter(item => isAvailable(guildId, item.id));
+    return itemsByCategory(category).filter(item => item.enabled !== false && isAvailable(guildId, item.id));
 }
 
 // Build a random rotation from the currently-available items: the configured
@@ -161,12 +162,12 @@ function randomRotation(guildId) {
 function getBuyableItems(guildId, userId) {
     if (userId) {
         const player = eco.getPlayer(guildId, userId);
-        if (eco.isTester(player)) return getConfig().items.slice();
+        if (eco.isTester(player)) return getConfig().items.filter(item => item.enabled !== false);
     }
     const cabinet = cabinetItems();
     const current = getCurrentShop(guildId);
     const shopItems = current
-        ? current.items.map(id => getItem(id)).filter(item => item && isAvailable(guildId, item.id))
+        ? current.items.map(id => getItem(id)).filter(item => item && item.enabled !== false && isAvailable(guildId, item.id))
         : [];
     const byId = new Map();
     for (const item of [...shopItems, ...cabinet]) byId.set(item.id, item);

@@ -57,6 +57,9 @@ function collectRotationIds(interaction) {
         if (!item || item.category !== slot.category) {
             return { error: `**${slot.label}** must be a valid ${slot.category} item (pick from autocomplete).` };
         }
+        if (item.enabled === false) {
+            return { error: `**${item.name}** is no longer offered.` };
+        }
         if (seen.has(item.id)) {
             return { error: `Duplicate item selected: **${item.name}**. Each slot must be a different item.` };
         }
