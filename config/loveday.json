@@ -1,0 +1,34 @@
+{
+  "staff_role_id": "1414321682415357962",
+  "finish_message": "You're finished! Staff will snowflake you shortly.",
+  "rounds": [
+    {
+      "resident_image": "RESIDENT_IMG_1_URL",
+      "pal_image": "PAL_IMG_1_URL",
+      "answer": "autumn punch tide morning harvest cove",
+      "type": "text",
+      "answer_type": "a string of words"
+    },
+    {
+      "resident_image": "RESIDENT_IMG_2_URL",
+      "pal_image": "PAL_IMG_2_URL",
+      "answer": "4",
+      "type": "number",
+      "answer_type": "a number"
+    },
+    {
+      "resident_image": "RESIDENT_IMG_3_URL",
+      "pal_image": "PAL_IMG_3_URL",
+      "answer": "vows",
+      "type": "text",
+      "answer_type": "a word"
+    },
+    {
+      "resident_image": "RESIDENT_IMG_4_URL",
+      "pal_image": "PAL_IMG_4_URL",
+      "answer": "here's to my herd always",
+      "type": "text",
+      "answer_type": null
+    }
+  ]
+}

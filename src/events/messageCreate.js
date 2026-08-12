@@ -33,6 +33,12 @@ module.exports = {
                 console.error('Bug Frenzy catch error:', err));
         }
 
+        // Love Day !loveday / !unlock handling (silent no-op outside a registered pair).
+        if (message.guild) {
+            require('../handlers/loveDay').handleMessage(message).catch(err =>
+                console.error('Love Day error:', err));
+        }
+
         if (message.guild && getSticky(message.channel.id)) {
             resendSticky(message.channel).catch(() => {});
         }
