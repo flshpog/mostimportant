@@ -27,11 +27,11 @@
       "answer_type": "a word"
     },
     {
-      "resident_image": "https://fishpog.lol/everestimgs/partfourres.png",
-      "pal_image": "https://fishpog.lol/everestimgs/partfourpal.png",
+      "resident_image": "https://fishpog.lol/everestimgs/partfourpal.png",
+      "pal_image": "https://fishpog.lol/everestimgs/partfourres.png",
       "answer": "here's to my herd always",
       "type": "text",
-      "answer_type": null
+      "answer_type": "another string of words"
     }
   ]
 }

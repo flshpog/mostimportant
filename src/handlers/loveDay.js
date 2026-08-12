@@ -116,7 +116,7 @@ async function dmRoundImages(message, record, roundNumber) {
     }
     if (failed.length) {
         await message.channel
-            .send(`⚠️ Couldn't DM the ${failed.join(' and ')} — make sure their DMs are open.`)
+            .send(`⚠️ Couldn't DM the ${failed.join(' and ')}. Make sure their DMs are open.`)
             .catch(() => {});
     }
 }
@@ -176,8 +176,7 @@ async function handleUnlock(message, rawAnswer) {
     if (!round) return;
 
     if (!checkAnswer(round, rawAnswer)) {
-        await message.reply('💔 Not quite — try again!').catch(() => {});
-        return;
+        return; // incorrect guess — no reply
     }
 
     // Correct — final round?
@@ -194,9 +193,15 @@ async function handleUnlock(message, rawAnswer) {
     await dmRoundImages(message, record, record.current_round);
 
     const nextRound = config.rounds[record.current_round - 1];
-    const msg = nextRound.answer_type
-        ? `💞 Correct! New images sent to your DMs. This round's answer is **${nextRound.answer_type}**.`
-        : '💞 Correct! Your final images are in your DMs — this is the last round!';
+    const isFinalRound = record.current_round === config.rounds.length;
+    let msg;
+    if (isFinalRound) {
+        msg = nextRound.answer_type
+            ? `💞 Correct! Your final images are in your DMs. This is the last round, and the answer is **${nextRound.answer_type}**.`
+            : '💞 Correct! Your final images are in your DMs. This is the last round!';
+    } else {
+        msg = `💞 Correct! New images sent to your DMs. This round's answer is **${nextRound.answer_type}**.`;
+    }
     await message.channel.send(msg).catch(() => {});
 }
 

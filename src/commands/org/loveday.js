@@ -34,7 +34,7 @@ module.exports = {
 
         await interaction.reply({
             content:
-                `💘 ${result.overwrote ? 'Updated' : 'Registered'} this channel's Love Day pair — ` +
+                `💘 ${result.overwrote ? 'Updated' : 'Registered'} this channel's Love Day pair: ` +
                 `resident ${resident}, pal ${pal}. They can now run \`!loveday\` to begin.`,
             ephemeral: true,
         });
