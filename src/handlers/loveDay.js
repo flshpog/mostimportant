@@ -88,21 +88,28 @@ function checkAnswer(round, rawSubmitted) {
 
 // --- DMs ---------------------------------------------------------------------
 
-// DMs the resident + pal their images for a round. Posts a channel warning if a
-// DM fails (the image IS the puzzle, so staff need to know).
+function toArray(value) {
+    return Array.isArray(value) ? value : [value];
+}
+
+// DMs the resident + pal their image(s) for a round. Each side's image field may be
+// a single URL or an array of URLs (e.g. Round 1's resident gets two pages), sent as
+// separate messages. Posts a channel warning if a DM fails (the image IS the puzzle).
 async function dmRoundImages(message, record, roundNumber) {
     const round = getConfig().rounds[roundNumber - 1];
     const client = message.client;
     const targets = [
-        { id: record.resident_id, url: round.resident_image, label: 'resident' },
-        { id: record.pal_id, url: round.pal_image, label: 'pal' },
+        { id: record.resident_id, urls: toArray(round.resident_image), label: 'resident' },
+        { id: record.pal_id, urls: toArray(round.pal_image), label: 'pal' },
     ];
 
     const failed = [];
     for (const target of targets) {
         try {
             const user = await client.users.fetch(target.id);
-            await user.send(target.url);
+            for (const url of target.urls) {
+                await user.send(url);
+            }
         } catch {
             failed.push(target.label);
         }

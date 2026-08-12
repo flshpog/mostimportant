@@ -3,29 +3,32 @@
   "finish_message": "You're finished! Staff will snowflake you shortly.",
   "rounds": [
     {
-      "resident_image": "RESIDENT_IMG_1_URL",
-      "pal_image": "PAL_IMG_1_URL",
+      "resident_image": [
+        "https://cdn.discordapp.com/attachments/1414321682839109812/1536961565931212861/partonepageone.png?ex=6a7d4e80&is=6a7bfd00&hm=35b371e47a19f4a4876714f834bce038752706feafe5e370296e49557b80567f&",
+        "https://cdn.discordapp.com/attachments/1414321682839109812/1536961566312890418/partonepagetwo.png?ex=6a7d4e80&is=6a7bfd00&hm=ca68847fbd3a5a606be61276851696f1a084bcccda18ef73ee704fadba258b38&"
+      ],
+      "pal_image": "https://cdn.discordapp.com/attachments/1414321682839109812/1536964003493052446/partonepagethree.png?ex=6a7d50c5&is=6a7bff45&hm=0ac3f18207d987c96ccc3583532cbecd7a52dff217f0dea01735a3cbc9bc2498&",
       "answer": "autumn punch tide morning harvest cove",
       "type": "text",
       "answer_type": "a string of words"
     },
     {
-      "resident_image": "RESIDENT_IMG_2_URL",
-      "pal_image": "PAL_IMG_2_URL",
+      "resident_image": "https://cdn.discordapp.com/attachments/1414321682839109812/1536972802291273840/parttwopageone.png?ex=6a7d58f7&is=6a7c0777&hm=fe6c4ed704f1b2f03d82787f4b7764a6c2d0dab12d56bca0526bd0f767b42787&",
+      "pal_image": "https://cdn.discordapp.com/attachments/1414321682839109812/1536976759646462093/parttwopagetwo.png?ex=6a7d5ca7&is=6a7c0b27&hm=85685ca1967c7dec3ccf87f020837be4d3764db3aad01a3940bd11054138c26e&",
       "answer": "4",
       "type": "number",
       "answer_type": "a number"
     },
     {
-      "resident_image": "RESIDENT_IMG_3_URL",
-      "pal_image": "PAL_IMG_3_URL",
+      "resident_image": "https://cdn.discordapp.com/attachments/1414321682839109812/1536980540413059153/partthreepageone.png?ex=6a7d602c&is=6a7c0eac&hm=1dbff67abea72d0cd6e6a15511a9b450e8a0a6f84398589cfe17c5aa7467cc22&",
+      "pal_image": "https://cdn.discordapp.com/attachments/1414321682839109812/1536982934827835402/partthreepagetwo.png?ex=6a7d6267&is=6a7c10e7&hm=09a4feee212a570b7d113ae3e13818428e4aa1cbea6bce94e9f65c8573f714cf&",
       "answer": "vows",
       "type": "text",
       "answer_type": "a word"
     },
     {
-      "resident_image": "RESIDENT_IMG_4_URL",
-      "pal_image": "PAL_IMG_4_URL",
+      "resident_image": "https://cdn.discordapp.com/attachments/1414321682839109812/1536987067177767033/partfourpageone.png?ex=6a7d6640&is=6a7c14c0&hm=acf4670bc837c1e06008b023f2945648749a470334a48747fc1a5da8640a2c7b&",
+      "pal_image": "https://cdn.discordapp.com/attachments/1414321682839109812/1536985225207480380/partfourpagetwo.png?ex=6a7d6489&is=6a7c1309&hm=a502fa68b3d58527969b5cbe7252e28073ab25cd651145722978400a9fccc16d&",
       "answer": "here's to my herd always",
       "type": "text",
       "answer_type": null
