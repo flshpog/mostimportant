@@ -1,0 +1,21 @@
+{
+  "_comment": [
+    "Per-server settings for the org channel commands: /alliance, /alliancevc, /tribe1on1s.",
+    "The bot runs in more than one server, so anything server-specific belongs here keyed by guild ID.",
+    "To add a server: copy the block below, swap in that server's guild ID and role IDs.",
+    "",
+    "spectator_role — a role that can READ alliance channels but never 1-on-1s, and can't speak in either.",
+    "  Set it to null (or leave the server out entirely) if that server has no spectator role; the",
+    "  permission overwrite is then skipped and the commands work normally. A role ID that no longer",
+    "  exists is also treated as null, so a deleted role can't break channel creation."
+  ],
+  "default": {
+    "spectator_role": null
+  },
+  "guilds": {
+    "1414321682025545822": {
+      "_name": "Everest Survivor (main)",
+      "spectator_role": "1414321682360832182"
+    }
+  }
+}

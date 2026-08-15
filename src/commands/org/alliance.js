@@ -1,4 +1,5 @@
 const { SlashCommandBuilder, PermissionFlagsBits, ChannelType } = require('discord.js');
+const { spectatorRole } = require('../../config/org');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -115,18 +116,20 @@ module.exports = {
                 });
             });
 
-            // Role 1414321682360832182: Can view alliances only, NOT 1-1s (no speaking)
-            if (type === 'alliance') {
-                permissionOverwrites.push({
-                    id: '1414321682360832182',
-                    allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.ReadMessageHistory],
-                    deny: [PermissionFlagsBits.SendMessages]
-                });
-            } else {
-                permissionOverwrites.push({
-                    id: '1414321682360832182',
-                    deny: [PermissionFlagsBits.ViewChannel]
-                });
+            // Spectators can view alliances only, NOT 1-1s, and never speak. Configured
+            // per server in config/org.json; skipped entirely in servers without one.
+            const spectator = spectatorRole(interaction.guild);
+            if (spectator) {
+                permissionOverwrites.push(type === 'alliance'
+                    ? {
+                        id: spectator.id,
+                        allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.ReadMessageHistory],
+                        deny: [PermissionFlagsBits.SendMessages]
+                    }
+                    : {
+                        id: spectator.id,
+                        deny: [PermissionFlagsBits.ViewChannel]
+                    });
             }
 
             // Create the channel

@@ -148,3 +148,34 @@ only shortens **future** timers, never one that's already counting down.
   your cue to send the buyer their actual advantage write-up.
 
 For the exact numbers, prices, and item ID list, see **`ECONOMY.md`**.
+
+---
+
+## Running the bot in another server
+
+The commands are registered globally, so they show up anywhere the bot is invited. What
+varies is server-specific IDs.
+
+**Channel commands (`/alliance`, `/alliancevc`, `/tribe1on1s`) work anywhere.** They used
+to hardcode the main server's spectator role, which made Discord reject the channel
+creation outright in any other server. That role is now per-server config. To give a
+second server a spectator role, add a block to `config/org.json`:
+
+```json
+"guilds": {
+  "1414321682025545822": { "spectator_role": "1414321682360832182" },
+  "YOUR_OTHER_GUILD_ID":  { "spectator_role": "THAT_SERVERS_ROLE_ID" }
+}
+```
+
+Leave a server out entirely and it simply gets no spectator overwrite — alliances and
+1-on-1s are still private to their members. A role ID that's been deleted is ignored
+rather than breaking the command.
+
+**The economy commands are still single-server.** `config/economy.json` holds one
+`host_category`, one `shop` channel, and one `host_log`, all pointing at the main server.
+In a second server the host gate won't recognise any channel as a host channel, so
+`/stockcheck`, `/editinventory`, `/setupshop` and the rest will refuse to run, and player
+balances are stored per guild but the shop would post to the main server's channel. Making
+the economy multi-server means keying those channel IDs by guild the same way — ask the
+dev if you need it.

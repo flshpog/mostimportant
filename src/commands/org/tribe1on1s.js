@@ -1,7 +1,7 @@
 const { SlashCommandBuilder, PermissionFlagsBits, ChannelType } = require('discord.js');
+const { spectatorRole } = require('../../config/org');
 
 const MAX_ROLES = 15;
-const SPECTATOR_ROLE_ID = '1414321682360832182';
 
 module.exports = {
     data: (() => {
@@ -47,6 +47,10 @@ module.exports = {
 
             await interaction.deferReply({ ephemeral: true });
 
+            // Per server (config/org.json); null in servers with no spectator role,
+            // in which case the overwrite is left off entirely.
+            const spectator = spectatorRole(interaction.guild);
+
             const created = [];
             const skipped = [];
             const failed = [];
@@ -82,11 +86,15 @@ module.exports = {
                                 PermissionFlagsBits.AddReactions,
                             ],
                         })),
-                        {
-                            id: SPECTATOR_ROLE_ID,
-                            deny: [PermissionFlagsBits.ViewChannel],
-                        },
                     ];
+
+                    // 1-on-1s are never visible to spectators.
+                    if (spectator) {
+                        permissionOverwrites.push({
+                            id: spectator.id,
+                            deny: [PermissionFlagsBits.ViewChannel],
+                        });
+                    }
 
                     try {
                         const channel = await interaction.guild.channels.create({
