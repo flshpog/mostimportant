@@ -1,6 +1,7 @@
 const { SlashCommandBuilder, PermissionFlagsBits, ChannelType } = require('discord.js');
 const { spectatorRole } = require('../../config/org');
 const { parseRoleIds } = require('../../handlers/roles');
+const { toChannelName } = require('../../handlers/channelNames');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -77,8 +78,9 @@ module.exports = {
             // what order the roles were given in.
             validRoles.sort((a, b) => a.name.toLowerCase().localeCompare(b.name.toLowerCase()));
 
-            // Create channel name based on role names
-            const channelName = validRoles.map(r => r.name.toLowerCase().replace(/[^a-z0-9]/g, '-')).join('-');
+            // Create channel name based on role names, shortened to Discord's
+            // 100-character cap (an alliance of four long names exceeds it).
+            const channelName = toChannelName(validRoles.map(r => r.name));
 
             // Check if alliance already exists
             const existingChannel = category.children.cache.find(

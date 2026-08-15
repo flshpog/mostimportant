@@ -1,5 +1,6 @@
 const { SlashCommandBuilder, PermissionFlagsBits, ChannelType } = require('discord.js');
 const { spectatorRole } = require('../../config/org');
+const { toChannelName, MAX_CHANNEL_NAME } = require('../../handlers/channelNames');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -64,7 +65,8 @@ module.exports = {
                 });
             }
 
-            const channelName = validRoles.map(r => r.name.toLowerCase().replace(/[^a-z0-9]/g, '-')).join('-') + ' VC';
+            // Shortened to Discord's 100-character cap, less the ' VC' suffix.
+            const channelName = toChannelName(validRoles.map(r => r.name), MAX_CHANNEL_NAME - 3) + ' VC';
 
             const existingChannel = category.children.cache.find(
                 channel => channel.name === channelName

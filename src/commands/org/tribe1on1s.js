@@ -1,6 +1,7 @@
 const { SlashCommandBuilder, PermissionFlagsBits, ChannelType } = require('discord.js');
 const { spectatorRole, guildSettings } = require('../../config/org');
 const { resolveRoles } = require('../../handlers/roles');
+const { toChannelName } = require('../../handlers/channelNames');
 
 // A tribe of n members needs n(n-1)/2 channels: 10 members = 45, 12 = 66, 17 = 136.
 // Discord caps a category at 50, so anything past 10 members needs somewhere to
@@ -113,6 +114,8 @@ module.exports = {
             const skipped = [];
             const failed = [];
             const noRoom = [];
+            const collisions = [];
+            const generatedThisRun = new Set();
 
             for (let i = 0; i < roles.length; i++) {
                 for (let j = i + 1; j < roles.length; j++) {
@@ -120,14 +123,20 @@ module.exports = {
                         a.name.toLowerCase().localeCompare(b.name.toLowerCase())
                     );
 
-                    const channelName = pair
-                        .map(r => r.name.toLowerCase().replace(/[^a-z0-9]/g, '-'))
-                        .join('-');
+                    const channelName = toChannelName(pair.map(r => r.name));
 
                     if (existingNames.has(channelName)) {
-                        skipped.push(channelName);
+                        // Distinguish "was already there" from "two pairs shortened
+                        // to the same name" — the second is a naming problem the
+                        // host needs to know about, not a clean skip.
+                        if (generatedThisRun.has(channelName)) {
+                            collisions.push(`${pair.map(r => r.name).join(' + ')} → ${channelName}`);
+                        } else {
+                            skipped.push(channelName);
+                        }
                         continue;
                     }
+                    generatedThisRun.add(channelName);
 
                     // First category with space wins; overflow only once it's full.
                     const slot = room.find(r => r.free > 0);
@@ -180,7 +189,13 @@ module.exports = {
                         slot.free -= 1;
                         slot.placed += 1;
                     } catch (err) {
-                        console.error(`Failed to create ${channelName}:`, err);
+                        // rawError.errors holds Discord's per-field detail; the
+                        // default console.error prints it as [Object].
+                        console.error(
+                            `Failed to create ${channelName} (${channelName.length} chars):`,
+                            err.message,
+                            JSON.stringify(err.rawError?.errors || {}, null, 2)
+                        );
                         failed.push(channelName);
                     }
                 }
@@ -211,6 +226,11 @@ module.exports = {
             }
             if (failed.length > 0) {
                 response += `\n\n❌ Failed ${failed.length}: ${nameList(failed)}`;
+            }
+            if (collisions.length > 0) {
+                response += `\n\n🔤 ${collisions.length} pair(s) shortened to a name already in use, `
+                    + `so they were skipped: ${nameList(collisions, 4)}\n`
+                    + 'Shorten those role names to fix it — channel names are capped at 100 characters.';
             }
             if (noRoom.length > 0) {
                 response += `\n\n📦 **Out of space** — ${noRoom.length} channel(s) had nowhere to go.\n`
