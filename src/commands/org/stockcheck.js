@@ -6,12 +6,6 @@ const { ensureHost } = require('../../handlers/hostGate');
 
 const AC_GREEN = 0x7CBB3F;
 
-// Watering cans aren't stored as item instances — they're player.reductions flags
-// (12, 20) and a use-counter array (24). Same IDs buy.js uses to apply them.
-const GOLDEN_WC_ID = 12;
-const WATERING_CAN_ID = 20;
-const FLIMSY_WC_ID = 24;
-
 // Rotation categories, paired with the config key holding their slot count.
 // Cabinet has no rotation slots — it's always-on, so `slots` is null.
 const CATEGORIES = [
@@ -20,26 +14,6 @@ const CATEGORIES = [
     { key: 'standard', label: '🔨 Standard Tools', slots: 'standard' },
     { key: 'cabinet', label: '🗄️ Cabinet', slots: null },
 ];
-
-// How many of each item ID players currently hold, split real vs fake. Fakes are
-// conjured by /counterfeit and never consumed stock, so they're excluded from the
-// reconciliation math — otherwise a counterfeit would mask a burned unit.
-function heldCounts(guildId) {
-    const real = {};
-    const fake = {};
-    for (const player of Object.values(eco.allPlayers(guildId))) {
-        for (const inst of player.items) {
-            const bucket = inst.is_fake ? fake : real;
-            bucket[inst.id] = (bucket[inst.id] || 0) + 1;
-        }
-        if (player.reductions.golden_wc) real[GOLDEN_WC_ID] = (real[GOLDEN_WC_ID] || 0) + 1;
-        if (player.reductions.watering_can) real[WATERING_CAN_ID] = (real[WATERING_CAN_ID] || 0) + 1;
-        if ((player.flimsy_wc || []).length > 0) {
-            real[FLIMSY_WC_ID] = (real[FLIMSY_WC_ID] || 0) + (player.flimsy_wc || []).length;
-        }
-    }
-    return { real, fake };
-}
 
 // One item line: stock left, who's holding it, and why it might be stuck.
 function itemLine(guildId, item, held) {
@@ -59,15 +33,17 @@ function itemLine(guildId, item, held) {
     const notes = [];
     if (item.enabled === false) notes.push('🚫 disabled');
     if (item.refreshes) notes.push('♻️ shown as "Refreshes" in the shop');
-    // No stock left and nobody is holding one — the unit went out and never came
-    // back. Since /editinventory now returns items automatically, this should only
-    // appear for stock lost before that fix, or with the return flags turned off.
-    if (left !== Infinity && left <= 0 && realHeld === 0) notes.push('⚠️ **burned** — nobody holds it');
+    // Available stock should always be `stock - copies actually held`. Anything
+    // else is drift — units burned before removals returned to the pool, or data
+    // edited by hand. /syncstock recomputes it from inventories.
+    const expected = item.stock === null ? null : Math.max(0, item.stock - realHeld);
+    const drifted = expected !== null && left !== expected;
+    if (drifted) notes.push(`🔧 **out of sync** — should be ${expected}`);
     if (fakeHeld > 0) notes.push(`🎭 ${fakeHeld} fake in play`);
 
     const holding = realHeld > 0 ? ` · held by ${realHeld}` : '';
     const suffix = notes.length ? ` · ${notes.join(' · ')}` : '';
-    return `• **${item.name}** (ID ${item.id}) — ${stock}${holding}${suffix}`;
+    return { line: `• **${item.name}** (ID ${item.id}) — ${stock}${holding}${suffix}`, drifted };
 }
 
 // Discord caps an embed field at 1024 chars — split long categories across
@@ -97,10 +73,11 @@ module.exports = {
 
         const guildId = interaction.guildId;
         const cfg = getConfig();
-        const held = heldCounts(guildId);
+        const held = eco.heldItemCounts(guildId);
 
         const fields = [];
         const warnings = [];
+        let driftCount = 0;
 
         for (const category of CATEGORIES) {
             const items = itemsByCategory(category.key);
@@ -124,7 +101,16 @@ module.exports = {
                 header += ` — ${offerable.length} offerable (always in shop)`;
             }
 
-            pushField(fields, header, items.map(item => itemLine(guildId, item, held)));
+            const rendered = items.map(item => itemLine(guildId, item, held));
+            driftCount += rendered.filter(r => r.drifted).length;
+            pushField(fields, header, rendered.map(r => r.line));
+        }
+
+        if (driftCount > 0) {
+            warnings.unshift(
+                `**${driftCount} item${driftCount === 1 ? '' : 's'} out of sync** with what players ` +
+                'actually hold — run `/syncstock` to correct them (or `/syncstock preview:true` first).'
+            );
         }
 
         const embed = new EmbedBuilder()
@@ -132,8 +118,8 @@ module.exports = {
             .setTitle('📦 Shop Stock Check')
             .setDescription(
                 warnings.length
-                    ? `⚠️ **Rotations will under-fill:**\n${warnings.map(w => `• ${w}`).join('\n')}`
-                    : '✅ Every category has enough stock to fill its rotation slots.'
+                    ? `⚠️ **Needs attention:**\n${warnings.map(w => `• ${w}`).join('\n')}`
+                    : '✅ Stock matches player inventories, and every category can fill its rotation slots.'
             )
             .addFields(fields)
             .setFooter({

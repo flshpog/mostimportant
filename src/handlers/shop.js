@@ -74,6 +74,20 @@ function returnUnit(guildId, itemId) {
     save(data);
 }
 
+// Set an item's available units outright — the repair path for stock that drifted
+// (items removed before removals returned to the pool, hand-edited data, etc).
+// Clamped to [0, config stock]. Returns the new count, or null for unlimited
+// items, which have nothing to track.
+function setUnits(guildId, itemId, units) {
+    const item = getItem(itemId);
+    if (!item || item.stock === null) return null;
+    const data = load();
+    const guild = getGuild(data, guildId);
+    guild.units[itemId] = Math.max(0, Math.min(item.stock, Math.floor(units)));
+    save(data);
+    return guild.units[itemId];
+}
+
 // --- Current / queued shop ---------------------------------------------------
 
 function getCurrentShop(guildId) {
@@ -179,6 +193,7 @@ module.exports = {
     isAvailable,
     consumeUnit,
     returnUnit,
+    setUnits,
     getCurrentShop,
     setCurrentShop,
     getQueuedShop,

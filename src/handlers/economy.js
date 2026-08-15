@@ -182,8 +182,39 @@ function countSlotsUsed(player) {
     return slots;
 }
 
+// Watering cans live on the player as flags/counters rather than item instances,
+// so a raw scan of player.items misses them. Same IDs /buy applies them from.
+const GOLDEN_WC_ID = 12;
+const WATERING_CAN_ID = 20;
+const FLIMSY_WC_ID = 24;
+
+// How many of each item ID are in circulation across the whole guild, split real
+// vs fake. Counterfeits are tracked separately because they never consumed a shop
+// unit — counting them against stock would invent scarcity that doesn't exist.
+// Eliminated players still count: they're holding the item until a host removes it.
+function heldItemCounts(guildId) {
+    const real = {};
+    const fake = {};
+    for (const player of Object.values(allPlayers(guildId))) {
+        for (const inst of player.items || []) {
+            const bucket = inst.is_fake ? fake : real;
+            bucket[inst.id] = (bucket[inst.id] || 0) + 1;
+        }
+        if (player.reductions && player.reductions.golden_wc) {
+            real[GOLDEN_WC_ID] = (real[GOLDEN_WC_ID] || 0) + 1;
+        }
+        if (player.reductions && player.reductions.watering_can) {
+            real[WATERING_CAN_ID] = (real[WATERING_CAN_ID] || 0) + 1;
+        }
+        const flimsy = (player.flimsy_wc || []).length;
+        if (flimsy > 0) real[FLIMSY_WC_ID] = (real[FLIMSY_WC_ID] || 0) + flimsy;
+    }
+    return { real, fake };
+}
+
 module.exports = {
     NON_SLOT_ITEM_IDS,
+    heldItemCounts,
     defaultPlayer,
     getPlayer,
     savePlayer,

@@ -82,14 +82,38 @@ Shovel, May Day Ticket, etc.) becomes offerable and buyable again. Use for a sea
 or to clear stock depleted during testing. (Per-item: remove an owned copy via
 `/editinventory`, which returns that unit to the pool on its own.)
 
+### `/syncstock`
+Recomputes every finite-stock item from what players actually hold:
+
+```
+available = configured stock - copies in circulation
+```
+
+This is the same rule `/editinventory` maintains as edits happen, applied retroactively.
+Use it to clear drift left over from before removals returned stock, or any time
+hand-edited data has pulled the shop out of alignment. Reports every correction, updates
+the live shop post, and logs to the host channel.
+
+- **`preview:true`** — show what would change without changing anything.
+- **Counterfeits are ignored.** A fake never consumed a unit, so it doesn't reduce stock.
+- **Eliminated players still count.** They're holding the item until a host removes it.
+- Safe to re-run: a second pass is a no-op.
+
+### `/setstock`
+Sets one item's available units directly — the escape hatch for cases `/syncstock` can't
+infer (holding a unit back deliberately, or an item that exists in a player's hands
+without having been sold). Clamped to the item's configured `stock`; unlimited items are
+rejected. Updates the live shop post.
+
+**Usage:** `/setstock item:<pick> units:2`
+
 ### `/stockcheck`
 Ephemeral host report of **every** item in the registry: units left vs. total, how many
 players currently hold one, and per-category flags. Answers "why is this sold out?"
 
-- **`⚠️ burned`** — no stock left and **nobody holds one**. The unit went out and never
-  came back. Since `/editinventory` now returns items automatically, this should only
-  show up for stock lost before that change (fix it with `/restockshop`) or if the
-  return flags are switched off in config.
+- **`🔧 out of sync`** — available stock doesn't equal `configured stock - copies held`,
+  and the line tells you what it should be. Run `/syncstock` to correct every one of
+  them at once. A count of drifted items also appears at the top of the report.
 - **`♻️ shown as "Refreshes"`** — cosmetic only: the item's shop-post label. It no longer
   affects whether stock comes back.
 - **`🎭 N fake in play`** — counterfeits from `/counterfeit`. They never consumed stock,

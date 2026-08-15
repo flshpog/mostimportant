@@ -59,7 +59,13 @@ The Cabinet, and Loan Repayment. Each round we choose which items are on offer.
 - **`/rerollshop`** — posts a brand-new **random** shop right now.
 - **`/stockcheck`** — private list of every item, how many are left, and who's holding
   one. Run this if a shop posts with fewer items than you expected, or if something says
-  SOLD OUT and you don't think anyone has it.
+  SOLD OUT and you don't think anyone has it. Anything marked 🔧 **out of sync** means
+  the shop's count disagrees with what players actually have.
+- **`/syncstock`** — fixes all of that in one go. It counts what everyone is holding and
+  sets each item's stock to match. Add `preview:true` to see the changes before making
+  them. Safe to run any time; if nothing's wrong it says so.
+- **`/setstock item:<pick> units:2`** — set one item's stock by hand, for when you want a
+  number that doesn't follow from who's holding what.
 
 **Why a shop can post with only 2 Golden Tools.** A random shop can only use items that
 still have stock. If just two Golden Tools are left in the season's pool, the random shop

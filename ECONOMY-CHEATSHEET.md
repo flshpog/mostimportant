@@ -41,7 +41,9 @@ Host commands need "Manage Server" AND must be run inside the host category.
 - `/refreshshop` — re-post the current shop with the latest config (after editing an item)
 - `/rerollshop` — post a random rotation right now
 - `/restockshop` — reset ALL shop stock to full (sold-out items become available again)
-- `/stockcheck` — stock left on every item, who's holding it, and a warning if a category can't fill its rotation slots
+- `/stockcheck` — stock left on every item, who's holding it, what's out of sync, and a warning if a category can't fill its rotation slots
+- `/syncstock` — match shop stock to what players actually hold (`preview:true` to look first). The fix for drift
+- `/setstock item:<pick> units:N` — set one item's stock by hand
 - Auto-reroll: if NObody queues a shop by midnight, the bot posts a random rotation automatically (so it never fails to refresh)
 
 Note: a stock-1 item (like Golden Shovel) disappears from `/setupshop` once bought — that's intended. It returns when a host removes it from the owner via `/editinventory`, or use `/restockshop` to reset everything.
