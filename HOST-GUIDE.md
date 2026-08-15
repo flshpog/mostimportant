@@ -153,22 +153,29 @@ For the exact numbers, prices, and item ID list, see **`ECONOMY.md`**.
 
 ## `/tribe1on1s` and big tribes
 
+**Mention every role in the one `roles` field**, separated by spaces — there's no limit on
+how many. Duplicates are collapsed, and anything that isn't a role in this server is
+ignored and reported rather than breaking the run.
+
 The command makes one channel per pair, which grows fast:
 
 | Tribe size | Channels needed |
 |---|---|
 | 8 | 28 |
 | 10 | 45 |
-| 11 | 55 |
 | 12 | 66 |
 | 15 | 105 |
+| 17 | 136 |
+| 20 | 190 |
 
 **Discord only allows 50 channels in a category**, so anything over 10 members won't fit
 in one. Use the two optional overflow options:
 
 ```
-/tribe1on1s category:#tribe-1on1s overflow1:#tribe-1on1s-2 overflow2:#tribe-1on1s-3 role1:… role2:…
+/tribe1on1s roles:@P1 @P2 @P3 … category:#tribe-1on1s overflow1:#tribe-1on1s-2 overflow2:#tribe-1on1s-3
 ```
+
+Three categories hold 150 channels, which covers a tribe of 17.
 
 It fills the first category to 50, then spills into `overflow1`, then `overflow2`. The
 reply tells you how many landed in each and how many slots are left. Categories you don't
@@ -182,6 +189,12 @@ finish the job.
 
 To leave headroom in a category you also use for other things, lower
 `category_channel_limit` in `config/org.json` from 50.
+
+**Above 150 channels in one go the command stops you.** Discord kills the command's reply
+after 15 minutes and rate limits channel creation, so a run that big can half-finish. Split
+it: run it on roughly half the roles, again on the other half, then once more with everyone
+to fill in the cross pairs. Existing channels are skipped every time, so nothing duplicates.
+Raise `max_channels_per_run` in `config/org.json` if you'd rather chance it.
 
 ---
 

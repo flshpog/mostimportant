@@ -11,11 +11,17 @@
     "",
     "category_channel_limit — how many channels /tribe1on1s will put in one category before moving to",
     "  the next. Discord's hard cap is 50. Lower it to leave headroom in a category you also use for",
-    "  something else. Applies to every server unless a guild block overrides it."
+    "  something else. Applies to every server unless a guild block overrides it.",
+    "",
+    "max_channels_per_run — safety brake on /tribe1on1s. A tribe of n needs n(n-1)/2 channels, which",
+    "  grows fast (20 roles = 190). Discord invalidates the command's reply after 15 minutes and rate",
+    "  limits channel creation, so a huge run can half-finish. Over this many, the command refuses and",
+    "  asks you to split it. Re-runs skip existing channels, so splitting is safe. Set to 0 for no limit."
   ],
   "default": {
     "spectator_role": null,
-    "category_channel_limit": 50
+    "category_channel_limit": 50,
+    "max_channels_per_run": 150
   },
   "guilds": {
     "1414321682025545822": {

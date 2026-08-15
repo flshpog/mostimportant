@@ -1,5 +1,6 @@
 const { SlashCommandBuilder, PermissionFlagsBits, ChannelType } = require('discord.js');
 const { spectatorRole } = require('../../config/org');
+const { parseRoleIds } = require('../../handlers/roles');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -178,19 +179,8 @@ module.exports = {
         }
     },
 
+    // Shared with /tribe1on1s — see src/handlers/roles.js.
     parseRoles(input) {
-        // Parse role mentions (<@&123456>) and raw IDs
-        const rolePattern = /<@&(\d+)>|(\d+)/g;
-        const roleIds = [];
-        let match;
-
-        while ((match = rolePattern.exec(input)) !== null) {
-            const roleId = match[1] || match[2];
-            if (roleId && !roleIds.includes(roleId)) {
-                roleIds.push(roleId);
-            }
-        }
-
-        return roleIds;
+        return parseRoleIds(input);
     }
 };
