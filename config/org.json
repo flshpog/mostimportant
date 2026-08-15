@@ -7,10 +7,15 @@
     "spectator_role — a role that can READ alliance channels but never 1-on-1s, and can't speak in either.",
     "  Set it to null (or leave the server out entirely) if that server has no spectator role; the",
     "  permission overwrite is then skipped and the commands work normally. A role ID that no longer",
-    "  exists is also treated as null, so a deleted role can't break channel creation."
+    "  exists is also treated as null, so a deleted role can't break channel creation.",
+    "",
+    "category_channel_limit — how many channels /tribe1on1s will put in one category before moving to",
+    "  the next. Discord's hard cap is 50. Lower it to leave headroom in a category you also use for",
+    "  something else. Applies to every server unless a guild block overrides it."
   ],
   "default": {
-    "spectator_role": null
+    "spectator_role": null,
+    "category_channel_limit": 50
   },
   "guilds": {
     "1414321682025545822": {

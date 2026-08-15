@@ -151,6 +151,40 @@ For the exact numbers, prices, and item ID list, see **`ECONOMY.md`**.
 
 ---
 
+## `/tribe1on1s` and big tribes
+
+The command makes one channel per pair, which grows fast:
+
+| Tribe size | Channels needed |
+|---|---|
+| 8 | 28 |
+| 10 | 45 |
+| 11 | 55 |
+| 12 | 66 |
+| 15 | 105 |
+
+**Discord only allows 50 channels in a category**, so anything over 10 members won't fit
+in one. Use the two optional overflow options:
+
+```
+/tribe1on1s category:#tribe-1on1s overflow1:#tribe-1on1s-2 overflow2:#tribe-1on1s-3 role1:… role2:…
+```
+
+It fills the first category to 50, then spills into `overflow1`, then `overflow2`. The
+reply tells you how many landed in each and how many slots are left. Categories you don't
+pass are simply not used, and the overflow ones are optional — a tribe of 10 or fewer
+never needs them.
+
+If it runs out of room it says so and tells you which option to add. **Re-running is
+safe:** channels that already exist in any of the given categories are skipped, not
+duplicated, so you can add another overflow category and run the same command again to
+finish the job.
+
+To leave headroom in a category you also use for other things, lower
+`category_channel_limit` in `config/org.json` from 50.
+
+---
+
 ## Running the bot in another server
 
 The commands are registered globally, so they show up anywhere the bot is invited. What
