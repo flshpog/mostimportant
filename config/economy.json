@@ -67,7 +67,10 @@
   },
 
   "flags": {
-    "log_command_usage": true
+    "log_command_usage": true,
+    "return_stock_on_removal": true,
+    "return_stock_from_eliminated": true,
+    "consume_stock_on_grant": true
   },
 
   "emoji": {

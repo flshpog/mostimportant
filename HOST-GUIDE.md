@@ -57,6 +57,14 @@ The Cabinet, and Loan Repayment. Each round we choose which items are on offer.
   shop tonight.
 - **`/refreshshop`** — re-posts the shop that's already up with the latest wording/prices.
 - **`/rerollshop`** — posts a brand-new **random** shop right now.
+- **`/stockcheck`** — private list of every item, how many are left, and who's holding
+  one. Run this if a shop posts with fewer items than you expected, or if something says
+  SOLD OUT and you don't think anyone has it.
+
+**Why a shop can post with only 2 Golden Tools.** A random shop can only use items that
+still have stock. If just two Golden Tools are left in the season's pool, the random shop
+posts two — it doesn't error, it just fills what it can. `/stockcheck` tells you this
+before midnight; `/restockshop` refills everything.
 
 **You don't have to remember to post a shop.** If nobody has queued one by midnight, the
 bot **automatically rolls a random shop** and posts it — so the shop always refreshes on
@@ -85,7 +93,7 @@ When in doubt, run host stuff in a host channel and you're fine.
 | `/eliminate` | **Freeze** a player — they can't earn or buy anything anymore. Use this the moment someone's out. It's the main thing stopping a voted-out person from farming bells for a friend. |
 | `/uneliminate` | Undo an elimination if you did it by mistake. |
 | `/viewinventory` | See **everything** about a player: bells, every item (including whether an item is a **fake**), their upgrades, and their status. This is the host's X-ray view. |
-| `/editinventory` | **Manually change** a player's stuff — their bell balance, their items, their upgrades. This is also how you **remove** an item after someone uses it (the bot never removes items itself). A form pops up with the current values; edit and submit. |
+| `/editinventory` | **Manually change** a player's stuff — their bell balance, their items, their upgrades. This is also how you **remove** an item after someone uses it (the bot never removes items itself). A form pops up with the current values; edit and submit. **Removing an item automatically puts it back in the shop; adding one takes it out.** |
 | `/counterfeit` | Secretly drop a **fake** item into someone's inventory. To that player it looks 100% real — they won't know until they try to use it. (This powers Redd's Counterfeit.) |
 | `/deliver` | Move bells and/or an item **from one player to another** (this is Pete's delivery). It charges the sender 250 for shipping and bounces if the receiver's inventory is full. Nobody is told — it's silent. |
 | `/taxreturns` | Prints a **full list of everything everyone owns**, by name. ⚠️ This one is NOT private and shows the whole board — only ever run it in a host channel, never where players can see. |
@@ -127,7 +135,9 @@ only shortens **future** timers, never one that's already counting down.
 - **The bot doesn't play the game.** It won't roll immunity, count Golden Rod votes, or
   decide any percentage. We do all of that by hand.
 - **The bot won't use up items.** After a player uses something, a host removes it with
-  `/editinventory`.
+  `/editinventory`. That removal **puts the item back in the shop** for someone else to
+  buy, and tells you it did. If you'd rather used items stay gone for good, set
+  `return_stock_on_removal` to `false` in `config/economy.json`.
 - **Deliver the advantage yourself.** When the bot pings you about a purchase, that's
   your cue to send the buyer their actual advantage write-up.
 

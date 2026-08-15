@@ -80,7 +80,24 @@ Specials / 3 Golden / 4 Standard). Handy for a manual reroll or to test the auto
 Resets **all** shop stock to the config defaults, so any sold-out finite item (Golden
 Shovel, May Day Ticket, etc.) becomes offerable and buyable again. Use for a season reset
 or to clear stock depleted during testing. (Per-item: remove an owned copy via
-`/editinventory` to refresh a single refreshing item instead.)
+`/editinventory`, which returns that unit to the pool on its own.)
+
+### `/stockcheck`
+Ephemeral host report of **every** item in the registry: units left vs. total, how many
+players currently hold one, and per-category flags. Answers "why is this sold out?"
+
+- **`⚠️ burned`** — no stock left and **nobody holds one**. The unit went out and never
+  came back. Since `/editinventory` now returns items automatically, this should only
+  show up for stock lost before that change (fix it with `/restockshop`) or if the
+  return flags are switched off in config.
+- **`♻️ shown as "Refreshes"`** — cosmetic only: the item's shop-post label. It no longer
+  affects whether stock comes back.
+- **`🎭 N fake in play`** — counterfeits from `/counterfeit`. They never consumed stock,
+  so they're excluded from the burned-unit math.
+- **`🚫 disabled`** — `enabled: false` in config; never offered regardless of stock.
+
+The header of each category compares offerable items against its rotation slot count and
+warns when a random rotation would **under-fill** (post 2 Golden Tools instead of 3).
 
 ### Auto-reroll (no command)
 If **no shop is queued** by the scheduled post time, the bot **auto-rerolls** a random
@@ -110,8 +127,30 @@ All require Manage Server + the host category.
 
 **`/editinventory` notes:** the items field is a comma-separated list of item IDs, e.g.
 `13, 19, 19, 24`. It best-effort preserves existing counterfeits by ID. Flimsy uses are
-one combined number. Removing a refreshing item returns its stock to the shop pool
-(unless the player is eliminated).
+one combined number.
+
+**Automatic stock reconciliation.** Whatever you change in the items field is mirrored in
+the shop pool, for **every** finite-stock item:
+
+| You do this | Shop pool |
+|---|---|
+| Remove an item ID | That unit goes **back** into stock |
+| Add an item ID | That unit is **taken out** of stock |
+| Remove a counterfeit | **Nothing** — fakes never used a unit |
+| Change an unlimited item | Nothing to track |
+
+The confirmation reports exactly what moved (`**Golden Rod** +2 back in the pool (now
+2/3)`), the same line goes to the host log, and the posted shop re-renders so a returned
+item stops saying SOLD OUT. Returns are capped at the item's configured `stock` — you can
+never end up with more than the config allows.
+
+Three switches in `flags` (`config/economy.json`) control it, all **on** by default:
+
+| Flag | Off means |
+|---|---|
+| `return_stock_on_removal` | Removing an item never restocks it (the old behaviour) |
+| `return_stock_from_eliminated` | Items pulled from **eliminated** players don't restock |
+| `consume_stock_on_grant` | Hand-adding an item doesn't deplete stock |
 
 ---
 

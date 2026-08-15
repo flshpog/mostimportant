@@ -3,19 +3,72 @@ const {
     ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder,
 } = require('discord.js');
 const eco = require('../../handlers/economy');
-const { getItem } = require('../../config/economy');
+const { getItem, getConfig } = require('../../config/economy');
 const { ensureHost } = require('../../handlers/hostGate');
 const { logToHost } = require('../../handlers/economyLog');
 const shop = require('../../handlers/shop');
+const { updatePostedShop } = require('../../handlers/shopService');
 
 function yesNo(value) {
     return String(value).trim().toLowerCase().startsWith('y');
 }
 
+// Counts REAL instances only. Counterfeits (/counterfeit) never consumed a shop
+// unit, so returning one on removal would conjure stock out of nothing.
 function countById(items) {
     const map = {};
-    for (const inst of items) map[inst.id] = (map[inst.id] || 0) + 1;
+    for (const inst of items) {
+        if (inst.is_fake) continue;
+        map[inst.id] = (map[inst.id] || 0) + 1;
+    }
     return map;
+}
+
+// Reconciles the shop pool against what actually changed in a player's inventory.
+// Any finite-stock item removed goes back to the pool; any added is taken out of
+// it. Unlimited items are a no-op inside consume/returnUnit. Returns a list of
+// human-readable changes for the host log.
+function syncStock(guildId, beforeItems, afterItems, player) {
+    const flags = getConfig().flags;
+    const oldCounts = countById(beforeItems);
+    const newCounts = countById(afterItems);
+    const changes = [];
+
+    // Eliminated players are frozen; whether their items re-enter circulation is
+    // a host call, not ours. Both switches live in config/economy.json.
+    const mayReturn = flags.return_stock_on_removal !== false
+        && (!player.eliminated || flags.return_stock_from_eliminated !== false);
+    const mayConsume = flags.consume_stock_on_grant !== false;
+
+    for (const idStr of new Set([...Object.keys(oldCounts), ...Object.keys(newCounts)])) {
+        const id = Number(idStr);
+        const item = getItem(id);
+        if (!item || item.stock === null) continue;
+
+        const delta = (oldCounts[id] || 0) - (newCounts[id] || 0);
+        if (delta === 0) continue;
+
+        // Report what the pool ACTUALLY did — return/consume clamp at the item's
+        // configured stock and at zero, so the requested delta can differ.
+        const unitsBefore = shop.availableUnits(guildId, id);
+        if (delta > 0 && mayReturn) {
+            for (let k = 0; k < delta; k++) shop.returnUnit(guildId, id);
+        } else if (delta < 0 && mayConsume) {
+            for (let k = 0; k < -delta; k++) shop.consumeUnit(guildId, id);
+        } else {
+            continue;
+        }
+
+        const moved = shop.availableUnits(guildId, id) - unitsBefore;
+        if (moved > 0) {
+            changes.push(`**${item.name}** +${moved} back in the pool (now ${unitsBefore + moved}/${item.stock})`);
+        } else if (moved < 0) {
+            changes.push(`**${item.name}** ${moved} out of the pool (now ${unitsBefore + moved}/${item.stock})`);
+        } else {
+            changes.push(`**${item.name}** unchanged (already ${unitsBefore}/${item.stock})`);
+        }
+    }
+    return changes;
 }
 
 module.exports = {
@@ -78,17 +131,8 @@ module.exports = {
             return { id, is_fake: false };
         });
 
-        // Refresh shop stock for removed refreshing items (unless eliminated).
-        const oldCounts = countById(before.items);
-        const newCounts = countById(newItems);
-        for (const idStr of Object.keys(oldCounts)) {
-            const id = Number(idStr);
-            const removed = oldCounts[id] - (newCounts[id] || 0);
-            const item = getItem(id);
-            if (removed > 0 && item && item.refreshes && !player.eliminated) {
-                for (let k = 0; k < removed; k++) shop.returnUnit(interaction.guildId, id);
-            }
-        }
+        // Put removed items back in the shop pool (and take added ones out).
+        const stockChanges = syncStock(interaction.guildId, before.items, newItems, player);
         player.items = newItems;
 
         // Flimsy — a single combined counter (the modal is one field).
@@ -101,7 +145,21 @@ module.exports = {
 
         eco.savePlayer(interaction.guildId, userId, player);
 
-        await interaction.reply({ content: `✅ Updated inventory for <@${userId}>.`, ephemeral: true });
+        // Tell the host exactly what the shop pool did — the old silent behaviour
+        // is what made removals feel like they vanished into the void.
+        const stockNote = stockChanges.length
+            ? `\n📦 Shop stock: ${stockChanges.join(', ')}.`
+            : '';
+        await interaction.reply({
+            content: `✅ Updated inventory for <@${userId}>.${stockNote}`,
+            ephemeral: true,
+        });
+
+        // Keep the posted shop honest — otherwise a returned item still reads
+        // SOLD OUT while /buy will happily sell it.
+        if (stockChanges.length) {
+            await updatePostedShop(interaction.client, interaction.guildId).catch(() => {});
+        }
 
         const fmtItems = arr => arr.map(i => i.id + (i.is_fake ? 'f' : '')).join(', ') || '(none)';
         await logToHost(
@@ -111,7 +169,8 @@ module.exports = {
             `• Items: [${fmtItems(before.items)}] → [${fmtItems(player.items)}]\n` +
             `• Golden WC: ${before.reductions.golden_wc} → ${player.reductions.golden_wc}\n` +
             `• Watering Can: ${before.reductions.watering_can} → ${player.reductions.watering_can}\n` +
-            `• Flimsy uses: ${(before.flimsy_wc || []).reduce((a, b) => a + b, 0)} → ${(player.flimsy_wc || []).reduce((a, b) => a + b, 0)}`
+            `• Flimsy uses: ${(before.flimsy_wc || []).reduce((a, b) => a + b, 0)} → ${(player.flimsy_wc || []).reduce((a, b) => a + b, 0)}` +
+            (stockChanges.length ? `\n• Shop stock: ${stockChanges.join(', ')}` : '')
         );
     },
 };
