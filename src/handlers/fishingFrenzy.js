@@ -444,10 +444,11 @@ async function doLeaderboardEdit(client, guildId, final) {
         console.error('Fishing Frenzy: leaderboard edit failed, reposting:', err.message);
         const msg = await postLeaderboard(client, guildId, { final }).catch(() => null);
         if (msg) {
-            const config = getConfig();
             const warn = `⚠️ The leaderboard message was deleted, so I posted a new one — **it needs re-pinning**: ${msg.url}`;
             try {
-                const results = await client.channels.fetch(config.results_channel);
+                const results = await client.channels.fetch(
+                    state.resultsChannelId || getConfig().results_channel
+                );
                 if (results && results.isTextBased()) await results.send(warn);
             } catch { /* the console error above is the fallback */ }
         }
@@ -531,7 +532,7 @@ async function sendChunked(channel, text) {
 
 // --- Lifecycle ---------------------------------------------------------------
 
-async function startFrenzy(client, guildId, { channelId, leaderboardChannelId, durationHours }) {
+async function startFrenzy(client, guildId, { channelId, leaderboardChannelId, resultsChannelId, durationHours }) {
     const config = getConfig();
     const now = Date.now();
 
@@ -539,6 +540,9 @@ async function startFrenzy(client, guildId, { channelId, leaderboardChannelId, d
         active: true,
         channelId,
         leaderboardChannelId,
+        // Resolved once at start and persisted, so a restart (or a config edit
+        // mid-game) can't redirect the tally away from where the game is running.
+        resultsChannelId: resultsChannelId || config.results_channel || channelId,
         startTime: now,
         endTime: now + durationHours * 60 * 60 * 1000,
         scoring_mode: config.scoring_mode || 'first_only',
@@ -596,8 +600,7 @@ async function endFrenzy(client, guildId) {
 
     await updateLeaderboard(client, guildId, { final: true }).catch(() => {});
 
-    const config = getConfig();
-    const target = config.results_channel || state.channelId;
+    const target = state.resultsChannelId || getConfig().results_channel || state.channelId;
     try {
         const channel = await client.channels.fetch(target);
         if (channel && channel.isTextBased()) await sendChunked(channel, tallyText(state));

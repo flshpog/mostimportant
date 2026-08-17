@@ -66,7 +66,13 @@ module.exports = {
                 return message.reply(`Fishing channel \`${channelId}\` not found in this server — pass one: \`!fishingfrenzy start #fishing-frenzy\`.`);
             }
 
-            const leaderboardChannelId = config.leaderboard_channel || channelId;
+            // In test mode everything stays in the channel you're testing in — the
+            // real leaderboard channel is player-facing, and a dry run shouldn't
+            // leave test scores and a stray tally sitting in it.
+            const isTest = config.test_mode;
+            const leaderboardChannelId = isTest ? channelId : (config.leaderboard_channel || channelId);
+            const resultsChannelId = isTest ? channelId : (config.results_channel || channelId);
+
             if (!message.guild.channels.cache.get(leaderboardChannelId)) {
                 return message.reply(`Leaderboard channel \`${leaderboardChannelId}\` not found in this server. Fix \`leaderboard_channel\` in \`config/fishing.json\`.`);
             }
@@ -92,11 +98,14 @@ module.exports = {
             const { leaderboardUrl } = await frenzy.startFrenzy(client, guildId, {
                 channelId,
                 leaderboardChannelId,
+                resultsChannelId,
                 durationHours: duration,
             });
 
-            const testWarning = frenzy.getConfig().test_mode
-                ? '\n\n🧪 **TEST MODE IS ON** — fish will spawn every few seconds. Run `!fishingfrenzy test off` and restart if this is the real game.'
+            const testWarning = isTest
+                ? '\n\n🧪 **TEST MODE IS ON** — fish spawn every few seconds, and the leaderboard + tally '
+                  + 'are staying in this channel instead of the real one. Run `!fishingfrenzy test off` and '
+                  + 'start again for the real game.'
                 : '';
 
             return notice.edit(
