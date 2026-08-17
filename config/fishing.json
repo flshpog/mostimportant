@@ -1,0 +1,51 @@
+{
+  "channel_id": "1538787163582238792",
+  "leaderboard_channel": "1526348458099871916",
+  "results_channel": "1526348458099871916",
+  "eligible_role_id": null,
+
+  "min_interval_minutes": 8,
+  "max_interval_minutes": 18,
+  "default_duration_hours": 24,
+
+  "scoring_mode": "first_only",
+  "react_on_late": false,
+  "min_window_seconds": 3,
+
+  "catch_phrase": "i reel in the {fish}",
+  "spawn_message": "🎣 A fish bites! Reel it in!",
+  "attachment_filename": "fish.png",
+  "image_upscale_px": 384,
+  "announce_on_close": true,
+  "leaderboard_min_edit_seconds": 5,
+
+  "test_mode": false,
+  "test_interval_seconds": { "min": 5, "max": 10 },
+  "test_window_seconds": 5,
+
+  "fish": [
+    { "name": "Sea Bass", "rarity": "Common", "window": 20, "points": 1, "weight": 30, "aliases": ["seabass"], "image": "https://dodo.ac/np/images/7/7f/Sea_Bass_NH_Icon.png" },
+    { "name": "Carp", "rarity": "Common", "window": 20, "points": 1, "weight": 30, "aliases": [], "image": "https://dodo.ac/np/images/5/5d/Carp_NH_Icon.png" },
+    { "name": "Crucian Carp", "rarity": "Common", "window": 20, "points": 1, "weight": 30, "aliases": [], "image": "https://dodo.ac/np/images/f/f2/Crucian_Carp_NH_Icon.png" },
+    { "name": "Bluegill", "rarity": "Common", "window": 20, "points": 1, "weight": 30, "aliases": ["blue gill"], "image": "https://dodo.ac/np/images/0/0c/Bluegill_NH_Icon.png" },
+    { "name": "Horse Mackerel", "rarity": "Common", "window": 20, "points": 1, "weight": 30, "aliases": ["horse mackeral"], "image": "https://dodo.ac/np/images/a/a3/Horse_Mackerel_NH_Icon.png" },
+
+    { "name": "Koi", "rarity": "Uncommon", "window": 15, "points": 4, "weight": 16, "aliases": [], "image": "https://dodo.ac/np/images/2/2d/Koi_NH_Icon.png" },
+    { "name": "Salmon", "rarity": "Uncommon", "window": 15, "points": 4, "weight": 16, "aliases": [], "image": "https://dodo.ac/np/images/c/ca/Salmon_NH_Icon.png" },
+    { "name": "Squid", "rarity": "Uncommon", "window": 15, "points": 4, "weight": 16, "aliases": [], "image": "https://dodo.ac/np/images/b/bf/Squid_NH_Icon.png" },
+    { "name": "Red Snapper", "rarity": "Uncommon", "window": 15, "points": 4, "weight": 16, "aliases": ["snapper"], "image": "https://dodo.ac/np/images/c/c1/Red_Snapper_NH_Icon.png" },
+    { "name": "Pike", "rarity": "Uncommon", "window": 15, "points": 4, "weight": 16, "aliases": [], "image": "https://dodo.ac/np/images/9/9f/Pike_NH_Icon.png" },
+
+    { "name": "Sturgeon", "rarity": "Rare", "window": 10, "points": 12, "weight": 6, "aliases": [], "image": "https://dodo.ac/np/images/9/91/Sturgeon_NH_Icon.png" },
+    { "name": "Blue Marlin", "rarity": "Rare", "window": 10, "points": 12, "weight": 6, "aliases": ["marlin"], "image": "https://dodo.ac/np/images/2/2a/Blue_Marlin_NH_Icon.png" },
+    { "name": "Football Fish", "rarity": "Rare", "window": 10, "points": 12, "weight": 6, "aliases": ["footballfish"], "image": "https://dodo.ac/np/images/3/34/Football_Fish_NH_Icon.png" },
+    { "name": "Napoleonfish", "rarity": "Rare", "window": 10, "points": 12, "weight": 6, "aliases": ["napoleon fish"], "image": "https://dodo.ac/np/images/3/30/Napoleonfish_NH_Icon.png" },
+    { "name": "Giant Trevally", "rarity": "Rare", "window": 10, "points": 12, "weight": 6, "aliases": ["trevally"], "image": "https://dodo.ac/np/images/1/17/Giant_Trevally_NH_Icon.png" },
+
+    { "name": "Coelacanth", "rarity": "Legendary", "window": 8, "points": 40, "weight": 2, "aliases": [], "image": "https://dodo.ac/np/images/4/45/Coelacanth_NH_Icon.png" },
+    { "name": "Great White Shark", "rarity": "Legendary", "window": 8, "points": 40, "weight": 2, "aliases": ["great white"], "image": "https://dodo.ac/np/images/2/20/Great_White_Shark_NH_Icon.png" },
+    { "name": "Whale Shark", "rarity": "Legendary", "window": 8, "points": 40, "weight": 2, "aliases": [], "image": "https://dodo.ac/np/images/4/4f/Whale_Shark_NH_Icon.png" },
+    { "name": "Barreleye", "rarity": "Legendary", "window": 8, "points": 40, "weight": 2, "aliases": ["barrel eye"], "image": "https://dodo.ac/np/images/e/e0/Barreleye_NH_Icon.png" },
+    { "name": "Golden Trout", "rarity": "Legendary", "window": 8, "points": 40, "weight": 2, "aliases": [], "image": "https://dodo.ac/np/images/f/fc/Golden_Trout_NH_Icon.png" }
+  ]
+}

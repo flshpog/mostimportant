@@ -33,6 +33,12 @@ module.exports = {
                 console.error('Bug Frenzy catch error:', err));
         }
 
+        // Fishing Frenzy catch handling (no-op unless a frenzy is active in this channel).
+        if (message.guild) {
+            require('../handlers/fishingFrenzy').handleMessage(message).catch(err =>
+                console.error('Fishing Frenzy catch error:', err));
+        }
+
         // Love Day !loveday / !unlock handling (silent no-op outside a registered pair).
         if (message.guild) {
             require('../handlers/loveDay').handleMessage(message).catch(err =>
