@@ -109,7 +109,7 @@ module.exports = {
             await this.sleep(1000);
 
             // Final player: everyone else drew white, so the last rock MUST be
-            // purple. They don't draw — announce it and eliminate.
+            // purple. They don't draw - announce it and eliminate.
             if (i === players.length - 1) {
                 await message.channel.send('There is only one rock left, it has to be purple. 🟣');
                 await this.sleep(1500);

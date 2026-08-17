@@ -2,7 +2,7 @@ const fs = require('fs');
 const path = require('path');
 const numberWords = require('./numberWords');
 
-// Love Day (F10) — "For Better, For Worse". Staff pair a resident + a pal to a
+// Love Day (F10) - "For Better, For Worse". Staff pair a resident + a pal to a
 // private channel; the pair runs !loveday to start a 4-round image puzzle (images
 // DM'd to each half) and !unlock's through it. Winner is decided off-bot from the
 // start/finish timestamps. Config is committed + tunable; state is per-channel.
@@ -144,12 +144,12 @@ async function handleMessage(message) {
     }
 }
 
-// !loveday — start the pair's clock and Round 1.
+// !loveday - start the pair's clock and Round 1.
 async function handleStart(message) {
     const record = getByChannel(message.channel.id);
-    if (!record) return; // no registered pair here — silent
+    if (!record) return; // no registered pair here - silent
     if (message.author.id !== record.resident_id && message.author.id !== record.pal_id) return;
-    if (record.started_at) return; // already started — silent
+    if (record.started_at) return; // already started - silent
 
     record.started_at = Date.now();
     record.current_round = 1;
@@ -163,23 +163,23 @@ async function handleStart(message) {
         .catch(() => {});
 }
 
-// !unlock <answer> — check the current round's answer.
+// !unlock <answer> - check the current round's answer.
 async function handleUnlock(message, rawAnswer) {
     const record = getByChannel(message.channel.id);
-    if (!record) return; // no pair — silent
+    if (!record) return; // no pair - silent
     if (message.author.id !== record.resident_id && message.author.id !== record.pal_id) return;
-    if (!record.started_at) return; // not started — silent
-    if (record.finished_at) return; // finished — silent
+    if (!record.started_at) return; // not started - silent
+    if (record.finished_at) return; // finished - silent
 
     const config = getConfig();
     const round = config.rounds[record.current_round - 1];
     if (!round) return;
 
     if (!checkAnswer(round, rawAnswer)) {
-        return; // incorrect guess — no reply
+        return; // incorrect guess - no reply
     }
 
-    // Correct — final round?
+    // Correct - final round?
     if (record.current_round >= config.rounds.length) {
         record.finished_at = Date.now();
         saveRecord(record);

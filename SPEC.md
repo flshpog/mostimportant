@@ -1,4 +1,4 @@
-# SPEC.md — Nook's Cranny Economy
+# SPEC.md - Nook's Cranny Economy
 
 Authoritative mechanical spec. Every number here belongs in config, not in code.
 
@@ -32,9 +32,9 @@ if wasps: effective_cooldown *= 2
 ```
 
 Reduction applies to the base **first**, then the doubling. A player with −50% who
-gets stung sits at 12h, not 24h — the penalty stays proportional to their build.
+gets stung sits at 12h, not 24h - the penalty stays proportional to their build.
 
-### Cooldown reduction — additive
+### Cooldown reduction - additive
 
 | Source | Reduction | Duration | Item ID |
 |---|---|---|---|
@@ -58,7 +58,7 @@ Ephemeral. Shows time remaining on the global lock, which command set it, the
 player's current total reduction, and Flimsy uses remaining if any.
 
 When an income command is run during cooldown, the failure message shows the time
-remaining — never a bare "on cooldown."
+remaining - never a bare "on cooldown."
 
 ---
 
@@ -71,13 +71,13 @@ always shows names.
 
 | ID | Item | Price | Stock |
 |---|---|---|---|
-| 1 | Nook Family Tax Returns | 7,500 | — |
-| 2 | Resetti's Do-Over | 7,000 | — |
-| 3 | Redd's Counterfeit | 6,500 | — |
-| 4 | Isabelle's Briefing | 5,000 | — |
-| 5 | Kapp'n's Island Tour | 5,000 | — |
+| 1 | Nook Family Tax Returns | 7,500 | - |
+| 2 | Resetti's Do-Over | 7,000 | - |
+| 3 | Redd's Counterfeit | 6,500 | - |
+| 4 | Isabelle's Briefing | 5,000 | - |
+| 5 | Kapp'n's Island Tour | 5,000 | - |
 | 6 | May Day Ticket | 3,500 | 1 |
-| 7 | Pete's Special Delivery | 250 + deposit | — |
+| 7 | Pete's Special Delivery | 250 + deposit | - |
 
 ### Golden Tools (3 in rotation per round)
 
@@ -96,11 +96,11 @@ always shows names.
 | 13 | Shovel | 4,000 | 3 |
 | 14 | Axe | 4,000 | 3 |
 | 15 | Slingshot | 3,500 | 3 |
-| 16 | Vaulting Pole | 3,500 | — |
+| 16 | Vaulting Pole | 3,500 | - |
 | 17 | Stone Axe | 3,000 | 3 |
 | 18 | Ladder | 2,500 | 5 |
 | 19 | Star Wand | 2,000 | unlimited, **stackable** |
-| 20 | Watering Can | 2,000 | — |
+| 20 | Watering Can | 2,000 | - |
 
 ### The Cabinet (always available, never rotates)
 
@@ -119,9 +119,9 @@ Each registry entry carries:
 id, name, description, price, category,
 stock (int | null for unlimited),
 refreshes (bool),
-stackable (bool)        — true for Star Wand (19) only
-occupies_slot (bool)    — false for 12, 20, 24
-once_per_player (bool)  — true for 12
+stackable (bool)        - true for Star Wand (19) only
+occupies_slot (bool)    - false for 12, 20, 24
+once_per_player (bool)  - true for 12
 ```
 
 ---
@@ -133,7 +133,7 @@ once_per_player (bool)  — true for 12
 - Each distinct item = 1 slot.
 - **Star Wand is the only stackable item.** Any quantity of Star Wands occupies
   exactly 1 slot. A player may hold 9 Wands plus 2 other items.
-- Watering Cans (IDs 12, 20, 24) **never occupy a slot** — they're upgrades, not
+- Watering Cans (IDs 12, 20, 24) **never occupy a slot** - they're upgrades, not
   playable items.
 - `/buy` **hard-blocks** at 3 slots. No override, no buy-and-play-same-round.
 - Items are removed by hosts via `/editinventory`. The bot never consumes an item.
@@ -142,7 +142,7 @@ once_per_player (bool)  — true for 12
 
 Item instances carry `is_fake: bool`, default false.
 
-A fake item is **completely indistinguishable** from a real one in `/inventory` —
+A fake item is **completely indistinguishable** from a real one in `/inventory` -
 same name, same description, no icon, no ordering difference, nothing. The flag is
 visible only to hosts, in `/viewinventory` and `/editinventory`.
 
@@ -171,10 +171,10 @@ available ──/buy──> owned ──host removes──> used ──> availab
                                                  └──> retired    (if not)
 ```
 
-- `available` — eligible to be slotted into a shop rotation
-- `owned` — purchased, sitting in someone's inventory, **not** offerable
-- `used` — host has removed it from an inventory
-- `retired` — permanently gone
+- `available` - eligible to be slotted into a shop rotation
+- `owned` - purchased, sitting in someone's inventory, **not** offerable
+- `used` - host has removed it from an inventory
+- `retired` - permanently gone
 
 Rules:
 
@@ -182,7 +182,7 @@ Rules:
 - `/buy` autocomplete offers **only** what is currently in the posted shop, plus the
   full Cabinet. Players must never see an item name they haven't been shown.
 - **Stock > 1** means that many units before the item leaves `available`.
-- **Refreshes** means a unit returns to `available` when a host marks it `used` —
+- **Refreshes** means a unit returns to `available` when a host marks it `used` -
   not on a timer, not at rotation.
 - **Player eliminated holding an unused item:** the item is gone. It does not return
   to the pool. Confirmed.
@@ -205,17 +205,17 @@ Rules:
 | Command | Behaviour |
 |---|---|
 | `/setupshop` | 9 inputs: 2 Specials, 3 Golden, 4 Standard. Autocomplete from `available`. Posts immediately to the shop channel. Cabinet + House Payments append automatically. |
-| `/queueshop` | Same inputs. Stores the queue; posts at **12:00am America/New_York**. On post, deletes the **stored message ID** of the previous shop post — never "the last bot message." |
+| `/queueshop` | Same inputs. Stores the queue; posts at **12:00am America/New_York**. On post, deletes the **stored message ID** of the previous shop post - never "the last bot message." |
 | `/viewinventory <user>` | Full host view: bells, items, `is_fake` flags, permanents, Flimsy counter, elimination status. |
 | `/editinventory <user>` | Modal. Fields: balance · items (CSV of IDs, e.g. `13, 19, 19, 24`) · Flimsy WC uses remaining · toggles for Golden WC and Watering Can. Every edit logged with before/after. |
 | `/eliminate <user>` | Freezes income commands and `/buy`. Flags inventory as eliminated. Held items do not return to the pool. |
 | `/uneliminate <user>` | Reverses it. Mistakes happen at 2am. |
-| `/deliver <from> <to> [bells] [item]` | Pete's. Moves bells and/or an item. Deducts 250 shipping from sender. **Bounces if the recipient is at 3 slots.** Silent — no public message, no DM. Logged. |
+| `/deliver <from> <to> [bells] [item]` | Pete's. Moves bells and/or an item. Deducts 250 shipping from sender. **Bounces if the recipient is at 3 slots.** Silent - no public message, no DM. Logged. |
 | `/counterfeit <user> <item>` | Places a fake item instance in a player's inventory. Logged. |
 | `/grant <user> <amount> [reason]` | Add bells. |
-| `/deduct <user> <amount> [reason]` | Remove bells. **This is the house payment tool** — it runs ~13 times per tribal, so it must be fast. |
+| `/deduct <user> <amount> [reason]` | Remove bells. **This is the house payment tool** - it runs ~13 times per tribal, so it must be fast. |
 | `/resetcooldown <user>` | Clears the global cooldown. |
-| `/taxreturns` | Every item owned by every player, **with names**, for host reference. Non-ephemeral, but **hard-restricted to the host category** — see warning below. |
+| `/taxreturns` | Every item owned by every player, **with names**, for host reference. Non-ephemeral, but **hard-restricted to the host category** - see warning below. |
 
 ### Host category gate
 
@@ -227,7 +227,7 @@ if channel.parent_id != config.channels.host_category:
     reject with an ephemeral error
 ```
 
-Apply this to **every host command** — `/setupshop`, `/queueshop`, `/editinventory`,
+Apply this to **every host command** - `/setupshop`, `/queueshop`, `/editinventory`,
 `/viewinventory`, `/eliminate`, `/uneliminate`, `/deliver`, `/counterfeit`, `/grant`,
 `/deduct`, `/resetcooldown`, `/taxreturns`. Role permissions are the primary guard;
 the category check is the backstop that stops a misfired command from firing into a
@@ -251,12 +251,12 @@ Host log channel: `1531494704712122603`
 Log: purchases · deliveries · counterfeits · all `/editinventory` diffs · `/grant` ·
 `/deduct` · eliminations · shop rotations posted.
 
-Do **not** log income command runs by default — 17 players × several per day is
+Do **not** log income command runs by default - 17 players × several per day is
 unreadable. Put it behind a config flag, default off.
 
 Shop channel: `1531460665481625681`
 
-Host category: `1414321682415357964` — every channel inside it is host-safe, and all
+Host category: `1414321682415357964` - every channel inside it is host-safe, and all
 host commands are gated on it.
 
 ---
@@ -269,10 +269,10 @@ Five embeds, one message. Match the existing format:
 - `image.url` = the Everest banner (1500×11 spacer, forces full embed width)
 - Bells emoji `<:Bells:1530232089021124711>` on every price line
 - Prices comma-separated
-- Descriptions pulled from the item registry — hosts pick names, the bot writes the
+- Descriptions pulled from the item registry - hosts pick names, the bot writes the
   rest
 
-**Header format — this matters.** Decorative flourishes must sit on their own
+**Header format - this matters.** Decorative flourishes must sit on their own
 normal-size line, *not* inside the `##`. Inside an H2 they render enormous, wrap, and
 cut off on desktop:
 
@@ -284,7 +284,7 @@ cut off on desktop:
 Embed order: Store Specials · Golden Tools · Standard Tools · The Cabinet ·
 Loan Repayment.
 
-Cabinet and Loan Repayment embeds are static — rendered from config every time, no
+Cabinet and Loan Repayment embeds are static - rendered from config every time, no
 host input.
 
 ---
@@ -297,7 +297,7 @@ editable without touching code:
 ```
 income:        payout ranges, probabilities, base cooldowns, wasp multiplier
 reductions:    each tier's %, flimsy use count, flimsy_wc_stacks flag
-items:         the full registry — id, name, description, price, stock,
+items:         the full registry - id, name, description, price, stock,
                refreshes, stackable, occupies_slot, once_per_player
 inventory:     slot cap
 house:         the four payment amounts (display only)

@@ -5,7 +5,7 @@ const { ensureHost } = require('../../handlers/hostGate');
 const { logToHost } = require('../../handlers/economyLog');
 
 // Places a FAKE item instance in a player's inventory (Redd's Counterfeit). It is
-// indistinguishable from a real one in /inventory — only /viewinventory shows the
+// indistinguishable from a real one in /inventory - only /viewinventory shows the
 // flag. Host override: no slot-cap or affordability checks.
 module.exports = {
     data: new SlashCommandBuilder()
@@ -32,7 +32,7 @@ module.exports = {
         const id = Number(raw);
         const item = Number.isInteger(id) ? getItem(id) : getItem(NaN);
         if (!item) {
-            return interaction.reply({ content: 'Unknown item — pick one from autocomplete.', ephemeral: true });
+            return interaction.reply({ content: 'Unknown item - pick one from autocomplete.', ephemeral: true });
         }
 
         const player = eco.getPlayer(interaction.guildId, user.id);

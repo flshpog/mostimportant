@@ -44,7 +44,7 @@ function sectionEmbed(guildId, key, items, { showStock = true } = {}) {
     return embed;
 }
 
-// The static Loan Repayment embed (house payments — display only, SPEC §4).
+// The static Loan Repayment embed (house payments - display only, SPEC §4).
 function loanEmbed() {
     const cfg = getConfig();
     const section = cfg.shop.sections.loan;

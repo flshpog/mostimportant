@@ -4,7 +4,7 @@ const MAX_ROLES = 10;
 
 // Hides SPECIFIC member roles from the alliance channels in a category (deny view +
 // speak), leaving every other member's access untouched. Unlike /mute1on1s (which
-// hides all involved player roles), this only touches the roles you name — ideal
+// hides all involved player roles), this only touches the roles you name - ideal
 // for removing one person from a 2+ member alliance. Only channels where the role
 // already has an overwrite (i.e. they're a member) are changed.
 module.exports = {
@@ -83,7 +83,7 @@ module.exports = {
                 if (changedHere) channelsAffected++;
             }
 
-            const lines = roles.map(r => `• ${r.name} — hidden from ${perRole[r.id] || 0} channel(s)`);
+            const lines = roles.map(r => `• ${r.name} - hidden from ${perRole[r.id] || 0} channel(s)`);
             let msg = `✅ Hid **${roles.length}** member role(s) across **${category.name}**.\n` +
                 `${lines.join('\n')}\n\n` +
                 `**Totals:** ${channelsAffected} channel(s), ${rolesHidden} overwrite(s)` +

@@ -11,20 +11,20 @@ function resolveChannel(guild, token) {
 }
 
 const USAGE = [
-    '**Flick\'s Bug Frenzy — usage:**',
-    '`!bugfrenzy start [#tribeA LabelA #tribeB LabelB] [durationHours]` — begin (defaults to the configured channels & 24h)',
-    '`!bugfrenzy stop` — end early + post the final tally',
-    '`!bugfrenzy standings` — current totals + top catchers',
-    '`!bugfrenzy status` — active? time left, spawn count, next spawn ETA',
-    '`!bugfrenzy spawn <bug name>` — force a specific bug now (QA)',
-    '`!bugfrenzy test [on|off]` — toggle fast test spawns (seconds instead of minutes)',
+    '**Flick\'s Bug Frenzy - usage:**',
+    '`!bugfrenzy start [#tribeA LabelA #tribeB LabelB] [durationHours]` - begin (defaults to the configured channels & 24h)',
+    '`!bugfrenzy stop` - end early + post the final tally',
+    '`!bugfrenzy standings` - current totals + top catchers',
+    '`!bugfrenzy status` - active? time left, spawn count, next spawn ETA',
+    '`!bugfrenzy spawn <bug name>` - force a specific bug now (QA)',
+    '`!bugfrenzy test [on|off]` - toggle fast test spawns (seconds instead of minutes)',
 ].join('\n');
 
 module.exports = {
     name: 'bugfrenzy',
 
     async execute(message, args) {
-        // Host/admin gate — match how host tools are gated (Manage Server).
+        // Host/admin gate - match how host tools are gated (Manage Server).
         if (!message.member || !message.member.permissions.has(PermissionFlagsBits.ManageGuild)) {
             return message.reply('You need the **Manage Server** permission to use this.');
         }
@@ -57,7 +57,7 @@ module.exports = {
                 const chA = message.guild.channels.cache.get(config.default_channels.A);
                 const chB = message.guild.channels.cache.get(config.default_channels.B);
                 if (!chA || !chB) {
-                    return message.reply('Default tribe channels not found in this server — pass them explicitly: `!bugfrenzy start #a TribeA #b TribeB`.');
+                    return message.reply('Default tribe channels not found in this server - pass them explicitly: `!bugfrenzy start #a TribeA #b TribeB`.');
                 }
                 channels = {
                     A: { id: chA.id, label: config.default_labels.A },
@@ -72,7 +72,7 @@ module.exports = {
 
             await frenzy.startFrenzy(client, guildId, channels, duration);
             return message.reply(
-                `✅ Bug Frenzy started — **${channels.A.label}** (<#${channels.A.id}>) vs **${channels.B.label}** (<#${channels.B.id}>) for **${duration}h**.`
+                `✅ Bug Frenzy started - **${channels.A.label}** (<#${channels.A.id}>) vs **${channels.B.label}** (<#${channels.B.id}>) for **${duration}h**.`
             );
         }
 
@@ -116,8 +116,8 @@ module.exports = {
             frenzy.setTestMode(on);
             const cfg = frenzy.getConfig();
             return message.reply(on
-                ? `🧪 Test mode **ON** — bugs now spawn every **${cfg.test_interval_seconds.min}–${cfg.test_interval_seconds.max}s** (applies to the next spawn). Turn off with \`!bugfrenzy test off\`.`
-                : `Test mode **OFF** — back to normal **${cfg.min_interval_minutes}–${cfg.max_interval_minutes} min** spawns.`);
+                ? `🧪 Test mode **ON** - bugs now spawn every **${cfg.test_interval_seconds.min}-${cfg.test_interval_seconds.max}s** (applies to the next spawn). Turn off with \`!bugfrenzy test off\`.`
+                : `Test mode **OFF** - back to normal **${cfg.min_interval_minutes}-${cfg.max_interval_minutes} min** spawns.`);
         }
 
         // ---- spawn (QA) ----

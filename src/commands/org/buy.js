@@ -9,7 +9,7 @@ const { logToHost, hostPing, logUsage } = require('../../handlers/economyLog');
 const REDUCTION_FLAG_BY_ITEM = { 12: 'golden_wc', 20: 'watering_can' };
 const FLIMSY_WC_ID = 24;
 
-// All watering cans. A player may hold only ONE at a time — they don't stack.
+// All watering cans. A player may hold only ONE at a time - they don't stack.
 const WATERING_CAN_IDS = new Set([12, 20, 24]);
 
 function hasWateringCan(player) {
@@ -28,7 +28,7 @@ module.exports = {
                 .setRequired(true)
                 .setAutocomplete(true)),
 
-    // Autocomplete + validation both read getBuyableItems — the single source of
+    // Autocomplete + validation both read getBuyableItems - the single source of
     // truth for what's purchasable. Never hardcode the buyable set here.
     async autocomplete(interaction) {
         const focused = interaction.options.getFocused().toLowerCase();
@@ -36,7 +36,7 @@ module.exports = {
             .filter(item => item.name.toLowerCase().includes(focused))
             .slice(0, 25)
             .map(item => ({
-                name: `${item.name} — ${item.price.toLocaleString('en-US')} Bells`,
+                name: `${item.name} - ${item.price.toLocaleString('en-US')} Bells`,
                 value: String(item.id),
             }));
         await interaction.respond(choices);
@@ -51,7 +51,7 @@ module.exports = {
         const buyable = getBuyableItems(interaction.guildId, interaction.user.id);
         const raw = interaction.options.getString('item').trim();
 
-        // Resolve by id (autocomplete value) or by typed name — but only within the
+        // Resolve by id (autocomplete value) or by typed name - but only within the
         // buyable set, so players can never buy something they weren't shown.
         let item = null;
         const asId = Number(raw);
@@ -72,14 +72,14 @@ module.exports = {
         // Testers bypass every restriction (see /twisttester).
         if (!isTester) {
             if (eco.isEliminated(player)) {
-                return interaction.reply({ content: "You've been eliminated — you can't buy anything.", ephemeral: true });
+                return interaction.reply({ content: "You've been eliminated - you can't buy anything.", ephemeral: true });
             }
 
             if (item.once_per_player && player.bought_once.includes(item.id)) {
                 return interaction.reply({ content: `You can only buy **${item.name}** once.`, ephemeral: true });
             }
 
-            // Watering cans don't stack — only one at a time. To switch, trade in
+            // Watering cans don't stack - only one at a time. To switch, trade in
             // the current one with a host (no refund) before buying another.
             if (WATERING_CAN_IDS.has(item.id) && hasWateringCan(player)) {
                 return interaction.reply({
@@ -90,12 +90,12 @@ module.exports = {
 
             if (player.balance < item.price) {
                 return interaction.reply({
-                    content: `You can't afford **${item.name}** — it costs ${formatBells(item.price)}, and you have ${formatBells(player.balance)}.`,
+                    content: `You can't afford **${item.name}** - it costs ${formatBells(item.price)}, and you have ${formatBells(player.balance)}.`,
                     ephemeral: true,
                 });
             }
 
-            // Slot cap — hard block. Stackable item you already own adds no slot.
+            // Slot cap - hard block. Stackable item you already own adds no slot.
             if (item.occupies_slot) {
                 const alreadyHasStackable = item.stackable && player.items.some(i => i.id === item.id);
                 if (!alreadyHasStackable && eco.countSlotsUsed(player) >= slotCap()) {
@@ -127,7 +127,7 @@ module.exports = {
         // Deplete shop stock (no-op for unlimited items; testers don't deplete).
         if (!isTester) consumeUnit(guildId, item.id);
 
-        // Silent to players — ephemeral only, no public message.
+        // Silent to players - ephemeral only, no public message.
         await interaction.reply({
             content:
                 `✅ You bought **${item.name}** for ${formatBells(item.price)}!\n` +

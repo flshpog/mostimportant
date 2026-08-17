@@ -15,7 +15,7 @@ function parseRoleIds(input) {
 }
 
 // Resolves those IDs against a guild. `valid` holds Role objects, `invalid` the
-// IDs that aren't roles here — worth surfacing, since a role ID copied from
+// IDs that aren't roles here - worth surfacing, since a role ID copied from
 // another server is a common and otherwise silent mistake.
 function resolveRoles(guild, input) {
     const valid = [];

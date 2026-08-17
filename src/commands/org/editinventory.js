@@ -48,7 +48,7 @@ function syncStock(guildId, beforeItems, afterItems, player) {
         const delta = (oldCounts[id] || 0) - (newCounts[id] || 0);
         if (delta === 0) continue;
 
-        // Report what the pool ACTUALLY did — return/consume clamp at the item's
+        // Report what the pool ACTUALLY did - return/consume clamp at the item's
         // configured stock and at zero, so the requested delta can differ.
         const unitsBefore = shop.availableUnits(guildId, id);
         if (delta > 0 && mayReturn) {
@@ -87,7 +87,7 @@ module.exports = {
 
         const modal = new ModalBuilder()
             .setCustomId(`editinv_modal_${user.id}`)
-            .setTitle(`Edit — ${user.username}`.slice(0, 45));
+            .setTitle(`Edit - ${user.username}`.slice(0, 45));
 
         const fields = [
             new TextInputBuilder().setCustomId('balance').setLabel('Balance')
@@ -119,7 +119,7 @@ module.exports = {
         const bal = parseInt(balRaw, 10);
         if (!Number.isNaN(bal)) player.balance = bal;
 
-        // Items — rebuild from CSV, preserving fakes by id where they existed.
+        // Items - rebuild from CSV, preserving fakes by id where they existed.
         const csv = interaction.fields.getTextInputValue('items').trim();
         const newIds = csv.length
             ? csv.split(',').map(s => Number(s.trim())).filter(n => Number.isInteger(n) && getItem(n))
@@ -135,7 +135,7 @@ module.exports = {
         const stockChanges = syncStock(interaction.guildId, before.items, newItems, player);
         player.items = newItems;
 
-        // Flimsy — a single combined counter (the modal is one field).
+        // Flimsy - a single combined counter (the modal is one field).
         const flimsy = parseInt(interaction.fields.getTextInputValue('flimsy').trim(), 10);
         player.flimsy_wc = !Number.isNaN(flimsy) && flimsy > 0 ? [flimsy] : [];
 
@@ -145,7 +145,7 @@ module.exports = {
 
         eco.savePlayer(interaction.guildId, userId, player);
 
-        // Tell the host exactly what the shop pool did — the old silent behaviour
+        // Tell the host exactly what the shop pool did - the old silent behaviour
         // is what made removals feel like they vanished into the void.
         const stockNote = stockChanges.length
             ? `\n📦 Shop stock: ${stockChanges.join(', ')}.`
@@ -155,7 +155,7 @@ module.exports = {
             ephemeral: true,
         });
 
-        // Keep the posted shop honest — otherwise a returned item still reads
+        // Keep the posted shop honest - otherwise a returned item still reads
         // SOLD OUT while /buy will happily sell it.
         if (stockChanges.length) {
             await updatePostedShop(interaction.client, interaction.guildId).catch(() => {});

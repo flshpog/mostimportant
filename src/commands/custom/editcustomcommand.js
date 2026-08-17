@@ -69,7 +69,7 @@ module.exports = {
             const newName = interaction.fields.getTextInputValue('commandName').toLowerCase();
             const newResponse = interaction.fields.getTextInputValue('commandResponse');
 
-            // Reject only empty or multi-token names — a name with spaces can never
+            // Reject only empty or multi-token names - a name with spaces can never
             // match, since command lookup only uses the first space-delimited token.
             // Everything else (emoji, colons, etc.) is allowed.
             if (!newName || /\s/.test(newName)) {

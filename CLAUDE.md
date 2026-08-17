@@ -1,4 +1,4 @@
-# CLAUDE.md — Everest Hub Bot / Nook's Cranny Economy
+# CLAUDE.md - Everest Hub Bot / Nook's Cranny Economy
 
 ## What this is
 
@@ -15,8 +15,8 @@ Read `SPEC.md` for the full mechanical spec. It is authoritative. If this file a
 
 The host said, verbatim: *"I don't want ANY variables that I cannot change."*
 
-Every number — prices, cooldowns, payout ranges, stock counts, slot caps, percentages,
-channel IDs, the timezone — lives in `config/economy.json` (or the equivalent for this
+Every number - prices, cooldowns, payout ranges, stock counts, slot caps, percentages,
+channel IDs, the timezone - lives in `config/economy.json` (or the equivalent for this
 repo's existing stack). Nothing is a magic number in a handler. If you find yourself
 typing a number inside game logic, stop and move it to config.
 
@@ -33,7 +33,7 @@ typing a number inside game logic, stop and move it to config.
 
 The one exception is the host log channel, which is host-only and should be verbose.
 
-Every host command is gated on the **host category** `1414321682415357964` — any
+Every host command is gated on the **host category** `1414321682415357964` - any
 channel inside it is safe, anything outside it is not. This is a backstop behind role
 permissions, not a replacement for them. `/taxreturns` in particular is non-ephemeral
 and dumps every ownership relationship in the game; if that gate fails open, it fails
@@ -67,11 +67,11 @@ files. If it uses SQLite, use SQLite.
 ## Conventions
 
 - **Timezone:** `America/New_York` for all scheduling. Never UTC in user-facing text.
-- **Bells emoji:** `<:Bells:1530232089021124711>` — this exact ID. There is a
+- **Bells emoji:** `<:Bells:1530232089021124711>` - this exact ID. There is a
   near-identical emoji from another server with ID `738250012932440176`. It will render
   as raw text. Do not use it.
 - **Money formatting:** comma-separated, no decimals. `7,500`
-- **Item IDs:** integers 1–24, defined in `SPEC.md`. Stable forever — never renumber.
+- **Item IDs:** integers 1–24, defined in `SPEC.md`. Stable forever - never renumber.
   Host-facing fields accept IDs; player-facing text always shows item names.
 - **Errors:** ephemeral, plain language, never a stack trace. A player seeing
   "TypeError" during tribal week is a bad night for everyone.
@@ -90,7 +90,7 @@ files. If it uses SQLite, use SQLite.
 Ship 1–3 working before touching 4. The income commands going live is the launch
 requirement; the shop can follow an hour later.
 
-## Things that have already been decided — do not re-litigate
+## Things that have already been decided - do not re-litigate
 
 - Watering Can cooldown reductions stack **additively**, not multiplicatively.
   Yes, this means the theoretical max is −85%. Nobody will own all three. It's fine.

@@ -73,7 +73,7 @@ async function processCategory(interaction, mode) {
         totalRoles += rolesChanged;
         totalFailures += failures;
         perCategory.push(
-            `• **${category.name}** — ${channelsAffected} channel(s), ${rolesChanged} overwrite(s)` +
+            `• **${category.name}** - ${channelsAffected} channel(s), ${rolesChanged} overwrite(s)` +
             (failures ? `, ⚠️ ${failures} failed` : '')
         );
     }

@@ -100,7 +100,7 @@
         "header": "## 🗄️ __THE CABINET__ 🗄️",
         "flourish": "- ····•··•••○○•••··•····•",
         "intro": "**All** items available 24/7... but cheap tools ain't reliable!",
-        "footer": "*You can only hold one watering can at a time — they don't stack. Trade in with a host to switch (no refund).*"
+        "footer": "*You can only hold one watering can at a time - they don't stack. Trade in with a host to switch (no refund).*"
       },
       "loan": {
         "header": "## 🏡 __LOAN REPAYMENT__ 🏡",
@@ -116,7 +116,7 @@
 
   "items": [
     { "id": 1,  "name": "Nook Family Tax Returns", "description": "See EVERY Nook's Cranny item currently owned by people in the game. No names attached.", "price": 7500, "category": "special", "stock": null, "refreshes": false, "stackable": false, "occupies_slot": true, "once_per_player": false },
-    { "id": 2,  "name": "Resetti's Do-Over", "description": "Sets your current challenge score to **0.** Next round, your challenge result is **doubled** — time halved, or score doubled.", "price": 7000, "category": "special", "stock": null, "refreshes": false, "stackable": false, "occupies_slot": true, "once_per_player": false },
+    { "id": 2,  "name": "Resetti's Do-Over", "description": "Sets your current challenge score to **0.** Next round, your challenge result is **doubled** - time halved, or score doubled.", "price": 7000, "category": "special", "stock": null, "refreshes": false, "stackable": false, "occupies_slot": true, "once_per_player": false },
     { "id": 3,  "name": "Redd's Counterfeit", "description": "Send a fake shop advantage to another player. They won't know it's fake until they try to use it.", "price": 6500, "category": "special", "stock": null, "refreshes": false, "stackable": false, "occupies_slot": true, "once_per_player": false },
     { "id": 4,  "name": "Isabelle's Briefing", "description": "Full vote reveal breakdown from any past Tribal Council, with all names.", "price": 5000, "category": "special", "stock": null, "refreshes": false, "stackable": false, "occupies_slot": true, "once_per_player": false },
     { "id": 5,  "name": "Kapp'n's Island Tour", "description": "Spend one round with viewing access to another tribe's chat, including Tribal Council if they attend.\nAt the end of the cycle, you may opt to **mutiny** to this tribe with Immunity for ONE episode.", "price": 5000, "category": "special", "stock": null, "refreshes": false, "stackable": false, "occupies_slot": true, "once_per_player": false, "enabled": false },
@@ -131,7 +131,7 @@
 
     { "id": 13, "name": "Shovel", "description": "Negates **TWO** votes cast against you.", "price": 4000, "category": "standard", "stock": 3, "refreshes": false, "stackable": false, "occupies_slot": true, "once_per_player": false },
     { "id": 14, "name": "Axe", "description": "Allows you to **steal** another player's vote.", "price": 4000, "category": "standard", "stock": 3, "refreshes": false, "stackable": false, "occupies_slot": true, "once_per_player": false },
-    { "id": 15, "name": "Slingshot", "description": "Target a player at Tribal Council — they will be **stunned** and cannot use Regular & Golden Tools that round.\nCannot stack with other Slingshots & variants.", "price": 3500, "category": "standard", "stock": 3, "refreshes": false, "stackable": false, "occupies_slot": true, "once_per_player": false },
+    { "id": 15, "name": "Slingshot", "description": "Target a player at Tribal Council - they will be **stunned** and cannot use Regular & Golden Tools that round.\nCannot stack with other Slingshots & variants.", "price": 3500, "category": "standard", "stock": 3, "refreshes": false, "stackable": false, "occupies_slot": true, "once_per_player": false },
     { "id": 16, "name": "Vaulting Pole", "description": "**+25%** to your score in the next challenge.", "price": 3500, "category": "standard", "stock": null, "refreshes": false, "stackable": false, "occupies_slot": true, "once_per_player": false },
     { "id": 17, "name": "Stone Axe", "description": "**Guarantees** vote-blocking power.", "price": 3000, "category": "standard", "stock": 3, "refreshes": false, "stackable": false, "occupies_slot": true, "once_per_player": false },
     { "id": 18, "name": "Ladder", "description": "Cast an **extra vote** at Tribal Council. Carries over to a re-vote.", "price": 2500, "category": "standard", "stock": 5, "refreshes": false, "stackable": false, "occupies_slot": true, "once_per_player": false },

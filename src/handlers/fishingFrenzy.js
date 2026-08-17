@@ -3,9 +3,9 @@ const path = require('path');
 const https = require('https');
 const { AttachmentBuilder } = require('discord.js');
 
-// CJ's Fishing Frenzy — a timed individual challenge. The bot posts an IMAGE of a
+// CJ's Fishing Frenzy - a timed individual challenge. The bot posts an IMAGE of a
 // fish with no text identifying it; the first player to name it inside the window
-// scores. Built parallel to bugFrenzy.js rather than sharing an engine with it —
+// scores. Built parallel to bugFrenzy.js rather than sharing an engine with it -
 // Bug Frenzy is shipped and working, and this has different enough rules that
 // abstracting them together would risk both.
 //
@@ -99,7 +99,7 @@ function findFish(config, name) {
     ) || null;
 }
 
-// The window actually used for a spawn — test mode overrides the per-fish value,
+// The window actually used for a spawn - test mode overrides the per-fish value,
 // otherwise the anti-overlap clamp swallows the compressed interval entirely.
 function windowSecondsFor(config, fish) {
     const base = config.test_mode ? (config.test_window_seconds || 5) : fish.window;
@@ -156,7 +156,7 @@ async function upscale(buffer, px) {
     }
 }
 
-// Fetch every fish image up front. Never fetch during a spawn — a third-party host
+// Fetch every fish image up front. Never fetch during a spawn - a third-party host
 // on the critical path of an 8-second window is how you lose a legendary.
 async function warmImageCache(config) {
     const results = [];
@@ -280,7 +280,8 @@ async function doSpawn(client, guildId, forcedFishName) {
     scheduleNextSpawn(client, guildId, windowMs);
 }
 
-// Window shut: reveal what it was, so players learn the roster.
+// Window shut. Only announce a fish that was actually caught; one nobody landed
+// stays a mystery, so a missed fish teaches you nothing for free.
 async function closeSpawn(client, guildId) {
     const data = load();
     const state = data[guildId];
@@ -292,10 +293,9 @@ async function closeSpawn(client, guildId) {
     save(data);
 
     const config = getConfig();
-    if (config.announce_on_close) {
-        const text = spawn.claimedBy
-            ? `🎣 That was a **${spawn.fish.name}** — reeled in by <@${spawn.claimedBy}> for **${spawn.fish.points}** ${spawn.fish.points === 1 ? 'point' : 'points'}.`
-            : `🌊 That was a **${spawn.fish.name}** — it got away.`;
+    if (config.announce_on_close && spawn.claimedBy) {
+        const unit = spawn.fish.points === 1 ? 'point' : 'points';
+        const text = `🎣 <@${spawn.claimedBy}> reeled in the **${spawn.fish.name}** for **${spawn.fish.points}** ${unit}!`;
         try {
             const channel = await client.channels.fetch(state.channelId);
             if (channel && channel.isTextBased()) {
@@ -339,7 +339,7 @@ async function handleMessage(message) {
         return;
     }
 
-    // first_only: claim it. Everything from here to save() must stay synchronous —
+    // first_only: claim it. Everything from here to save() must stay synchronous -
     // an await before the claim lets two simultaneous catches both score.
     const mode = state.scoring_mode || 'first_only';
     if (mode === 'first_only') {
@@ -386,12 +386,12 @@ function leaderboardText(state, { final = false } = {}) {
     const { players } = computeStandings(state);
     const medal = i => (i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `**${i + 1}.**`);
 
-    const lines = [final ? '# 🎣 Fishing Frenzy — Final Standings' : '# 🎣 Fishing Frenzy — Live Leaderboard', ''];
+    const lines = [final ? '# 🎣 Fishing Frenzy - Final Standings' : '# 🎣 Fishing Frenzy - Live Leaderboard', ''];
     if (players.length === 0) {
         lines.push('*No fish caught yet.*');
     } else {
         lines.push(players.map((p, i) =>
-            `${medal(i)} <@${p.userId}> — **${p.points}** ${p.points === 1 ? 'pt' : 'pts'} (${p.catches} caught)`
+            `${medal(i)} <@${p.userId}> - **${p.points}** ${p.points === 1 ? 'pt' : 'pts'} (${p.catches} caught)`
         ).join('\n'));
     }
 
@@ -405,7 +405,7 @@ function leaderboardText(state, { final = false } = {}) {
 }
 
 // Post the leaderboard message fresh. The HOST pins it, so this returns the message
-// for its jump link — and callers must treat a replacement as a re-pin event.
+// for its jump link - and callers must treat a replacement as a re-pin event.
 async function postLeaderboard(client, guildId, { final = false } = {}) {
     const data = load();
     const state = data[guildId];
@@ -439,12 +439,12 @@ async function doLeaderboardEdit(client, guildId, final) {
         const msg = await channel.messages.fetch(state.leaderboardMessageId);
         await msg.edit({ content: leaderboardText(state, { final }), allowedMentions: { parse: [] } });
     } catch (err) {
-        // The message is gone. Replace it, but say so loudly — the host pinned the
+        // The message is gone. Replace it, but say so loudly - the host pinned the
         // old one, and a silent swap leaves a pinned message frozen at a stale score.
         console.error('Fishing Frenzy: leaderboard edit failed, reposting:', err.message);
         const msg = await postLeaderboard(client, guildId, { final }).catch(() => null);
         if (msg) {
-            const warn = `⚠️ The leaderboard message was deleted, so I posted a new one — **it needs re-pinning**: ${msg.url}`;
+            const warn = `⚠️ The leaderboard message was deleted, so I posted a new one - **it needs re-pinning**: ${msg.url}`;
             try {
                 const results = await client.channels.fetch(
                     state.resultsChannelId || getConfig().results_channel
@@ -483,7 +483,7 @@ function tallyText(state) {
     const caught = (state.catchLog || []).length;
     const gotAway = Math.max(0, (state.spawnCount || 0) - caught);
 
-    const lines = ['# 🎣 CJ\'s Fishing Frenzy — Final Results', ''];
+    const lines = ['# 🎣 CJ\'s Fishing Frenzy - Final Results', ''];
 
     if (players.length === 0) {
         lines.push('**Nobody caught anything.**', '');
@@ -494,7 +494,7 @@ function tallyText(state) {
             lines.push(`🏆 **<@${winners[0].userId}> wins Individual Immunity** with **${top}** points.`, '');
         } else {
             lines.push(
-                `🤝 **Tie at ${top} points** — ${winners.map(w => `<@${w.userId}>`).join(', ')}.`,
+                `🤝 **Tie at ${top} points** - ${winners.map(w => `<@${w.userId}>`).join(', ')}.`,
                 '*Hosts will break the tie.*',
                 ''
             );
@@ -505,7 +505,7 @@ function tallyText(state) {
     lines.push(players.length
         ? players.map((p, i) => {
             const best = rarest[p.userId];
-            return `**${i + 1}.** <@${p.userId}> — **${p.points}** pts (${p.catches} caught)`
+            return `**${i + 1}.** <@${p.userId}> - **${p.points}** pts (${p.catches} caught)`
                 + (best ? ` · best: ${best.name}` : '');
         }).join('\n')
         : '*No catches.*');
@@ -564,7 +564,7 @@ async function startFrenzy(client, guildId, { channelId, leaderboardChannelId, r
             await channel.send(
                 `🎣 **CJ's Fishing Frenzy has begun!**\n` +
                 `Fish will start biting here at random over the next **${durationHours}h**. ` +
-                `Each one comes as an image — name it before the window closes.\n` +
+                `Each one comes as an image - name it before the window closes.\n` +
                 `Only the **first** person to reel in each fish scores.`
             );
         }

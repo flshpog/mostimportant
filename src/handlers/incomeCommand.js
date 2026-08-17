@@ -2,7 +2,7 @@ const { runIncome, formatDuration } = require('./incomeEngine');
 const { getConfig, formatBells } = require('../config/economy');
 const { logUsage } = require('./economyLog');
 
-// Shared executor for /rock /tree /bottle — the commands differ only by `key`.
+// Shared executor for /rock /tree /bottle - the commands differ only by `key`.
 async function executeIncome(interaction, key) {
     if (!interaction.inGuild()) {
         return interaction.reply({ content: 'This command can only be used in the server.', ephemeral: true });
@@ -15,10 +15,10 @@ async function executeIncome(interaction, key) {
 
     if (result.status === 'eliminated') {
         await interaction.reply({
-            content: "You've been eliminated — you can no longer earn bells.",
+            content: "You've been eliminated - you can no longer earn bells.",
             ephemeral: true,
         });
-        await logUsage(interaction.client, `🚫 **${tag}** ran \`/${key}\` — blocked (eliminated).`);
+        await logUsage(interaction.client, `🚫 **${tag}** ran \`/${key}\` - blocked (eliminated).`);
         return;
     }
 
@@ -27,12 +27,12 @@ async function executeIncome(interaction, key) {
         await interaction.reply({
             content:
                 `⏳ You're on cooldown (set by **/${result.source}**).\n` +
-                `Available <t:${unlock}:R> — in **${formatDuration(result.remainingMs)}**.`,
+                `Available <t:${unlock}:R> - in **${formatDuration(result.remainingMs)}**.`,
             ephemeral: true,
         });
         await logUsage(
             interaction.client,
-            `⏳ **${tag}** ran \`/${key}\` — blocked, on cooldown (${formatDuration(result.remainingMs)} left, set by /${result.source}).`
+            `⏳ **${tag}** ran \`/${key}\` - blocked, on cooldown (${formatDuration(result.remainingMs)} left, set by /${result.source}).`
         );
         return;
     }
@@ -60,7 +60,7 @@ async function executeIncome(interaction, key) {
     const detail = result.wasps ? 'WASPS (0 bells)' : `+${result.payout} bells`;
     await logUsage(
         interaction.client,
-        `💰 **${tag}** ran \`/${key}\` — ${detail}. Balance: ${result.balance.toLocaleString('en-US')}.`
+        `💰 **${tag}** ran \`/${key}\` - ${detail}. Balance: ${result.balance.toLocaleString('en-US')}.`
     );
 }
 

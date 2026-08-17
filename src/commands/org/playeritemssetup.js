@@ -108,7 +108,7 @@ module.exports = {
                 const confessionalName = `${base}-confessional`;
                 const submissionsName = `${base}-submissions`;
 
-                // Custom role — created but not assigned to anyone.
+                // Custom role - created but not assigned to anyone.
                 if (!exclude.roles) {
                     const existingRole = interaction.guild.roles.cache.find(
                         r => r.name.toLowerCase() === name.toLowerCase()
@@ -129,7 +129,7 @@ module.exports = {
                     }
                 }
 
-                // Confessional — @everyone denied, member+ can view.
+                // Confessional - @everyone denied, member+ can view.
                 if (!exclude.confessionals) {
                     const existing = confessionalCategory.children.cache.find(c => c.name === confessionalName);
                     if (existing) {
@@ -164,7 +164,7 @@ module.exports = {
                     }
                 }
 
-                // Submissions — fully private. Only Administrators, who bypass overwrites.
+                // Submissions - fully private. Only Administrators, who bypass overwrites.
                 if (!exclude.submissions) {
                     const existing = submissionsCategory.children.cache.find(c => c.name === submissionsName);
                     if (existing) {

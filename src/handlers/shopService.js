@@ -4,7 +4,7 @@ const shop = require('./shop');
 const { logToHost } = require('./economyLog');
 
 // Posts a shop rotation to the configured shop channel, deleting the previously
-// stored shop message first (by its stored ID — never "the last bot message").
+// stored shop message first (by its stored ID - never "the last bot message").
 // Shared by /setupshop and the midnight scheduler. Records the new current shop.
 async function postShop(client, guildId, itemIds) {
     const cfg = getConfig();
@@ -21,7 +21,7 @@ async function postShop(client, guildId, itemIds) {
             const prevMsg = await channel.messages.fetch(prev.messageId);
             await prevMsg.delete();
         } catch {
-            // Already gone — fine.
+            // Already gone - fine.
         }
     }
 
@@ -35,7 +35,7 @@ async function postShop(client, guildId, itemIds) {
 
 // Edits the currently-posted shop message in place with freshly-rendered embeds,
 // so stock counts (and SOLD OUT) stay live as items sell. No-op if no shop is
-// posted. Never throws — a failed stock refresh must not break a purchase.
+// posted. Never throws - a failed stock refresh must not break a purchase.
 async function updatePostedShop(client, guildId) {
     const current = shop.getCurrentShop(guildId);
     if (!current || !current.messageId) return;

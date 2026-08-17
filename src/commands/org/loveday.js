@@ -2,7 +2,7 @@ const { SlashCommandBuilder } = require('discord.js');
 const loveDay = require('../../handlers/loveDay');
 
 // Staff-only pairing command. Run inside the channel that will be the pair's private
-// game channel — it registers channel_id -> { resident, pal }. Gated at runtime on the
+// game channel - it registers channel_id -> { resident, pal }. Gated at runtime on the
 // configurable staff role (config/loveday.json).
 module.exports = {
     data: new SlashCommandBuilder()

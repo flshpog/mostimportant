@@ -21,10 +21,10 @@ module.exports = {
         const lines = [];
         if (remaining > 0) {
             const unlock = Math.floor(player.cooldown.until / 1000);
-            lines.push(`⏳ **Cooldown active** — set by \`/${player.cooldown.source}\`.`);
-            lines.push(`Available <t:${unlock}:R> — in **${formatDuration(remaining)}**.`);
+            lines.push(`⏳ **Cooldown active** - set by \`/${player.cooldown.source}\`.`);
+            lines.push(`Available <t:${unlock}:R> - in **${formatDuration(remaining)}**.`);
         } else {
-            lines.push('✅ **No active cooldown** — you can earn bells now!');
+            lines.push('✅ **No active cooldown** - you can earn bells now!');
         }
         lines.push(`Cooldown reduction: **${reductionPct}%**`);
         if (flimsyUses > 0) {
@@ -38,7 +38,7 @@ module.exports = {
             : 'no cooldown';
         await logUsage(
             interaction.client,
-            `⏱️ **${interaction.user.tag}** checked \`/cooldown\` — ${state}, reduction ${reductionPct}%.`
+            `⏱️ **${interaction.user.tag}** checked \`/cooldown\` - ${state}, reduction ${reductionPct}%.`
         );
     },
 };

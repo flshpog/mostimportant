@@ -34,7 +34,7 @@ module.exports = {
             const parsed = parseEmoji(emojiInput);
 
             if (!parsed || !parsed.id) {
-                const errorMsg = 'That doesn\'t look like a custom emoji. Default emojis can\'t be stolen — they\'re already everywhere!';
+                const errorMsg = 'That doesn\'t look like a custom emoji. Default emojis can\'t be stolen - they\'re already everywhere!';
                 return await (isSlash
                     ? interaction.reply({ content: errorMsg, ephemeral: true })
                     : interaction.reply(errorMsg));

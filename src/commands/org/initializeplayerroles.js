@@ -24,7 +24,7 @@ module.exports = {
 
         setPlayerRoles(interaction.guild.id, valid);
 
-        let msg = `✅ Player role list set — **${valid.length}** role(s) stored. This replaced any previous list.`;
+        let msg = `✅ Player role list set - **${valid.length}** role(s) stored. This replaced any previous list.`;
         if (invalid.length) {
             msg += `\n\n⚠️ Skipped ${invalid.length} ID(s) not found in this server:\n${invalid.join(', ')}`;
         }

@@ -25,7 +25,7 @@ module.exports = {
         const total = rows.reduce((sum, r) => sum + r.balance, 0);
         const header = `💰 **Player Balances** (${rows.length} players · total ${formatBells(total)})\n`;
         const lines = rows.map(
-            (r, i) => `**${i + 1}.** <@${r.id}> — ${formatBells(r.balance)}${r.eliminated ? ' ☠️' : ''}`
+            (r, i) => `**${i + 1}.** <@${r.id}> - ${formatBells(r.balance)}${r.eliminated ? ' ☠️' : ''}`
         );
 
         // Chunk to Discord's message limit; all messages are private to the host.

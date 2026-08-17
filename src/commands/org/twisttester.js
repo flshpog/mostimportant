@@ -40,7 +40,7 @@ module.exports = {
             eco.savePlayer(interaction.guildId, user.id, player);
             return interaction.reply({
                 content:
-                    `🧪 **${user.tag}** is now a **tester** — no cooldowns, every item buyable, ` +
+                    `🧪 **${user.tag}** is now a **tester** - no cooldowns, every item buyable, ` +
                     `free purchases, no slot cap. Balance topped to ${formatBells(player.balance)}.`,
                 ephemeral: true,
             });
@@ -51,7 +51,7 @@ module.exports = {
         return interaction.reply({
             content:
                 `🧪 **${user.tag}** is no longer a tester. ` +
-                `(Balance and items are left as-is — delete \`data/economy.json\` to fully wipe.)`,
+                `(Balance and items are left as-is - delete \`data/economy.json\` to fully wipe.)`,
             ephemeral: true,
         });
     },

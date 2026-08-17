@@ -5,7 +5,7 @@ const { updatePostedShop } = require('../../handlers/shopService');
 const { ensureHost } = require('../../handlers/hostGate');
 const { logToHost } = require('../../handlers/economyLog');
 
-// Manual per-item stock control — the escape hatch for cases /syncstock can't
+// Manual per-item stock control - the escape hatch for cases /syncstock can't
 // infer, e.g. holding a unit back on purpose, or an item that exists in a
 // player's hands without ever having been sold.
 module.exports = {
@@ -22,7 +22,7 @@ module.exports = {
             .setMinValue(0))
         .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild),
 
-    // Finite-stock items only — unlimited ones have nothing to set. Current
+    // Finite-stock items only - unlimited ones have nothing to set. Current
     // availability is shown inline so hosts pick against real numbers.
     async autocomplete(interaction) {
         const focused = interaction.options.getFocused().toLowerCase();
@@ -30,7 +30,7 @@ module.exports = {
             .filter(item => item.stock !== null && item.name.toLowerCase().includes(focused))
             .slice(0, 25)
             .map(item => ({
-                name: `${item.name} (ID ${item.id}) — ${shop.availableUnits(interaction.guildId, item.id)}/${item.stock} left`,
+                name: `${item.name} (ID ${item.id}) - ${shop.availableUnits(interaction.guildId, item.id)}/${item.stock} left`,
                 value: String(item.id),
             }));
         await interaction.respond(choices);
@@ -50,11 +50,11 @@ module.exports = {
             item = getConfig().items.find(i => i.name.toLowerCase() === raw.toLowerCase()) || null;
         }
         if (!item) {
-            return interaction.reply({ content: 'Unknown item — pick one from autocomplete.', ephemeral: true });
+            return interaction.reply({ content: 'Unknown item - pick one from autocomplete.', ephemeral: true });
         }
         if (item.stock === null) {
             return interaction.reply({
-                content: `**${item.name}** has unlimited stock — there's nothing to set. It's always available.`,
+                content: `**${item.name}** has unlimited stock - there's nothing to set. It's always available.`,
                 ephemeral: true,
             });
         }
@@ -62,12 +62,12 @@ module.exports = {
         const before = shop.availableUnits(interaction.guildId, item.id);
         const after = shop.setUnits(interaction.guildId, item.id, requested);
 
-        // Keep the posted shop honest — otherwise it keeps reading SOLD OUT while
+        // Keep the posted shop honest - otherwise it keeps reading SOLD OUT while
         // /buy sells happily from the new number.
         await updatePostedShop(interaction.client, interaction.guildId).catch(() => {});
 
         const capped = requested > item.stock
-            ? `\n⚠️ Capped at **${item.stock}** — that's this item's \`stock\` in \`config/economy.json\`.`
+            ? `\n⚠️ Capped at **${item.stock}** - that's this item's \`stock\` in \`config/economy.json\`.`
             : '';
 
         await interaction.reply({

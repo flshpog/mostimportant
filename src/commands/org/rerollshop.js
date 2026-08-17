@@ -3,7 +3,7 @@ const { ensureHost } = require('../../handlers/hostGate');
 const shop = require('../../handlers/shop');
 const { postShop } = require('../../handlers/shopService');
 
-// Posts a new shop built from a random rotation of currently-available items —
+// Posts a new shop built from a random rotation of currently-available items -
 // the same thing the midnight scheduler does automatically when no shop is
 // queued. Handy for a manual reroll or for testing the auto-reroll.
 module.exports = {

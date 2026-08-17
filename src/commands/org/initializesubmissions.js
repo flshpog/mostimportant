@@ -25,7 +25,7 @@ module.exports = {
 
         setChannels(interaction.guildId, 'submissions', valid);
 
-        let msg = `✅ Submission list set — **${valid.length}** channel(s) stored. This replaced any previous list.`;
+        let msg = `✅ Submission list set - **${valid.length}** channel(s) stored. This replaced any previous list.`;
         if (invalid.length) {
             msg += `\n\n⚠️ Skipped ${invalid.length} ID(s) not found or not text channels:\n${invalid.join(', ')}`;
         }

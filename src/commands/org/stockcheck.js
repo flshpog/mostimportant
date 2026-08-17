@@ -7,7 +7,7 @@ const { ensureHost } = require('../../handlers/hostGate');
 const AC_GREEN = 0x7CBB3F;
 
 // Rotation categories, paired with the config key holding their slot count.
-// Cabinet has no rotation slots — it's always-on, so `slots` is null.
+// Cabinet has no rotation slots - it's always-on, so `slots` is null.
 const CATEGORIES = [
     { key: 'special', label: '⭐ Store Specials', slots: 'specials' },
     { key: 'golden', label: '🌟 Golden Tools', slots: 'golden' },
@@ -34,19 +34,19 @@ function itemLine(guildId, item, held) {
     if (item.enabled === false) notes.push('🚫 disabled');
     if (item.refreshes) notes.push('♻️ shown as "Refreshes" in the shop');
     // Available stock should always be `stock - copies actually held`. Anything
-    // else is drift — units burned before removals returned to the pool, or data
+    // else is drift - units burned before removals returned to the pool, or data
     // edited by hand. /syncstock recomputes it from inventories.
     const expected = item.stock === null ? null : Math.max(0, item.stock - realHeld);
     const drifted = expected !== null && left !== expected;
-    if (drifted) notes.push(`🔧 **out of sync** — should be ${expected}`);
+    if (drifted) notes.push(`🔧 **out of sync** - should be ${expected}`);
     if (fakeHeld > 0) notes.push(`🎭 ${fakeHeld} fake in play`);
 
     const holding = realHeld > 0 ? ` · held by ${realHeld}` : '';
     const suffix = notes.length ? ` · ${notes.join(' · ')}` : '';
-    return { line: `• **${item.name}** (ID ${item.id}) — ${stock}${holding}${suffix}`, drifted };
+    return { line: `• **${item.name}** (ID ${item.id}) - ${stock}${holding}${suffix}`, drifted };
 }
 
-// Discord caps an embed field at 1024 chars — split long categories across
+// Discord caps an embed field at 1024 chars - split long categories across
 // continuation fields rather than dropping items silently.
 function pushField(fields, name, lines) {
     const chunks = [];
@@ -81,7 +81,7 @@ module.exports = {
 
         for (const category of CATEGORIES) {
             const items = itemsByCategory(category.key);
-            // Mirrors shop.offerableItems() — what a random rotation can draw from.
+            // Mirrors shop.offerableItems() - what a random rotation can draw from.
             const offerable = items.filter(
                 item => item.enabled !== false && availableUnits(guildId, item.id) > 0
             );
@@ -89,16 +89,16 @@ module.exports = {
             let header = category.label;
             if (category.slots) {
                 const needed = cfg.rotation[category.slots];
-                header += ` — ${offerable.length} offerable / ${needed} slot${needed === 1 ? '' : 's'}`;
+                header += ` - ${offerable.length} offerable / ${needed} slot${needed === 1 ? '' : 's'}`;
                 if (offerable.length < needed) {
                     header += ' ⚠️';
                     warnings.push(
                         `**${category.label}**: only ${offerable.length} item${offerable.length === 1 ? '' : 's'} ` +
-                        `available for ${needed} slots — a random rotation will post ${offerable.length} instead of ${needed}.`
+                        `available for ${needed} slots - a random rotation will post ${offerable.length} instead of ${needed}.`
                     );
                 }
             } else {
-                header += ` — ${offerable.length} offerable (always in shop)`;
+                header += ` - ${offerable.length} offerable (always in shop)`;
             }
 
             const rendered = items.map(item => itemLine(guildId, item, held));
@@ -109,7 +109,7 @@ module.exports = {
         if (driftCount > 0) {
             warnings.unshift(
                 `**${driftCount} item${driftCount === 1 ? '' : 's'} out of sync** with what players ` +
-                'actually hold — run `/syncstock` to correct them (or `/syncstock preview:true` first).'
+                'actually hold - run `/syncstock` to correct them (or `/syncstock preview:true` first).'
             );
         }
 

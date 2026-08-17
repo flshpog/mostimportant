@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 
-// Flick's Bug Frenzy — a timed two-tribe bug-catching game. The bot drops the same
+// Flick's Bug Frenzy - a timed two-tribe bug-catching game. The bot drops the same
 // bug into both tribe channels at the same moment; players catch it by typing the
 // catch phrase within its window. Scoring keys off which channel the catch lands in.
 //
@@ -13,7 +13,7 @@ const STATE_PATH = path.join(__dirname, '../../data/bugfrenzy.json');
 // Runtime overrides toggled by command (gitignored) so hosts don't edit config.
 const OVERRIDE_PATH = path.join(__dirname, '../../data/bugfrenzyRuntime.json');
 
-// In-memory timers (not persisted — rebuilt on resume).
+// In-memory timers (not persisted - rebuilt on resume).
 const spawnTimers = new Map();
 const endTimers = new Map();
 
@@ -212,7 +212,7 @@ async function handleMessage(message) {
     if (caught.includes(message.author.id)) return; // already caught this spawn
     if ((state.scoring_mode || 'all_in_window') === 'first_only' && caught.length > 0) return;
 
-    // Valid catch — record synchronously, then react.
+    // Valid catch - record synchronously, then react.
     caught.push(message.author.id);
     addScore(state, message.author.id, tribe, spawn.bug.points);
     if (!state.catchLog) state.catchLog = [];
@@ -253,10 +253,10 @@ function standingsText(state, { includeTop = 5 } = {}) {
     const s = computeStandings(state);
     const lines = [];
     for (const tribe of ['A', 'B']) {
-        lines.push(`**${labelOf(state, tribe)} — ${s.tribeTotals[tribe]} pts**`);
+        lines.push(`**${labelOf(state, tribe)} - ${s.tribeTotals[tribe]} pts**`);
         const top = s.players[tribe].slice(0, includeTop);
         if (top.length) {
-            lines.push(top.map((p, i) => `${i + 1}. <@${p.userId}> — ${p.points} pts (${p.catches} caught)`).join('\n'));
+            lines.push(top.map((p, i) => `${i + 1}. <@${p.userId}> - ${p.points} pts (${p.catches} caught)`).join('\n'));
         } else {
             lines.push('*No catches yet.*');
         }
@@ -276,7 +276,7 @@ function tallyText(state) {
         : `🤝 **It's a tie!**`;
 
     const lines = [
-        `🪲 **Flick's Bug Frenzy — Final Results**`,
+        `🪲 **Flick's Bug Frenzy - Final Results**`,
         header,
         `${labelOf(state, 'A')}: **${s.tribeTotals.A}** · ${labelOf(state, 'B')}: **${s.tribeTotals.B}**`,
         '',
@@ -286,7 +286,7 @@ function tallyText(state) {
         lines.push(`__${labelOf(state, tribe)} leaderboard__`);
         const players = s.players[tribe];
         if (players.length) {
-            lines.push(players.map((p, i) => `${i + 1}. <@${p.userId}> — ${p.points} pts (${p.catches} caught)`).join('\n'));
+            lines.push(players.map((p, i) => `${i + 1}. <@${p.userId}> - ${p.points} pts (${p.catches} caught)`).join('\n'));
         } else {
             lines.push('*No catches.*');
         }
@@ -295,8 +295,8 @@ function tallyText(state) {
 
     lines.push('__Summary__');
     lines.push(`Total spawns: **${state.spawnCount || 0}**`);
-    lines.push(`Bugs caught — ${labelOf(state, 'A')}: **${s.caughtPerTribe.A}**, ${labelOf(state, 'B')}: **${s.caughtPerTribe.B}**`);
-    lines.push(`Rarest caught — ${labelOf(state, 'A')}: **${s.rarest.A ? s.rarest.A.name : '—'}**, ${labelOf(state, 'B')}: **${s.rarest.B ? s.rarest.B.name : '—'}**`);
+    lines.push(`Bugs caught - ${labelOf(state, 'A')}: **${s.caughtPerTribe.A}**, ${labelOf(state, 'B')}: **${s.caughtPerTribe.B}**`);
+    lines.push(`Rarest caught - ${labelOf(state, 'A')}: **${s.rarest.A ? s.rarest.A.name : '-'}**, ${labelOf(state, 'B')}: **${s.rarest.B ? s.rarest.B.name : '-'}**`);
 
     return lines.join('\n');
 }

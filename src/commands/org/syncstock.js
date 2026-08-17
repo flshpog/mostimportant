@@ -16,7 +16,7 @@ const AC_GREEN = 0x7CBB3F;
 // retroactively. Use it once to clear drift from before removals returned stock,
 // or any time hand-edited data has pulled the shop out of alignment.
 //
-// Counterfeits are excluded — they never consumed a unit, so counting them would
+// Counterfeits are excluded - they never consumed a unit, so counting them would
 // invent scarcity. Eliminated players DO count: they still hold the item.
 module.exports = {
     data: new SlashCommandBuilder()
@@ -36,7 +36,7 @@ module.exports = {
         const changed = [];
         const unchanged = [];
         for (const item of getConfig().items) {
-            if (item.stock === null) continue; // unlimited — nothing to reconcile
+            if (item.stock === null) continue; // unlimited - nothing to reconcile
 
             const inCirculation = held.real[item.id] || 0;
             const target = Math.max(0, Math.min(item.stock, item.stock - inCirculation));
@@ -52,12 +52,12 @@ module.exports = {
         }
 
         const fmt = r =>
-            `• **${r.item.name}** (ID ${r.item.id}) — ${r.current} → **${r.target}**` +
+            `• **${r.item.name}** (ID ${r.item.id}) - ${r.current} → **${r.target}**` +
             ` of ${r.item.stock}  ·  ${r.inCirculation} held`;
 
         const embed = new EmbedBuilder()
             .setColor(AC_GREEN)
-            .setTitle(preview ? '🔍 Stock Sync — Preview' : '🔄 Stock Synced')
+            .setTitle(preview ? '🔍 Stock Sync - Preview' : '🔄 Stock Synced')
             .setDescription(
                 changed.length
                     ? (preview
@@ -67,7 +67,7 @@ module.exports = {
             );
 
         if (changed.length) {
-            // One field, chunked — the registry is small but a full drift could be long.
+            // One field, chunked - the registry is small but a full drift could be long.
             const lines = changed.map(fmt);
             let buf = '';
             const chunks = [];
@@ -91,7 +91,7 @@ module.exports = {
             await updatePostedShop(interaction.client, guildId).catch(() => {});
             await logToHost(
                 interaction.client,
-                `🔄 **${interaction.user.tag}** ran \`/syncstock\` — ${changed.length} item(s) corrected:\n` +
+                `🔄 **${interaction.user.tag}** ran \`/syncstock\` - ${changed.length} item(s) corrected:\n` +
                 changed.map(r => `• ${r.item.name} (ID ${r.item.id}): ${r.current} → ${r.target}`).join('\n')
             );
         }

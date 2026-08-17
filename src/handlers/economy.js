@@ -2,7 +2,7 @@ const fs = require('fs');
 const path = require('path');
 const { getConfig, getItem } = require('../config/economy');
 
-// Runtime player state — gitignored, per-deployment. Mirrors the playerRoles.js
+// Runtime player state - gitignored, per-deployment. Mirrors the playerRoles.js
 // pattern: guild-keyed, synchronous read-modify-write of the whole file.
 const ECONOMY_PATH = path.join(__dirname, '../../data/economy.json');
 
@@ -21,14 +21,14 @@ function save(data) {
     fs.writeFileSync(ECONOMY_PATH, JSON.stringify(data, null, 2));
 }
 
-// Non-slot upgrade items — never occupy an inventory slot (SPEC §3).
+// Non-slot upgrade items - never occupy an inventory slot (SPEC §3).
 const NON_SLOT_ITEM_IDS = [12, 20, 24];
 
 function defaultPlayer() {
     return {
         balance: 0,
         // One entry per item instance. Star Wand stacks as repeated entries.
-        // Watering Cans (12/20/24) are NOT stored here — see reductions / flimsy_wc.
+        // Watering Cans (12/20/24) are NOT stored here - see reductions / flimsy_wc.
         items: [],
         // Permanent cooldown reductions. Survive elimination.
         reductions: { golden_wc: false, watering_can: false },
@@ -190,7 +190,7 @@ const FLIMSY_WC_ID = 24;
 
 // How many of each item ID are in circulation across the whole guild, split real
 // vs fake. Counterfeits are tracked separately because they never consumed a shop
-// unit — counting them against stock would invent scarcity that doesn't exist.
+// unit - counting them against stock would invent scarcity that doesn't exist.
 // Eliminated players still count: they're holding the item until a host removes it.
 function heldItemCounts(guildId) {
     const real = {};

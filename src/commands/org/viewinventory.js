@@ -5,7 +5,7 @@ const { ensureHost } = require('../../handlers/hostGate');
 
 const AC_GREEN = 0x7CBB3F;
 
-// Full host view — unlike /inventory, this DOES reveal is_fake, permanents, the
+// Full host view - unlike /inventory, this DOES reveal is_fake, permanents, the
 // Flimsy counter, elimination and tester status.
 module.exports = {
     data: new SlashCommandBuilder()
@@ -24,7 +24,7 @@ module.exports = {
             ? player.items.map(inst => {
                 const item = getItem(inst.id);
                 const name = item ? item.name : `Unknown (${inst.id})`;
-                return `• ${name} (ID ${inst.id})${inst.is_fake ? ' — ⚠️ FAKE' : ''}`;
+                return `• ${name} (ID ${inst.id})${inst.is_fake ? ' - ⚠️ FAKE' : ''}`;
             }).join('\n')
             : '*Empty*';
 
@@ -45,7 +45,7 @@ module.exports = {
 
         const embed = new EmbedBuilder()
             .setColor(AC_GREEN)
-            .setTitle(`🔎 Inventory — ${user.tag}`)
+            .setTitle(`🔎 Inventory - ${user.tag}`)
             .setDescription(`**Balance:** ${formatBells(player.balance)}`)
             .addFields(
                 { name: 'Items', value: itemLines },

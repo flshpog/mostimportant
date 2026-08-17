@@ -26,8 +26,8 @@ module.exports = {
         const cfg = getConfig();
         const player = eco.getPlayer(interaction.guildId, interaction.user.id);
 
-        // List one line per non-stackable instance (so duplicates — incl. hidden
-        // counterfeits — each show, with NO fake marker); aggregate stackables.
+        // List one line per non-stackable instance (so duplicates - incl. hidden
+        // counterfeits - each show, with NO fake marker); aggregate stackables.
         const singleLines = [];
         const stackCounts = new Map();
         for (const inst of player.items) {
@@ -74,7 +74,7 @@ module.exports = {
 
         await logUsage(
             interaction.client,
-            `📖 **${interaction.user.tag}** checked \`/inventory\` — ` +
+            `📖 **${interaction.user.tag}** checked \`/inventory\` - ` +
             `balance ${player.balance.toLocaleString('en-US')}, ${slotsUsed}/${cfg.inventory.slot_cap} slots.`
         );
     },

@@ -1,4 +1,4 @@
-# Nook's Cranny Economy — Command & Item Reference
+# Nook's Cranny Economy - Command & Item Reference
 
 Everything the bot adds for Everest Survivor S2. All game values live in
 `config/economy.json` and can be edited live (no restart needed for value changes;
@@ -15,11 +15,11 @@ Everything the bot adds for Everest Survivor S2. All game values live in
 ## 🟢 Player commands
 
 ### `/rock` · `/tree` · `/bottle`
-Earn bells. **One shared cooldown** across all three — running any one locks all
+Earn bells. **One shared cooldown** across all three - running any one locks all
 three. Ephemeral. Blocked if you're eliminated.
-- `/rock` — 180–220 bells · 8h cooldown
-- `/tree` — 60%: 700–800 bells · 40%: **wasps** (0 bells, cooldown doubled) · 12h base
-- `/bottle` — 80%: 90–110 · 20%: 2,400–2,600 · 24h cooldown
+- `/rock` - 180–220 bells · 8h cooldown
+- `/tree` - 60%: 700–800 bells · 40%: **wasps** (0 bells, cooldown doubled) · 12h base
+- `/bottle` - 80%: 90–110 · 20%: 2,400–2,600 · 24h cooldown
 
 Cooldown reductions (from Watering Cans) apply to the base first; the wasp penalty
 doubles *after* that.
@@ -35,7 +35,7 @@ cooldown reduction %, and Flimsy Watering Can uses remaining.
 ### `/inventory`
 Ephemeral. Shows your balance, items (Star Wands stack), and active perks. **Requires
 a player role** (set via `/initializeplayerroles`). Counterfeit items look identical to
-real ones here — no marker.
+real ones here - no marker.
 
 **Usage:** `/inventory`
 
@@ -69,7 +69,7 @@ time (**00:00 America/New_York** by default), replacing the previous post.
 **Usage:** same options as `/setupshop`.
 
 ### `/refreshshop`
-Re-posts the **current** rotation with the latest config — use it after editing an
+Re-posts the **current** rotation with the latest config - use it after editing an
 item's text/price or adding a Cabinet item so the change shows on the live shop.
 
 ### `/rerollshop`
@@ -94,13 +94,13 @@ Use it to clear drift left over from before removals returned stock, or any time
 hand-edited data has pulled the shop out of alignment. Reports every correction, updates
 the live shop post, and logs to the host channel.
 
-- **`preview:true`** — show what would change without changing anything.
+- **`preview:true`** - show what would change without changing anything.
 - **Counterfeits are ignored.** A fake never consumed a unit, so it doesn't reduce stock.
 - **Eliminated players still count.** They're holding the item until a host removes it.
 - Safe to re-run: a second pass is a no-op.
 
 ### `/setstock`
-Sets one item's available units directly — the escape hatch for cases `/syncstock` can't
+Sets one item's available units directly - the escape hatch for cases `/syncstock` can't
 infer (holding a unit back deliberately, or an item that exists in a player's hands
 without having been sold). Clamped to the item's configured `stock`; unlimited items are
 rejected. Updates the live shop post.
@@ -111,21 +111,21 @@ rejected. Updates the live shop post.
 Ephemeral host report of **every** item in the registry: units left vs. total, how many
 players currently hold one, and per-category flags. Answers "why is this sold out?"
 
-- **`🔧 out of sync`** — available stock doesn't equal `configured stock - copies held`,
+- **`🔧 out of sync`** - available stock doesn't equal `configured stock - copies held`,
   and the line tells you what it should be. Run `/syncstock` to correct every one of
   them at once. A count of drifted items also appears at the top of the report.
-- **`♻️ shown as "Refreshes"`** — cosmetic only: the item's shop-post label. It no longer
+- **`♻️ shown as "Refreshes"`** - cosmetic only: the item's shop-post label. It no longer
   affects whether stock comes back.
-- **`🎭 N fake in play`** — counterfeits from `/counterfeit`. They never consumed stock,
+- **`🎭 N fake in play`** - counterfeits from `/counterfeit`. They never consumed stock,
   so they're excluded from the burned-unit math.
-- **`🚫 disabled`** — `enabled: false` in config; never offered regardless of stock.
+- **`🚫 disabled`** - `enabled: false` in config; never offered regardless of stock.
 
 The header of each category compares offerable items against its rotation slot count and
 warns when a random rotation would **under-fill** (post 2 Golden Tools instead of 3).
 
 ### Auto-reroll (no command)
 If **no shop is queued** by the scheduled post time, the bot **auto-rerolls** a random
-rotation and posts it — so the shop never fails to refresh if hosts forget to queue one.
+rotation and posts it - so the shop never fails to refresh if hosts forget to queue one.
 Controlled by `rotation.auto_reroll` in config (default **on**). A queued shop always
 takes priority over the auto-reroll.
 
@@ -139,15 +139,15 @@ All require Manage Server + the host category.
 |---|---|---|
 | `/balances` | Private list of **every** player's balance, sorted high to low, with the total. | `/balances` |
 | `/grant` | Add bells to a player. | `/grant user:@p amount:5000 [reason:…]` |
-| `/deduct` | Remove bells — **the house-payment tool**. | `/deduct user:@p amount:1000 [reason:…]` |
+| `/deduct` | Remove bells - **the house-payment tool**. | `/deduct user:@p amount:1000 [reason:…]` |
 | `/resetcooldown` | Clears a player's income cooldown. | `/resetcooldown user:@p` |
 | `/eliminate` | Freezes a player from all economy actions (income + buy). | `/eliminate user:@p` |
 | `/uneliminate` | Reverses an elimination. | `/uneliminate user:@p` |
-| `/viewinventory` | Full host view — balance, items **with `is_fake` flags**, upgrades, Flimsy counter, status. | `/viewinventory user:@p` |
+| `/viewinventory` | Full host view - balance, items **with `is_fake` flags**, upgrades, Flimsy counter, status. | `/viewinventory user:@p` |
 | `/editinventory` | Opens a modal: balance · items (CSV of IDs) · Flimsy uses · Golden WC (yes/no) · Watering Can (yes/no). Logs before/after. | `/editinventory user:@p` |
 | `/counterfeit` | Places a **fake** item in a player's inventory (indistinguishable in `/inventory`). | `/counterfeit user:@p item:<pick>` |
 | `/deliver` | Pete's: move bells and/or one item between players. Charges 250 shipping to sender. Bounces if recipient is full. Silent. | `/deliver from:@a to:@b [bells:500] [item:<pick>]` |
-| `/taxreturns` | **NON-EPHEMERAL.** Lists every item every player owns, with names. Host reference only — locked to the host category. | `/taxreturns` |
+| `/taxreturns` | **NON-EPHEMERAL.** Lists every item every player owns, with names. Host reference only - locked to the host category. | `/taxreturns` |
 
 **`/editinventory` notes:** the items field is a comma-separated list of item IDs, e.g.
 `13, 19, 19, 24`. It best-effort preserves existing counterfeits by ID. Flimsy uses are
@@ -160,12 +160,12 @@ the shop pool, for **every** finite-stock item:
 |---|---|
 | Remove an item ID | That unit goes **back** into stock |
 | Add an item ID | That unit is **taken out** of stock |
-| Remove a counterfeit | **Nothing** — fakes never used a unit |
+| Remove a counterfeit | **Nothing** - fakes never used a unit |
 | Change an unlimited item | Nothing to track |
 
 The confirmation reports exactly what moved (`**Golden Rod** +2 back in the pool (now
 2/3)`), the same line goes to the host log, and the posted shop re-renders so a returned
-item stops saying SOLD OUT. Returns are capped at the item's configured `stock` — you can
+item stops saying SOLD OUT. Returns are capped at the item's configured `stock` - you can
 never end up with more than the config allows.
 
 Three switches in `flags` (`config/economy.json`) control it, all **on** by default:
@@ -191,7 +191,7 @@ To wipe **all** economy data, delete `data/economy.json`.
 
 ## Complete Item ID List
 
-IDs are permanent — never renumber. Host inputs accept IDs; players always see names.
+IDs are permanent - never renumber. Host inputs accept IDs; players always see names.
 Stock `∞` = unlimited.
 
 ### Store Specials (IDs 1–7)
@@ -226,7 +226,7 @@ Stock `∞` = unlimited.
 | 19 | Star Wand | 2,000 | ∞ | **stackable** (any qty = 1 slot) |
 | 20 | Watering Can | 2,000 | ∞ | no slot · −25% cooldown |
 
-### The Cabinet — always available, never rotates (IDs 21–24)
+### The Cabinet - always available, never rotates (IDs 21–24)
 | ID | Item | Price | Notes |
 |---:|---|---:|---|
 | 21 | Flimsy Shovel | 1,000 | |
@@ -245,16 +245,16 @@ Stock `∞` = unlimited.
 
 ## Cooldown reductions (Watering Cans)
 
-You can hold only **one** watering can at a time — they do **not** stack. To switch,
+You can hold only **one** watering can at a time - they do **not** stack. To switch,
 trade in your current one with a host (no refund) before buying another.
 - Golden Watering Can (ID 12): **−50%**, permanent, once per player.
 - Watering Can (ID 20): **−25%**, permanent.
 - Flimsy Watering Can (ID 24): **−10%** for your next 10 income commands.
 
 None of them take an inventory slot. A reduction only applies to cooldowns set
-*after* you own the can — it never shrinks a cooldown that's already running.
+*after* you own the can - it never shrinks a cooldown that's already running.
 
 ---
 
-*The bot never adjudicates gameplay — it only handles bells, cooldowns, inventory
+*The bot never adjudicates gameplay - it only handles bells, cooldowns, inventory
 bookkeeping, and the shop. Hosts roll every tool effect and remove items manually.*

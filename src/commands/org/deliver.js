@@ -6,7 +6,7 @@ const { logToHost } = require('../../handlers/economyLog');
 
 // Pete's Special Delivery. Moves bells and/or one item between players, deducting
 // the shipping fee from the sender. Bounces if the recipient is at the slot cap.
-// Silent — no public message, no DM. Logged.
+// Silent - no public message, no DM. Logged.
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('deliver')
@@ -49,7 +49,7 @@ module.exports = {
             return interaction.reply({ content: 'Sender and recipient must be different players.', ephemeral: true });
         }
         if (!bells && !itemRaw) {
-            return interaction.reply({ content: 'Nothing to deliver — provide bells, an item, or both.', ephemeral: true });
+            return interaction.reply({ content: 'Nothing to deliver - provide bells, an item, or both.', ephemeral: true });
         }
 
         const cfg = getConfig();
@@ -64,7 +64,7 @@ module.exports = {
             const id = Number(itemRaw);
             item = Number.isInteger(id) ? getItem(id) : null;
             if (!item) {
-                return interaction.reply({ content: 'Unknown item — pick from autocomplete.', ephemeral: true });
+                return interaction.reply({ content: 'Unknown item - pick from autocomplete.', ephemeral: true });
             }
             const inst = fromPlayer.items.find(i => i.id === item.id);
             if (!inst) {
@@ -77,7 +77,7 @@ module.exports = {
         const cost = bells + shipping;
         if (fromPlayer.balance < cost) {
             return interaction.reply({
-                content: `📦 Bounced — ${from} can't cover ${formatBells(bells)} + ${formatBells(shipping)} shipping (has ${formatBells(fromPlayer.balance)}).`,
+                content: `📦 Bounced - ${from} can't cover ${formatBells(bells)} + ${formatBells(shipping)} shipping (has ${formatBells(fromPlayer.balance)}).`,
                 ephemeral: true,
             });
         }
@@ -87,7 +87,7 @@ module.exports = {
             const alreadyHasStackable = item.stackable && toPlayer.items.some(i => i.id === item.id);
             if (!alreadyHasStackable && eco.countSlotsUsed(toPlayer) >= slotCap()) {
                 return interaction.reply({
-                    content: `📦 Bounced — ${to}'s inventory is full (${slotCap()} slots).`,
+                    content: `📦 Bounced - ${to}'s inventory is full (${slotCap()} slots).`,
                     ephemeral: true,
                 });
             }

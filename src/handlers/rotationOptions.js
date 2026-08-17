@@ -38,7 +38,7 @@ async function handleRotationAutocomplete(interaction) {
         .filter(item => item.name.toLowerCase().includes(query))
         .slice(0, 25)
         // Store the NAME as the value (not the ID) so the filled-in option stays
-        // human-readable when Discord re-renders the command — otherwise it shows
+        // human-readable when Discord re-renders the command - otherwise it shows
         // the raw ID number after you leave and return to the channel.
         .map(item => ({ name: `${item.name} (${item.price.toLocaleString('en-US')})`, value: item.name }));
     await interaction.respond(choices);

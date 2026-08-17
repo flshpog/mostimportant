@@ -181,7 +181,7 @@ module.exports = {
         }
     },
 
-    // Shared with /tribe1on1s — see src/handlers/roles.js.
+    // Shared with /tribe1on1s - see src/handlers/roles.js.
     parseRoles(input) {
         return parseRoleIds(input);
     }

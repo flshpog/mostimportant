@@ -3,7 +3,7 @@ const { sendAsCharacter } = require('../../handlers/characterWebhook');
 // ---------------------------------------------------------------------------
 // Season interview flow (Animal Crossing).
 //
-// Each value below is a Discohook-style payload — paste the JSON you design
+// Each value below is a Discohook-style payload - paste the JSON you design
 // directly as the value: { username, avatar_url, embeds: [ { title,
 // description, image: { url } } ] }. Embeds default to leaf green unless the
 // payload sets its own `color`. Messages post via webhook so the bot appears

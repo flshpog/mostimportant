@@ -1,7 +1,7 @@
 // Discord rejects a channel name longer than 100 characters with a 50035
 // "Invalid Form Body" and refuses to create the channel at all. Since these
 // commands build names by joining role names together, a couple of long ones
-// blows the limit easily — and an alliance of four does it reliably.
+// blows the limit easily - and an alliance of four does it reliably.
 
 const MAX_CHANNEL_NAME = 100;
 
@@ -16,7 +16,7 @@ function slugify(part) {
 }
 
 // Joins parts into a channel name that Discord will accept. Over the limit, each
-// part is shortened evenly instead of truncating the whole string — a 1-on-1
+// part is shortened evenly instead of truncating the whole string - a 1-on-1
 // channel named after only the first player would be useless for telling them
 // apart. Returns 'channel' if the parts contain nothing usable at all.
 function toChannelName(parts, max = MAX_CHANNEL_NAME) {

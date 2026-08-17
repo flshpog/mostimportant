@@ -48,16 +48,16 @@ async function fire(client) {
             try {
                 const queued = shop.getQueuedShop(guildId);
                 if (queued) {
-                    // A shop was queued — post it as scheduled.
+                    // A shop was queued - post it as scheduled.
                     await postShop(client, guildId, queued.items);
                     shop.clearQueuedShop(guildId);
                 } else if (autoReroll && shop.getCurrentShop(guildId)) {
-                    // Nobody queued a shop — auto-reroll a random rotation so the
+                    // Nobody queued a shop - auto-reroll a random rotation so the
                     // shop never silently fails to refresh at midnight.
                     const items = shop.randomRotation(guildId);
                     if (items.length) {
                         await postShop(client, guildId, items);
-                        await logToHost(client, `🎲 No shop was queued — auto-rerolled a random rotation (${items.length} items).`);
+                        await logToHost(client, `🎲 No shop was queued - auto-rerolled a random rotation (${items.length} items).`);
                     }
                 }
             } catch (err) {

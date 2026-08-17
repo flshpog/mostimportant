@@ -4,9 +4,9 @@ const { ensureHost } = require('../../handlers/hostGate');
 const { logToHost } = require('../../handlers/economyLog');
 
 // Freezes a player: income commands and /buy are blocked. This alone does not
-// touch their items or the shop pool — removing an item via /editinventory is
+// touch their items or the shop pool - removing an item via /editinventory is
 // what returns it (see flags.return_stock_from_eliminated). The single biggest
-// exploit guard in the game — a jury farming bells for an ally.
+// exploit guard in the game - a jury farming bells for an ally.
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('eliminate')

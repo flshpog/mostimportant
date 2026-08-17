@@ -11,15 +11,15 @@ function resolveChannel(guild, token) {
 }
 
 const USAGE = [
-    "**CJ's Fishing Frenzy — usage:**",
-    '`!fishingfrenzy start [#channel] [durationHours]` — begin (defaults to the configured channel & 24h)',
-    '`!fishingfrenzy stop` — end early + post the final tally',
-    '`!fishingfrenzy standings` — current leaderboard',
-    '`!fishingfrenzy status` — active? time left, spawns, next spawn ETA',
-    '`!fishingfrenzy leaderboard` — re-post the leaderboard message (returns a link to pin)',
-    '`!fishingfrenzy checkimages` — verify all fish images load (run before game day)',
-    '`!fishingfrenzy spawn <fish name>` — force a specific fish now (QA)',
-    '`!fishingfrenzy test [on|off]` — toggle fast spawns + short windows',
+    "**CJ's Fishing Frenzy - usage:**",
+    '`!fishingfrenzy start [#channel] [durationHours]` - begin (defaults to the configured channel & 24h)',
+    '`!fishingfrenzy stop` - end early + post the final tally',
+    '`!fishingfrenzy standings` - current leaderboard',
+    '`!fishingfrenzy status` - active? time left, spawns, next spawn ETA',
+    '`!fishingfrenzy leaderboard` - re-post the leaderboard message (returns a link to pin)',
+    '`!fishingfrenzy checkimages` - verify all fish images load (run before game day)',
+    '`!fishingfrenzy spawn <fish name>` - force a specific fish now (QA)',
+    '`!fishingfrenzy test [on|off]` - toggle fast spawns + short windows',
 ].join('\n');
 
 module.exports = {
@@ -48,8 +48,8 @@ module.exports = {
             }
             return notice.edit(
                 `⚠️ **${failed.length} of ${results.length} failed:**\n` +
-                failed.map(f => `• ${f.name} — ${f.error}`).join('\n') +
-                '\n\nFix these before starting — the game will refuse to start otherwise.'
+                failed.map(f => `• ${f.name} - ${f.error}`).join('\n') +
+                '\n\nFix these before starting - the game will refuse to start otherwise.'
             );
         }
 
@@ -63,10 +63,10 @@ module.exports = {
             const channelId = explicit ? explicit.id : config.channel_id;
             const channel = message.guild.channels.cache.get(channelId);
             if (!channel) {
-                return message.reply(`Fishing channel \`${channelId}\` not found in this server — pass one: \`!fishingfrenzy start #fishing-frenzy\`.`);
+                return message.reply(`Fishing channel \`${channelId}\` not found in this server - pass one: \`!fishingfrenzy start #fishing-frenzy\`.`);
             }
 
-            // In test mode everything stays in the channel you're testing in — the
+            // In test mode everything stays in the channel you're testing in - the
             // real leaderboard channel is player-facing, and a dry run shouldn't
             // leave test scores and a stray tally sitting in it.
             const isTest = config.test_mode;
@@ -90,8 +90,8 @@ module.exports = {
             const failed = results.filter(r => !r.ok);
             if (failed.length > 0) {
                 return notice.edit(
-                    `❌ **Not starting** — ${failed.length} image(s) failed to load:\n` +
-                    failed.map(f => `• ${f.name} — ${f.error}`).join('\n')
+                    `❌ **Not starting** - ${failed.length} image(s) failed to load:\n` +
+                    failed.map(f => `• ${f.name} - ${f.error}`).join('\n')
                 );
             }
 
@@ -103,7 +103,7 @@ module.exports = {
             });
 
             const testWarning = isTest
-                ? '\n\n🧪 **TEST MODE IS ON** — fish spawn every few seconds, and the leaderboard + tally '
+                ? '\n\n🧪 **TEST MODE IS ON** - fish spawn every few seconds, and the leaderboard + tally '
                   + 'are staying in this channel instead of the real one. Run `!fishingfrenzy test off` and '
                   + 'start again for the real game.'
                 : '';
@@ -112,7 +112,7 @@ module.exports = {
                 `✅ Fishing Frenzy started in <#${channelId}> for **${duration}h**.\n` +
                 (leaderboardUrl
                     ? `📌 **Pin the leaderboard now:** ${leaderboardUrl}`
-                    : '⚠️ Could not post the leaderboard message — check my permissions in the leaderboard channel, then run `!fishingfrenzy leaderboard`.') +
+                    : '⚠️ Could not post the leaderboard message - check my permissions in the leaderboard channel, then run `!fishingfrenzy leaderboard`.') +
                 testWarning
             );
         }
@@ -156,8 +156,8 @@ module.exports = {
                 console.error('Fishing Frenzy: leaderboard repost failed:', err);
                 return null;
             });
-            if (!msg) return message.reply('❌ Could not post the leaderboard — check my permissions in that channel.');
-            return message.reply(`📌 New leaderboard message posted — **pin this one**: ${msg.url}`);
+            if (!msg) return message.reply('❌ Could not post the leaderboard - check my permissions in that channel.');
+            return message.reply(`📌 New leaderboard message posted - **pin this one**: ${msg.url}`);
         }
 
         // ---- test mode toggle ----
@@ -171,9 +171,9 @@ module.exports = {
             frenzy.setTestMode(on);
             const cfg = frenzy.getConfig();
             return message.reply(on
-                ? `🧪 Test mode **ON** — fish every **${cfg.test_interval_seconds.min}–${cfg.test_interval_seconds.max}s**, `
+                ? `🧪 Test mode **ON** - fish every **${cfg.test_interval_seconds.min}-${cfg.test_interval_seconds.max}s**, `
                   + `windows shortened to **${cfg.test_window_seconds}s** (applies to the next spawn). Turn off with \`!fishingfrenzy test off\`.`
-                : `Test mode **OFF** — back to **${cfg.min_interval_minutes}–${cfg.max_interval_minutes} min** spawns and normal windows.`);
+                : `Test mode **OFF** - back to **${cfg.min_interval_minutes}-${cfg.max_interval_minutes} min** spawns and normal windows.`);
         }
 
         // ---- spawn (QA) ----

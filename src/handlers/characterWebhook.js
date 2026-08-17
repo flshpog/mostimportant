@@ -1,6 +1,6 @@
 const { PermissionFlagsBits } = require('discord.js');
 
-// Animal Crossing leaf green — default embed accent when a payload omits `color`.
+// Animal Crossing leaf green - default embed accent when a payload omits `color`.
 const AC_GREEN = 0x7CBB3F;
 
 // Name of the webhook we create/reuse per channel to post as season characters.
@@ -34,7 +34,7 @@ async function sendAsCharacter(channel, payload, content) {
         avatarURL: payload.avatar_url || undefined,
         content: content || undefined,
         embeds,
-        // Only allow user pings (the applicant) — never @everyone/@here from a payload.
+        // Only allow user pings (the applicant) - never @everyone/@here from a payload.
         allowedMentions: { parse: ['users'] },
     });
 }

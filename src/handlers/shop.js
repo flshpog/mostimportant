@@ -3,7 +3,7 @@ const path = require('path');
 const { getConfig, getItem, cabinetItems, itemsByCategory } = require('../config/economy');
 const eco = require('./economy');
 
-// Runtime shop state — gitignored. Per guild: available unit counts (only stored
+// Runtime shop state - gitignored. Per guild: available unit counts (only stored
 // when they diverge from the config default), the currently-posted shop, and any
 // queued shop awaiting the midnight post.
 const SHOP_PATH = path.join(__dirname, '../../data/shop.json');
@@ -60,7 +60,7 @@ function consumeUnit(guildId, itemId) {
     save(data);
 }
 
-// Return one unit to the available pool — a host marked a refreshing item `used`.
+// Return one unit to the available pool - a host marked a refreshing item `used`.
 // Capped at the item's original stock.
 function returnUnit(guildId, itemId) {
     const item = getItem(itemId);
@@ -74,7 +74,7 @@ function returnUnit(guildId, itemId) {
     save(data);
 }
 
-// Set an item's available units outright — the repair path for stock that drifted
+// Set an item's available units outright - the repair path for stock that drifted
 // (items removed before removals returned to the pool, hand-edited data, etc).
 // Clamped to [0, config stock]. Returns the new count, or null for unlimited
 // items, which have nothing to track.
@@ -127,7 +127,7 @@ function guildsWithShop() {
     return Object.keys(data).filter(gid => data[gid] && data[gid].current);
 }
 
-// Reset all stock to the config defaults — every finite item becomes fully
+// Reset all stock to the config defaults - every finite item becomes fully
 // available again. (Clears the per-item unit overrides.)
 function restockAll(guildId) {
     const data = load();
@@ -170,7 +170,7 @@ function randomRotation(guildId) {
 
 // --- The single buyable-set seam ---------------------------------------------
 
-// Both /buy autocomplete and validation call this — the one source of truth.
+// Both /buy autocomplete and validation call this - the one source of truth.
 // Testers may buy the entire registry; everyone else gets the Cabinet plus the
 // in-stock items in the currently-posted shop.
 function getBuyableItems(guildId, userId) {

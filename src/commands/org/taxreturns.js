@@ -5,11 +5,11 @@ const { ensureHost } = require('../../handlers/hostGate');
 
 // ⚠️ NON-EPHEMERAL by request, and it dumps every ownership relationship in the
 // game. The host-category gate is the ONLY thing between this and a player
-// channel — if it ever fails open, the season is over. ensureHost first, always.
+// channel - if it ever fails open, the season is over. ensureHost first, always.
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('taxreturns')
-        .setDescription('Every item owned by every player — host reference (host only, NON-EPHEMERAL).')
+        .setDescription('Every item owned by every player - host reference (host only, NON-EPHEMERAL).')
         .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild),
 
     async execute(interaction) {
@@ -34,7 +34,7 @@ module.exports = {
 
             if (owned.length === 0) continue;
             anyOwned = true;
-            lines.push(`**<@${userId}>** — ${formatBells(player.balance)}${player.eliminated ? ' ☠️' : ''}`);
+            lines.push(`**<@${userId}>** - ${formatBells(player.balance)}${player.eliminated ? ' ☠️' : ''}`);
             lines.push(owned.map(o => `• ${o}`).join('\n'));
             lines.push('');
         }

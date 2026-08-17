@@ -2,7 +2,7 @@ const fs = require('fs');
 const path = require('path');
 
 // Committed game definition (SPEC §9). Read fresh each call so hosts can edit
-// config/economy.json and have changes take effect without a code change — the
+// config/economy.json and have changes take effect without a code change - the
 // single most important rule of this build.
 const CONFIG_PATH = path.join(__dirname, '../../config/economy.json');
 
@@ -32,7 +32,7 @@ function slotCap() {
     return getConfig().inventory.slot_cap;
 }
 
-// e.g. "7,500 <:Bells:...>" — comma-separated, no decimals, with the Bells emoji.
+// e.g. "7,500 <:Bells:...>" - comma-separated, no decimals, with the Bells emoji.
 function formatBells(amount) {
     const cfg = getConfig();
     const num = Number(amount).toLocaleString('en-US');

@@ -4,7 +4,7 @@ const shop = require('../../handlers/shop');
 const { postShop } = require('../../handlers/shopService');
 
 // Re-posts the CURRENT shop rotation (same items) using the latest config, so
-// edits to item names/descriptions/prices — and newly added Cabinet items — show
+// edits to item names/descriptions/prices - and newly added Cabinet items - show
 // up on the live shop without re-picking the rotation. Deletes the old post and
 // posts a fresh one, exactly like /setupshop.
 module.exports = {

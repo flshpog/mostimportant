@@ -4,12 +4,12 @@ const { formatBells } = require('../../config/economy');
 const { ensureHost } = require('../../handlers/hostGate');
 const { logToHost } = require('../../handlers/economyLog');
 
-// The house-payment tool — runs ~13 times per tribal, so keep it fast: one user,
+// The house-payment tool - runs ~13 times per tribal, so keep it fast: one user,
 // one amount, one confirm.
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('deduct')
-        .setDescription('Remove bells from a player — the house payment tool (host only).')
+        .setDescription('Remove bells from a player - the house payment tool (host only).')
         .addUserOption(o => o.setName('user').setDescription('The player').setRequired(true))
         .addIntegerOption(o => o.setName('amount').setDescription('Bells to remove').setRequired(true).setMinValue(1))
         .addStringOption(o => o.setName('reason').setDescription('Reason (optional)'))

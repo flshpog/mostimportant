@@ -57,7 +57,7 @@ module.exports = {
             if (roles.length < 2) {
                 return await interaction.reply({
                     content: 'You need at least 2 distinct roles. Mention them in the `roles` field, '
-                        + 'separated by spaces — for example `@Player1 @Player2 @Player3`.'
+                        + 'separated by spaces - for example `@Player1 @Player2 @Player3`.'
                         + (invalidRoles.length
                             ? `\n\n⚠️ Not roles in this server: ${invalidRoles.join(', ')}`
                             : ''),
@@ -127,7 +127,7 @@ module.exports = {
 
                     if (existingNames.has(channelName)) {
                         // Distinguish "was already there" from "two pairs shortened
-                        // to the same name" — the second is a naming problem the
+                        // to the same name" - the second is a naming problem the
                         // host needs to know about, not a clean skip.
                         if (generatedThisRun.has(channelName)) {
                             collisions.push(`${pair.map(r => r.name).join(' + ')} → ${channelName}`);
@@ -202,7 +202,7 @@ module.exports = {
             }
 
             // A full tribe is up to 105 channels, so summarise rather than listing
-            // every mention — the old output blew past Discord's limit and truncated.
+            // every mention - the old output blew past Discord's limit and truncated.
             const nameList = (names, max = 8) => names.length <= max
                 ? names.join(', ')
                 : `${names.slice(0, max).join(', ')} +${names.length - max} more`;
@@ -213,7 +213,7 @@ module.exports = {
             const used = room.filter(r => r.placed > 0);
             if (used.length > 0) {
                 response += '\n\n**Where they went**\n' + used
-                    .map(r => `• ${r.category} — ${r.placed} created, ${r.free} slot(s) left`)
+                    .map(r => `• ${r.category} - ${r.placed} created, ${r.free} slot(s) left`)
                     .join('\n');
             }
 
@@ -230,17 +230,17 @@ module.exports = {
             if (collisions.length > 0) {
                 response += `\n\n🔤 ${collisions.length} pair(s) shortened to a name already in use, `
                     + `so they were skipped: ${nameList(collisions, 4)}\n`
-                    + 'Shorten those role names to fix it — channel names are capped at 100 characters.';
+                    + 'Shorten those role names to fix it - channel names are capped at 100 characters.';
             }
             if (noRoom.length > 0) {
-                response += `\n\n📦 **Out of space** — ${noRoom.length} channel(s) had nowhere to go.\n`
+                response += `\n\n📦 **Out of space** - ${noRoom.length} channel(s) had nowhere to go.\n`
                     + `${categories.length === CATEGORY_OPTIONS.length
                         ? `All ${categories.length} categories are full (${limit} channels each).`
                         : `Re-run with the \`overflow${categories.length}\` option pointing at another empty category.`}\n`
                     + 'Already-created channels are skipped on a re-run, so it\'s safe to run again.';
             }
             if (noRoom.length === 0 && totalRoom < pairCount && created.length > 0) {
-                response += '\n\n💡 Tight fit — you\'re close to filling these categories.';
+                response += '\n\n💡 Tight fit - you\'re close to filling these categories.';
             }
 
             if (response.length > 1900) response = response.slice(0, 1900) + '\n...(truncated)';

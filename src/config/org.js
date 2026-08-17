@@ -22,7 +22,7 @@ function guildSettings(guildId) {
 }
 
 // The spectator Role object for this guild, or null when the server has none.
-// Also returns null if the configured ID isn't a role here — passing an ID from
+// Also returns null if the configured ID isn't a role here - passing an ID from
 // another server to channels.create() is rejected by Discord and fails the whole
 // call, which is exactly what broke these commands outside the main server.
 function spectatorRole(guild) {
