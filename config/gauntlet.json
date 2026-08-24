@@ -11,66 +11,88 @@
     "THE 101ST KEY (!the101stkey / !unlock / !hint): five keys in order. !unlock only ever",
     "  checks the CURRENT key, so the chain cannot be skipped. Two hints per key.",
     "",
-    "PLACEHOLDER strings below are for the host to fill in. Everything here is editable",
+    "Every prompt, hint, answer, window, weight and message below is editable",
     "without a code change; windows are seconds and must stay under interval_seconds."
   ],
-
   "frenzy": {
     "interval_seconds": 30,
     "required_catches": 10,
     "idle_spawns_before_pause": 6,
-
-    "rarity_weights": { "Common": 55, "Uncommon": 27, "Rare": 13, "Legendary": 5 },
-
+    "rarity_weights": {
+      "Common": 55,
+      "Uncommon": 27,
+      "Rare": 13,
+      "Legendary": 5
+    },
     "windows": {
-      "bug":  { "Common": 10, "Uncommon": 7,  "Rare": 5,  "Legendary": 3 },
-      "fish": { "Common": 20, "Uncommon": 15, "Rare": 10, "Legendary": 8 }
+      "bug": {
+        "Common": 10,
+        "Uncommon": 7,
+        "Rare": 5,
+        "Legendary": 3
+      },
+      "fish": {
+        "Common": 20,
+        "Uncommon": 15,
+        "Rare": 10,
+        "Legendary": 8
+      }
     },
     "min_window_seconds": 3,
-
     "bug_spawn_message": "A **{bug}** {flavor}! Catch it!",
     "bug_default_flavor": "appears",
     "fish_spawn_message": "Something bites! Reel it in!",
     "attachment_filename": "fish.png",
     "image_upscale_px": 384,
-
     "bug_catch_phrase": "i catch the {bug}",
     "fish_catch_phrase": "i reel in the {fish}",
-
-    "start_message": "PLACEHOLDER - the frenzy has begun. Catch 10 to clear this leg.",
-    "resume_message": "PLACEHOLDER - picking up where you left off.",
-    "idle_pause_message": "PLACEHOLDER - paused because the channel went quiet. Run `!thefrenzy` again to resume.",
-    "completion_message": "PLACEHOLDER - host supplies the frenzy completion text."
+    "start_message": "Flick and CJ are both set up and ready to go. Something will turn up every 30 seconds. Bugs come with their names attached, fish don't, so you'll have to know those yourself.\nCatch **10** and you're through. First one's on its way.",
+    "resume_message": "Alright, you're back. Your catches are all still there so we're carrying on from where you stopped. Next one lands in 30 seconds.",
+    "idle_pause_message": "It's been quiet in here for a while so Flick and CJ have wandered off to do something else. Don't panic, everything you've caught still counts.\nRun **`!thefrenzy`** whenever you're ready and they'll come right back.",
+    "completion_message": "**That's 10.** Nice one, you're through the second leg.\nRun **`!leg-3`** when you're ready to keep going."
   },
-
   "keys": [
     {
-      "prompt": "PLACEHOLDER - key 1 prompt",
+      "prompt": "Franklin left a note nailed to the pantry door before he took off. Good luck reading it.\n```\nGFIPVBWZB\n```",
       "answer": "turkeyday",
-      "hints": ["PLACEHOLDER - key 1 hint 1", "PLACEHOLDER - key 1 hint 2"]
+      "hints": [
+        "The first letter and the last letter are having an argument.",
+        "A becomes Z, B becomes Y, and so on down the alphabet. Franklin's very proud of this one."
+      ]
     },
     {
-      "prompt": "PLACEHOLDER - key 2 prompt",
+      "prompt": "There was a menu for the feast, five courses long, and Franklin's gone and forgotten a word from every line of it. Fill them back in, then read down the list.\n```\nFlick's Bug ______\nZipper's ______ Hunt\nK.K. Slider's ______ Wars\nGulliver's ______ Hunt\n______ Subjects\n```",
       "answer": "feast",
-      "hints": ["PLACEHOLDER - key 2 hint 1", "PLACEHOLDER - key 2 hint 2"]
+      "hints": [
+        "You've played all five of these.",
+        "Read the first letter of each answer, top to bottom."
+      ]
     },
     {
-      "prompt": "PLACEHOLDER - key 3 prompt",
+      "prompt": "Everything's out on the counter. Franklin wrote the recipe himself so naturally the amounts make no sense, and that's because they were never really amounts.\n```\n  4 x mushroom\n  2 x carrot\n  3 x corn\n  4 x olive\n  2 x celery\n  1 x squash\n  3 x potato\n```",
       "answer": "harvest",
-      "hints": ["PLACEHOLDER - key 3 hint 1", "PLACEHOLDER - key 3 hint 2"]
+      "hints": [
+        "Nobody needs four olives.",
+        "The number tells you how far to count into the word."
+      ]
     },
     {
-      "prompt": "PLACEHOLDER - key 4 prompt",
+      "prompt": "Brewster's still here. He's been here the whole time, and there are five drinks sitting on his counter that nobody ever came to collect.\n\n🔨🛋️💙   🌱🌷🦥   ��🔔🐶   🎀👚🌸   🦉🦴🖼️\n\nTake what they've got in common.",
       "answer": "climb",
-      "hints": ["PLACEHOLDER - key 4 hint 1", "PLACEHOLDER - key 4 hint 2"]
+      "hints": [
+        "You decoded thirty of these earlier today.",
+        "Forget the names themselves and look at how each one starts."
+      ]
     },
     {
-      "prompt": "PLACEHOLDER - key 5 prompt",
+      "prompt": "Four doors open and there's one left. Franklin's last note is just four numbers, nothing else.\n```\n6 · 2 · 7 · 3\n```\n*\"You've been carrying it the whole time. Count into what you already opened, in order.\"*",
       "answer": "yeti",
-      "hints": ["PLACEHOLDER - key 5 hint 1", "PLACEHOLDER - key 5 hint 2"]
+      "hints": [
+        "It's the four keys you've already opened, in the order you opened them.",
+        "Sixth letter of the first key, second letter of the second one, and keep going."
+      ]
     }
   ],
-
   "wrong_answer_message": "Not quite.",
   "hint_penalty_message": "That's a 3 minute penalty.",
   "hints_exhausted_message": "You've already used both hints for this key.",
