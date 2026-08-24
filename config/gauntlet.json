@@ -71,7 +71,7 @@
     }
   ],
 
-  "wrong_answer_message": "Not quite - that's a 1 minute penalty. Try again!",
+  "wrong_answer_message": "Not quite.",
   "hint_penalty_message": "That's a 3 minute penalty.",
   "hints_exhausted_message": "You've already used both hints for this key.",
   "finish_message": "# You have completed Season 2's rendition of The Everest Gauntlet!"
