@@ -173,6 +173,18 @@ async function warmImageCache(config) {
     return results;
 }
 
+// Buffer for one fish, from the shared cache, fetching and upscaling on a miss.
+// Exported so other legs (the F4 Gauntlet frenzy) can post the same fish images
+// through the same cache instead of duplicating the download logic. Purely
+// additive: nothing in Fishing Frenzy calls this.
+async function imageBufferFor(fish, upscalePx) {
+    const cached = imageCache.get(fish.name);
+    if (cached) return cached;
+    const buf = await upscale(await downloadBuffer(fish.image), upscalePx);
+    imageCache.set(fish.name, buf);
+    return buf;
+}
+
 // --- Scheduling --------------------------------------------------------------
 
 function scheduleNextSpawn(client, guildId, windowMs, explicitDelayMs) {
@@ -657,6 +669,7 @@ module.exports = {
     handleMessage,
     resumeAll,
     warmImageCache,
+    imageBufferFor,
     postLeaderboard,
     updateLeaderboard,
     leaderboardText,

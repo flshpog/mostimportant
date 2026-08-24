@@ -1,0 +1,78 @@
+{
+  "_comment": [
+    "The Everest Gauntlet (F4). Two independent solo legs, one config.",
+    "",
+    "THE FRENZY (!thefrenzy): a spawn every interval_seconds, strictly alternating bugs",
+    "  (odd spawns, name shown) and fish (even spawns, image only). Roll a rarity from",
+    "  rarity_weights, then pick a random creature of that rarity from the EXISTING pools",
+    "  in config/bugfrenzy.json and config/fishing.json. Creatures are never defined here.",
+    "  The leg ends only at required_catches. There is no spawn cap.",
+    "",
+    "THE 101ST KEY (!the101stkey / !unlock / !hint): five keys in order. !unlock only ever",
+    "  checks the CURRENT key, so the chain cannot be skipped. Two hints per key.",
+    "",
+    "PLACEHOLDER strings below are for the host to fill in. Everything here is editable",
+    "without a code change; windows are seconds and must stay under interval_seconds."
+  ],
+
+  "frenzy": {
+    "interval_seconds": 30,
+    "required_catches": 10,
+    "idle_spawns_before_pause": 6,
+
+    "rarity_weights": { "Common": 55, "Uncommon": 27, "Rare": 13, "Legendary": 5 },
+
+    "windows": {
+      "bug":  { "Common": 10, "Uncommon": 7,  "Rare": 5,  "Legendary": 3 },
+      "fish": { "Common": 20, "Uncommon": 15, "Rare": 10, "Legendary": 8 }
+    },
+    "min_window_seconds": 3,
+
+    "bug_spawn_message": "A **{bug}** {flavor}! Catch it!",
+    "bug_default_flavor": "appears",
+    "fish_spawn_message": "Something bites! Reel it in!",
+    "attachment_filename": "fish.png",
+    "image_upscale_px": 384,
+
+    "bug_catch_phrase": "i catch the {bug}",
+    "fish_catch_phrase": "i reel in the {fish}",
+
+    "start_message": "PLACEHOLDER - the frenzy has begun. Catch 10 to clear this leg.",
+    "resume_message": "PLACEHOLDER - picking up where you left off.",
+    "idle_pause_message": "PLACEHOLDER - paused because the channel went quiet. Run `!thefrenzy` again to resume.",
+    "completion_message": "PLACEHOLDER - host supplies the frenzy completion text."
+  },
+
+  "keys": [
+    {
+      "prompt": "PLACEHOLDER - key 1 prompt",
+      "answer": "turkeyday",
+      "hints": ["PLACEHOLDER - key 1 hint 1", "PLACEHOLDER - key 1 hint 2"]
+    },
+    {
+      "prompt": "PLACEHOLDER - key 2 prompt",
+      "answer": "feast",
+      "hints": ["PLACEHOLDER - key 2 hint 1", "PLACEHOLDER - key 2 hint 2"]
+    },
+    {
+      "prompt": "PLACEHOLDER - key 3 prompt",
+      "answer": "harvest",
+      "hints": ["PLACEHOLDER - key 3 hint 1", "PLACEHOLDER - key 3 hint 2"]
+    },
+    {
+      "prompt": "PLACEHOLDER - key 4 prompt",
+      "answer": "climb",
+      "hints": ["PLACEHOLDER - key 4 hint 1", "PLACEHOLDER - key 4 hint 2"]
+    },
+    {
+      "prompt": "PLACEHOLDER - key 5 prompt",
+      "answer": "yeti",
+      "hints": ["PLACEHOLDER - key 5 hint 1", "PLACEHOLDER - key 5 hint 2"]
+    }
+  ],
+
+  "wrong_answer_message": "Not quite - that's a 1 minute penalty. Try again!",
+  "hint_penalty_message": "That's a 3 minute penalty.",
+  "hints_exhausted_message": "You've already used both hints for this key.",
+  "finish_message": "# You have completed Season 2's rendition of The Everest Gauntlet!"
+}

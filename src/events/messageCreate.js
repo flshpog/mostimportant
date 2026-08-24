@@ -45,6 +45,15 @@ module.exports = {
                 console.error('Love Day error:', err));
         }
 
+        // F4 Gauntlet: the frenzy leg (spawn/catch) and the 101st Key chain.
+        // Both silent no-ops outside a channel with an active run of that leg.
+        if (message.guild) {
+            require('../handlers/gauntletFrenzy').handleMessage(message).catch(err =>
+                console.error('Gauntlet frenzy error:', err));
+            require('../handlers/gauntletKey').handleMessage(message).catch(err =>
+                console.error('Gauntlet key error:', err));
+        }
+
         if (message.guild && getSticky(message.channel.id)) {
             resendSticky(message.channel).catch(() => {});
         }
