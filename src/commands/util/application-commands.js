@@ -37,7 +37,7 @@ const steps = {
                 "title": "Recruit 1",
                 "description": "Well, let’s start off with the question you all know and love.\n\nIf you’re here, someone on the host team probably knows all of this already. Still, we need some info!\n\n> Your **name**\n> Your **age**\n> Your **pronouns**\n> Your **timezone**\n\nTo continue, do **`!recruit-2`**.",
                 "image": {
-                    "url": "https://static2.klipy.com/ii/c3a19a0b747a76e98651f2b9a3cca5ff/bd/6e/ovdfM5WM.gif"
+                    "url": "https://static2.klipy.com/ii/39f2394ae36df6e199be9eb7c9fa1012/b9/38/bCBJCgXC.gif"
                 }
             }
         ]
@@ -50,7 +50,7 @@ const steps = {
                 "title": "Recruit 2",
                 "description": "Let’s get a little deeper into it. Of course, we aren’t going to make you do a standard interview. We just have proper question for you today.\n\n**Why will you win Everest Survivor S3: The Mushroom Kingdom?**\n\nWhen you’re ready to continue, you can do **`!recruit-3`**.\n",
                 "image": {
-                    "url": "https://static2.klipy.com/ii/c3a19a0b747a76e98651f2b9a3cca5ff/24/a5/kzXJhjlg.gif"
+                    "url": "https://static2.klipy.com/ii/c3a19a0b747a76e98651f2b9a3cca5ff/ea/2f/1b2dWurQ.gif"
                 }
             }
         ]
