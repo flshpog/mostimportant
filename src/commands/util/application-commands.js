@@ -19,6 +19,7 @@ const WELCOME = {
         {
             "title": "Welcome!",
             "description": "I’m **Super Mario**, and I’ll be running you through your interview.\n\nWe at **Everest** appreciate your interest in playing the season! To ensure a high chance of being cast, please **take your time** on this interview. Don’t rush through it too fast, it isn’t long and tedious. The best answers are thought out ones!\n\nDuring each season, the producers hand-pick some players to play. If you’re one of those people, you can do **`!recruit-1`** to proceed. If you’re not, you can do **`!interview-1`** to proceed.",
+            "color": 15750750,
             "image": {
                 "url": "https://static2.klipy.com/ii/925f17378dd1893b674a723c07535afe/d4/3b/EIvoNJe7.gif"
             }
@@ -36,6 +37,7 @@ const steps = {
             {
                 "title": "Recruit 1",
                 "description": "Well, let’s start off with the question you all know and love.\n\nIf you’re here, someone on the host team probably knows all of this already. Still, we need some info!\n\n> Your **name**\n> Your **age**\n> Your **pronouns**\n> Your **timezone**\n\nTo continue, do **`!recruit-2`**.",
+                "color": 15750750,
                 "image": {
                     "url": "https://static2.klipy.com/ii/39f2394ae36df6e199be9eb7c9fa1012/b9/38/bCBJCgXC.gif"
                 }
