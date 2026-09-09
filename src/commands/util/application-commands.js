@@ -13,14 +13,14 @@ const { sendAsCharacter } = require('../../handlers/characterWebhook');
 // Auto-sent when a ticket is opened (see ticket-setup.js). The applicant is
 // pinged in the message content alongside this embed.
 const WELCOME = {
-    "username": "Orville",
-    "avatar_url": "https://i.ytimg.com/vi/hyzqLZri-E0/oar2.jpg?sqp=-oaymwEYCJUDENAFSFqQAgHyq4qpAwcIARUAAIhC&rs=AOn4CLByKJA0CJ_ehgG6a7T2fNIQBDA5BQ&usqp=CCk",
+    "username": "Super Mario",
+    "avatar_url": "https://static0.thegamerimages.com/wordpress/wp-content/uploads/2025/10/super-mario-galaxy-2-screenshot-of-mario-on-yoshi-s-back-flying-out-of-a-volcano.jpg?w=1600&h=900&fit=crop",
     "embeds": [
         {
             "title": "Welcome!",
-            "description": "I’m **Orville**, and I’ll be running you through your interview.\n\nWe at **Everest** appreciate your interest in playing the season! To ensure a high chance of being cast, please **take your time** on this interview. Don’t rush through it too fast, it isn’t long and tedious. The best answers are thought out ones!\n\nFor this season, our producers have personally recruited some people to be on the season. If you’re one of those people, you can do **`!recruit-1`** to proceed. If you’re not, you can do **`!interview-1`** to proceed.",
+            "description": "I’m **Super Mario**, and I’ll be running you through your interview.\n\nWe at **Everest** appreciate your interest in playing the season! To ensure a high chance of being cast, please **take your time** on this interview. Don’t rush through it too fast, it isn’t long and tedious. The best answers are thought out ones!\n\nDuring each season, the producers hand-pick some players to play. If you’re one of those people, you can do **`!recruit-1`** to proceed. If you’re not, you can do **`!interview-1`** to proceed.",
             "image": {
-                "url": "https://static2.klipy.com/ii/d7aec6f6f171607374b2065c836f92f4/eb/10/B2sU82Sb.gif"
+                "url": "https://static2.klipy.com/ii/925f17378dd1893b674a723c07535afe/d4/3b/EIvoNJe7.gif"
             }
         }
     ]
@@ -49,7 +49,7 @@ const steps = {
         "embeds": [
             {
                 "title": "Recruit 2",
-                "description": "Let’s get a little deeper into it. Of course, we aren’t going to make you do a standard interview. We just have proper question for you today.\n\n**Why will you win Everest Survivor S2: New Horizons?**\n\nWhen you’re ready to continue, you can do **`!recruit-3`**.\n",
+                "description": "Let’s get a little deeper into it. Of course, we aren’t going to make you do a standard interview. We just have proper question for you today.\n\n**Why will you win Everest Survivor S3: The Mushroom Kingdom?**\n\nWhen you’re ready to continue, you can do **`!recruit-3`**.\n",
                 "image": {
                     "url": "https://static2.klipy.com/ii/c3a19a0b747a76e98651f2b9a3cca5ff/24/a5/kzXJhjlg.gif"
                 }
