@@ -112,7 +112,7 @@ const steps = {
                 "title": "Interview 1",
                 "description": "Let's begin by making sure we have everything right for our **cast info**.\n\nPlease provide..\n> * Your **name**\n> * Your **age**\n> * Your **pronouns**\n> * Your **timezone**\n\nTo continue, **`!interview-2`**.",
                 "image": {
-                    "url": "https://static2.klipy.com/ii/d7aec6f6f171607374b2065c836f92f4/74/6c/zy5n9I93.gif"
+                    "url": "https://static2.klipy.com/ii/39f2394ae36df6e199be9eb7c9fa1012/b9/38/bCBJCgXC.gif"
                 }
             }
         ]
@@ -123,9 +123,9 @@ const steps = {
         "avatar_url": "https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/f/69d79c77-7a14-4d6e-a6e4-6aadb16f4fdb/dfyts5a-befb4a6c-e651-4361-91c0-ac23a65905d9.jpg?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1cm46YXBwOjdlMGQxODg5ODIyNjQzNzNhNWYwZDQxNWVhMGQyNmUwIiwiaXNzIjoidXJuOmFwcDo3ZTBkMTg4OTgyMjY0MzczYTVmMGQ0MTVlYTBkMjZlMCIsIm9iaiI6W1t7InBhdGgiOiIvZi82OWQ3OWM3Ny03YTE0LTRkNmUtYTZlNC02YWFkYjE2ZjRmZGIvZGZ5dHM1YS1iZWZiNGE2Yy1lNjUxLTQzNjEtOTFjMC1hYzIzYTY1OTA1ZDkuanBnIn1dXSwiYXVkIjpbInVybjpzZXJ2aWNlOmZpbGUuZG93bmxvYWQiXX0.9vYZfwklBp3Nk6SVhJkjus1HBhKv514jp84LOFkuJD0",        "embeds": [
             {
                 "title": "Interview 2",
-                "description": "*Now let's get into this.*\n\n*What's your reasoning for applying to this season? Are you interested in the theme? Were you in and around season 1 of Everest and wanted to take a crack at season 2? Let us know!*\n\nTo continue, **`!interview-3`**.",
+                "description": "*Now let's get into this.*\n\n*What's your reasoning for applying to this season? Are you interested in the theme? Were you in and around season 1/2 of Everest and wanted to take a crack at season 3? Let us know!*\n\nTo continue, **`!interview-3`**.",
                 "image": {
-                    "url": "https://static2.klipy.com/ii/4e7bea9f7a3371424e6c16ebc93252fe/fa/7c/LUoNVl1d5Fas00BLHH.gif"
+                    "url": "https://static2.klipy.com/ii/4493325008d34b7bf8cd6813cd5c1619/ec/5d/530ZGghATMRO96.gif"
                 }
             }
         ]
@@ -138,7 +138,7 @@ const steps = {
                 "title": "Interview 3",
                 "description": "Now into the personal territory...\n\n*Tell us about your ORG history! Are you the kind of player who's always involved in a game? Are you more of a once-a-year kind of player? Did you come out of retirement just for this? Please share your experiences with any fun or notable games from your ORG career!*\n\n*...or if this is your first ORG ever, welcome! Are you a fan of the show, did you get introduced by a friend? How'd you end up here? More importantly... how do you plan to navigate the game for your first time playing?*\n\n*Additionally, what from your previous ORG runs do you want to replicate here in Everest? What worked well for you before? What do you want to change this time around? Give us the tea!*\n\nTo continue, **`!interview-4`**.",
                 "image": {
-                    "url": "https://static2.klipy.com/ii/4e7bea9f7a3371424e6c16ebc93252fe/d2/55/QkkoPeSb57MaCm.gif"
+                    "url": "https://static2.klipy.com/ii/a15b48460c436e1e92c85ffc680932cc/42/4b/reb84rrq.gif"
                 }
             }
         ]
@@ -151,7 +151,7 @@ const steps = {
                 "title": "Interview 4",
                 "description": "We've got just 2 more questions for you today.\n\n*Every Survivor season is full of characters… heroes, villains, side-kicks, comedic reliefs, trainwrecks and so much more. How would you describe the kind of character you anticipate being this season?*\n\n*Enough about Survivor and ORGs now. Tell us a little more about yourself, outside of the game. How do you describe yourself, and how might that compare to how OTHERS describe you? Additionally, tell us about your hobbies and what you do for work/school!*\n\nTo continue, **`!interview-5`**.",
                 "image": {
-                    "url": "https://static2.klipy.com/ii/71b2873e478b9d8d0482ea3ec777ba7f/63/dd/JVZ19MeI.gif"
+                    "url": "https://static2.klipy.com/ii/4493325008d34b7bf8cd6813cd5c1619/51/fd/FlSl972rZGoTzwLj.gif"
                 }
             }
         ]
@@ -161,10 +161,10 @@ const steps = {
         "username": "Super Mario",
         "avatar_url": "https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/f/69d79c77-7a14-4d6e-a6e4-6aadb16f4fdb/dfyts5a-befb4a6c-e651-4361-91c0-ac23a65905d9.jpg?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1cm46YXBwOjdlMGQxODg5ODIyNjQzNzNhNWYwZDQxNWVhMGQyNmUwIiwiaXNzIjoidXJuOmFwcDo3ZTBkMTg4OTgyMjY0MzczYTVmMGQ0MTVlYTBkMjZlMCIsIm9iaiI6W1t7InBhdGgiOiIvZi82OWQ3OWM3Ny03YTE0LTRkNmUtYTZlNC02YWFkYjE2ZjRmZGIvZGZ5dHM1YS1iZWZiNGE2Yy1lNjUxLTQzNjEtOTFjMC1hYzIzYTY1OTA1ZDkuanBnIn1dXSwiYXVkIjpbInVybjpzZXJ2aWNlOmZpbGUuZG93bmxvYWQiXX0.9vYZfwklBp3Nk6SVhJkjus1HBhKv514jp84LOFkuJD0",        "embeds": [
             {
-                "title": "Interview 5",
-                "description": "And now for the fun part!\n\nThis season, each castaway will be represented by a **villager**. If you’re unfamiliar with Animal Crossing, there are over 400 villagers that can choose to come live on or visit your island.\n\nHead over to [this link](https://animalcrossing.fandom.com/wiki/Villager_list_(New_Horizons)) and find **three** villagers you would like to represent you. Then, send them here in order of highest to lowest priority.\n\nWe work on a first come, first serve basis, so the quicker you do this the higher your chances are of getting your favorite!\n\nThe following villagers are **off-limits**:\n> * Erik (fishpog)\n> * Lopez (Kebab)\n> * Raymond (Mike)\n> * Fang (Fio)\n> * Admiral (xSoul)\n> * Sasha (Lemmy)\n> * Kid Cat (Woofley)\n> * Boots (Void)\n> * Freya (Fuggles)\n> - Any **special** characters, i.e. Tom Nook or Blathers\n\nTo continue, do **`!acknowledgements`**.",
+                "title": "Recruit 3",
+                "description": "And now for the fun part!\n\nFor Season 2, we had every castaway be represented by an Animal Crossing villager. We want to to keep this theme running, but the Mario universe doesn't have as straight-up of an answer for who we should let the castaways represent.\n\nSo, our solution is to let you guys be literally *anyone* you want to be.\n\nHead over to [this link](https://nintendo.fandom.com/wiki/Category:Characters_in_Mario_(series)) and find **three** characters you would like to represent you. Then, send them here in order of highest to lowest priority.\n\nWe work on a first come, first serve basis, so the quicker you do this the higher your chances are of getting your favorite!\n\nThe following characters are **off-limits**:\n> * Daisy (Cara)\n> * Yoshi (Fio)\n> * Captain Toad (fishpog)\n> * Monty Mole (Ricci)\n> * Rosalina (Lezaria)\n> * Dry Bones (Void)\n> * Birdo (Riley)\n> * Yellow Shy Guy (Colin)\n> * King Boo (Emp)\n> * Goomba (Sam)\n> - Mario, Peach, and Bowser\n\nTo continue, do **`!acknowledgements`**.",
                 "image": {
-                    "url": "https://static2.klipy.com/ii/35ccce3d852f7995dd2da910f2abd795/7d/8a/g3aT5CSX.gif"
+                    "url": "https://static2.klipy.com/ii/c3a19a0b747a76e98651f2b9a3cca5ff/ba/f0/CalTeuxX.gif"
                 }
             }
         ]
