@@ -26,7 +26,7 @@ module.exports = {
 
             const embed = new EmbedBuilder()
                 .setTitle('🎫 Create a Ticket')
-                .setDescription('Click the button below if you wish to apply for Everest Survivor S2: New Horizons!')
+                .setDescription('Click the button below if you wish to apply for Everest Survivor S3: The Mushroom Kingdom!')
                 .setColor(0x7CBB3F)
                 .setFooter({ text: 'Everest Survivor Applications' })
                 .setTimestamp();
