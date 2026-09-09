@@ -75,7 +75,7 @@ const steps = {
             {
                 "description": "# ACKNOWLEDGEMENTS & UNDERSTANDINGS\n\nIn order for you to formally enter the casting pool, you must read and agree to all of the following:\n\n1. *I have read the <#1414321682839109818> and understand what I can be given a strike for. I recognize that cheating of any kind and extreme instances of toxicity will not be tolerated in this environment.*\n\n2. *I am signing up for a game that can be very mentally taxing at times. While this ORG is important, I understand that real life and mental health will always take priority over a silly online game.*\n\n3. *It is expected of me to do confessionals each episode in my confessional channel. I will not leave my confessional blank and actively contribute content (and my personal narrative) to the season!*\n\n4. *I understand that this will be a time commitment, and I will do my best to be available as often as I can be. While it is not expected of me to be on Discord 24/7, I have the free time needed to be an active participant in the game.*\n\nIf you don't want to fill out a DNC list, you're done! Continue with **`!finish`**.\nIf you DO feel the need to fill one out, the command to do so is **`!dnc-list`**.",
                 "image": {
-                    "url": "https://static2.klipy.com/ii/8ce8357c78ea940b9c2015daf05ce1a5/b0/ea/ufiUgoyu.gif"
+                    "url": "https://static2.klipy.com/ii/4493325008d34b7bf8cd6813cd5c1619/f8/32/5BEueWBxhDp8ILNPLuzD.gif"
                 }
             }
         ]
@@ -87,7 +87,7 @@ const steps = {
             {
                 "description": "# DNC INFO\nLet's be very clear. **I do not like or endorse cancel culture, and I especially do not like a mob mentality against one particular person**. That being said, at Everest, we want to ensure that every player feels comfortable within the game. So with that being said, here is how this will work.\n\nIf you have someone who you have PERSONAL beef with or someone who you just absolutely cannot stand for one reason or another, please let us know their name and discord tag. We can guarantee that you will not start on the same Tribe to minimize the impact of your feud/prevent metagaming.\n\nIf there is someone who you OBJECTIVELY believe should not be allowed to touch this season with a 20-foot pole, please let us know their name, discord tag and a list of reasons they should not play the season. We 100% expect you to provide evidence (screenshots, docs, whatever) to back up your claims here.\n\nAfter *this*, you're done. do **`!finish`** to finish your interview.",
                 "image": {
-                    "url": "https://media1.tenor.com/m/OUkL8sFsLb4AAAAd/animal-crossing-wave-race-wave-race.gif"
+                    "url": "https://static2.klipy.com/ii/935d7ab9d8c6202580a668421940ec81/ab/81/MDZnOAmS.gif"
                 }
             }
         ]
@@ -99,7 +99,7 @@ const steps = {
             {
                 "description": "# ...And that's all!\n\nThank you again for your interest in playing.\n\nWe are extremely excited for this season, and we hope you are equally as excited to play.\n\nIf you wish, ping Producers to let us know you've completed your interview. If not, Fio would probably like you just a little bit more.",
                 "image": {
-                    "url": "https://static2.klipy.com/ii/d7aec6f6f171607374b2065c836f92f4/4f/b8/E1A33yAd.gif"
+                    "url": "https://static2.klipy.com/ii/35ccce3d852f7995dd2da910f2abd795/71/e1/AIzPyP9h.gif"
                 }
             }
         ]
