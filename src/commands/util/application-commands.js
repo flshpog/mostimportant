@@ -14,7 +14,7 @@ const { sendAsCharacter } = require('../../handlers/characterWebhook');
 // pinged in the message content alongside this embed.
 const WELCOME = {
     "username": "Super Mario",
-    "avatar_url": "https://static0.thegamerimages.com/wordpress/wp-content/uploads/2025/10/super-mario-galaxy-2-screenshot-of-mario-on-yoshi-s-back-flying-out-of-a-volcano.jpg?w=1600&h=900&fit=crop",
+    "avatar_url": "https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/f/69d79c77-7a14-4d6e-a6e4-6aadb16f4fdb/dfyts5a-befb4a6c-e651-4361-91c0-ac23a65905d9.jpg?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1cm46YXBwOjdlMGQxODg5ODIyNjQzNzNhNWYwZDQxNWVhMGQyNmUwIiwiaXNzIjoidXJuOmFwcDo3ZTBkMTg4OTgyMjY0MzczYTVmMGQ0MTVlYTBkMjZlMCIsIm9iaiI6W1t7InBhdGgiOiIvZi82OWQ3OWM3Ny03YTE0LTRkNmUtYTZlNC02YWFkYjE2ZjRmZGIvZGZ5dHM1YS1iZWZiNGE2Yy1lNjUxLTQzNjEtOTFjMC1hYzIzYTY1OTA1ZDkuanBnIn1dXSwiYXVkIjpbInVybjpzZXJ2aWNlOmZpbGUuZG93bmxvYWQiXX0.9vYZfwklBp3Nk6SVhJkjus1HBhKv514jp84LOFkuJD0",
     "embeds": [
         {
             "title": "Welcome!",
