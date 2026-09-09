@@ -51,6 +51,7 @@ const steps = {
             {
                 "title": "Recruit 2",
                 "description": "Let’s get a little deeper into it. Of course, we aren’t going to make you do a standard interview. We just have proper question for you today.\n\n**Why will you win Everest Survivor S3: The Mushroom Kingdom?**\n\nWhen you’re ready to continue, you can do **`!recruit-3`**.\n",
+                "color": 15750750,
                 "image": {
                     "url": "https://static2.klipy.com/ii/c3a19a0b747a76e98651f2b9a3cca5ff/ea/2f/1b2dWurQ.gif"
                 }
@@ -64,6 +65,7 @@ const steps = {
             {
                 "title": "Recruit 3",
                 "description": "And now for the fun part!\n\nFor Season 2, we had every castaway be represented by an Animal Crossing villager. We want to to keep this theme running, but the Mario universe doesn't have as straight-up of an answer for who we should let the castaways represent.\n\nSo, our solution is to let you guys be literally *anyone* you want to be.\n\nHead over to [this link](https://nintendo.fandom.com/wiki/Category:Characters_in_Mario_(series)) and find **three** characters you would like to represent you. Then, send them here in order of highest to lowest priority.\n\nWe work on a first come, first serve basis, so the quicker you do this the higher your chances are of getting your favorite!\n\nThe following characters are **off-limits**:\n> * Daisy (Cara)\n> * Yoshi (Fio)\n> * Captain Toad (fishpog)\n> * Monty Mole (Ricci)\n> * Rosalina (Lezaria)\n> * Dry Bones (Void)\n> * Birdo (Riley)\n> * Yellow Shy Guy (Colin)\n> * King Boo (Emp)\n> * Goomba (Sam)\n> - Mario, Peach, and Bowser\n\nTo continue, do **`!acknowledgements`**.",
+                "color": 15750750,
                 "image": {
                     "url": "https://static2.klipy.com/ii/c3a19a0b747a76e98651f2b9a3cca5ff/ba/f0/CalTeuxX.gif"
                 }
@@ -76,6 +78,7 @@ const steps = {
         "avatar_url": "https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/f/69d79c77-7a14-4d6e-a6e4-6aadb16f4fdb/dfyts5a-befb4a6c-e651-4361-91c0-ac23a65905d9.jpg?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1cm46YXBwOjdlMGQxODg5ODIyNjQzNzNhNWYwZDQxNWVhMGQyNmUwIiwiaXNzIjoidXJuOmFwcDo3ZTBkMTg4OTgyMjY0MzczYTVmMGQ0MTVlYTBkMjZlMCIsIm9iaiI6W1t7InBhdGgiOiIvZi82OWQ3OWM3Ny03YTE0LTRkNmUtYTZlNC02YWFkYjE2ZjRmZGIvZGZ5dHM1YS1iZWZiNGE2Yy1lNjUxLTQzNjEtOTFjMC1hYzIzYTY1OTA1ZDkuanBnIn1dXSwiYXVkIjpbInVybjpzZXJ2aWNlOmZpbGUuZG93bmxvYWQiXX0.9vYZfwklBp3Nk6SVhJkjus1HBhKv514jp84LOFkuJD0",        "embeds": [
             {
                 "description": "# ACKNOWLEDGEMENTS & UNDERSTANDINGS\n\nIn order for you to formally enter the casting pool, you must read and agree to all of the following:\n\n1. *I have read the <#1414321682839109818> and understand what I can be given a strike for. I recognize that cheating of any kind and extreme instances of toxicity will not be tolerated in this environment.*\n\n2. *I am signing up for a game that can be very mentally taxing at times. While this ORG is important, I understand that real life and mental health will always take priority over a silly online game.*\n\n3. *It is expected of me to do confessionals each episode in my confessional channel. I will not leave my confessional blank and actively contribute content (and my personal narrative) to the season!*\n\n4. *I understand that this will be a time commitment, and I will do my best to be available as often as I can be. While it is not expected of me to be on Discord 24/7, I have the free time needed to be an active participant in the game.*\n\nIf you don't want to fill out a DNC list, you're done! Continue with **`!finish`**.\nIf you DO feel the need to fill one out, the command to do so is **`!dnc-list`**.",
+                "color": 15750750,
                 "image": {
                     "url": "https://static2.klipy.com/ii/4493325008d34b7bf8cd6813cd5c1619/f8/32/5BEueWBxhDp8ILNPLuzD.gif"
                 }
@@ -88,6 +91,7 @@ const steps = {
         "avatar_url": "https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/f/69d79c77-7a14-4d6e-a6e4-6aadb16f4fdb/dfyts5a-befb4a6c-e651-4361-91c0-ac23a65905d9.jpg?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1cm46YXBwOjdlMGQxODg5ODIyNjQzNzNhNWYwZDQxNWVhMGQyNmUwIiwiaXNzIjoidXJuOmFwcDo3ZTBkMTg4OTgyMjY0MzczYTVmMGQ0MTVlYTBkMjZlMCIsIm9iaiI6W1t7InBhdGgiOiIvZi82OWQ3OWM3Ny03YTE0LTRkNmUtYTZlNC02YWFkYjE2ZjRmZGIvZGZ5dHM1YS1iZWZiNGE2Yy1lNjUxLTQzNjEtOTFjMC1hYzIzYTY1OTA1ZDkuanBnIn1dXSwiYXVkIjpbInVybjpzZXJ2aWNlOmZpbGUuZG93bmxvYWQiXX0.9vYZfwklBp3Nk6SVhJkjus1HBhKv514jp84LOFkuJD0",        "embeds": [
             {
                 "description": "# DNC INFO\nLet's be very clear. **I do not like or endorse cancel culture, and I especially do not like a mob mentality against one particular person**. That being said, at Everest, we want to ensure that every player feels comfortable within the game. So with that being said, here is how this will work.\n\nIf you have someone who you have PERSONAL beef with or someone who you just absolutely cannot stand for one reason or another, please let us know their name and discord tag. We can guarantee that you will not start on the same Tribe to minimize the impact of your feud/prevent metagaming.\n\nIf there is someone who you OBJECTIVELY believe should not be allowed to touch this season with a 20-foot pole, please let us know their name, discord tag and a list of reasons they should not play the season. We 100% expect you to provide evidence (screenshots, docs, whatever) to back up your claims here.\n\nAfter *this*, you're done. do **`!finish`** to finish your interview.",
+                "color": 15750750,
                 "image": {
                     "url": "https://static2.klipy.com/ii/935d7ab9d8c6202580a668421940ec81/ab/81/MDZnOAmS.gif"
                 }
@@ -100,6 +104,7 @@ const steps = {
         "avatar_url": "https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/f/69d79c77-7a14-4d6e-a6e4-6aadb16f4fdb/dfyts5a-befb4a6c-e651-4361-91c0-ac23a65905d9.jpg?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1cm46YXBwOjdlMGQxODg5ODIyNjQzNzNhNWYwZDQxNWVhMGQyNmUwIiwiaXNzIjoidXJuOmFwcDo3ZTBkMTg4OTgyMjY0MzczYTVmMGQ0MTVlYTBkMjZlMCIsIm9iaiI6W1t7InBhdGgiOiIvZi82OWQ3OWM3Ny03YTE0LTRkNmUtYTZlNC02YWFkYjE2ZjRmZGIvZGZ5dHM1YS1iZWZiNGE2Yy1lNjUxLTQzNjEtOTFjMC1hYzIzYTY1OTA1ZDkuanBnIn1dXSwiYXVkIjpbInVybjpzZXJ2aWNlOmZpbGUuZG93bmxvYWQiXX0.9vYZfwklBp3Nk6SVhJkjus1HBhKv514jp84LOFkuJD0",        "embeds": [
             {
                 "description": "# ...And that's all!\n\nThank you again for your interest in playing.\n\nWe are extremely excited for this season, and we hope you are equally as excited to play.\n\nIf you wish, ping Producers to let us know you've completed your interview. If not, Fio would probably like you just a little bit more.",
+                "color": 15750750,
                 "image": {
                     "url": "https://static2.klipy.com/ii/35ccce3d852f7995dd2da910f2abd795/71/e1/AIzPyP9h.gif"
                 }
@@ -113,6 +118,7 @@ const steps = {
             {
                 "title": "Interview 1",
                 "description": "Let's begin by making sure we have everything right for our **cast info**.\n\nPlease provide..\n> * Your **name**\n> * Your **age**\n> * Your **pronouns**\n> * Your **timezone**\n\nTo continue, **`!interview-2`**.",
+                "color": 15750750,
                 "image": {
                     "url": "https://static2.klipy.com/ii/39f2394ae36df6e199be9eb7c9fa1012/b9/38/bCBJCgXC.gif"
                 }
@@ -126,6 +132,7 @@ const steps = {
             {
                 "title": "Interview 2",
                 "description": "*Now let's get into this.*\n\n*What's your reasoning for applying to this season? Are you interested in the theme? Were you in and around season 1/2 of Everest and wanted to take a crack at season 3? Let us know!*\n\nTo continue, **`!interview-3`**.",
+                "color": 15750750,
                 "image": {
                     "url": "https://static2.klipy.com/ii/4493325008d34b7bf8cd6813cd5c1619/ec/5d/530ZGghATMRO96.gif"
                 }
@@ -139,6 +146,7 @@ const steps = {
             {
                 "title": "Interview 3",
                 "description": "Now into the personal territory...\n\n*Tell us about your ORG history! Are you the kind of player who's always involved in a game? Are you more of a once-a-year kind of player? Did you come out of retirement just for this? Please share your experiences with any fun or notable games from your ORG career!*\n\n*...or if this is your first ORG ever, welcome! Are you a fan of the show, did you get introduced by a friend? How'd you end up here? More importantly... how do you plan to navigate the game for your first time playing?*\n\n*Additionally, what from your previous ORG runs do you want to replicate here in Everest? What worked well for you before? What do you want to change this time around? Give us the tea!*\n\nTo continue, **`!interview-4`**.",
+                "color": 15750750,
                 "image": {
                     "url": "https://static2.klipy.com/ii/a15b48460c436e1e92c85ffc680932cc/42/4b/reb84rrq.gif"
                 }
@@ -152,6 +160,7 @@ const steps = {
             {
                 "title": "Interview 4",
                 "description": "We've got just 2 more questions for you today.\n\n*Every Survivor season is full of characters… heroes, villains, side-kicks, comedic reliefs, trainwrecks and so much more. How would you describe the kind of character you anticipate being this season?*\n\n*Enough about Survivor and ORGs now. Tell us a little more about yourself, outside of the game. How do you describe yourself, and how might that compare to how OTHERS describe you? Additionally, tell us about your hobbies and what you do for work/school!*\n\nTo continue, **`!interview-5`**.",
+                "color": 15750750,
                 "image": {
                     "url": "https://static2.klipy.com/ii/4493325008d34b7bf8cd6813cd5c1619/51/fd/FlSl972rZGoTzwLj.gif"
                 }
@@ -165,6 +174,7 @@ const steps = {
             {
                 "title": "Recruit 3",
                 "description": "And now for the fun part!\n\nFor Season 2, we had every castaway be represented by an Animal Crossing villager. We want to to keep this theme running, but the Mario universe doesn't have as straight-up of an answer for who we should let the castaways represent.\n\nSo, our solution is to let you guys be literally *anyone* you want to be.\n\nHead over to [this link](https://nintendo.fandom.com/wiki/Category:Characters_in_Mario_(series)) and find **three** characters you would like to represent you. Then, send them here in order of highest to lowest priority.\n\nWe work on a first come, first serve basis, so the quicker you do this the higher your chances are of getting your favorite!\n\nThe following characters are **off-limits**:\n> * Daisy (Cara)\n> * Yoshi (Fio)\n> * Captain Toad (fishpog)\n> * Monty Mole (Ricci)\n> * Rosalina (Lezaria)\n> * Dry Bones (Void)\n> * Birdo (Riley)\n> * Yellow Shy Guy (Colin)\n> * King Boo (Emp)\n> * Goomba (Sam)\n> - Mario, Peach, and Bowser\n\nTo continue, do **`!acknowledgements`**.",
+                "color": 15750750,
                 "image": {
                     "url": "https://static2.klipy.com/ii/c3a19a0b747a76e98651f2b9a3cca5ff/ba/f0/CalTeuxX.gif"
                 }
