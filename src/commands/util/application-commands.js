@@ -36,7 +36,7 @@ const steps = {
         "embeds": [
             {
                 "title": "Recruit 1",
-                "description": "Well, let’s start off with the question you all know and love.\n\nIf you’re here, someone on the host team probably knows all of this already. Still, we need some info!\n\n> Your **name**\n> Your **age**\n> Your **pronouns**\n> Your **timezone**\n\nTo continue, do **`!recruit-2`**.",
+                "description": "Well, let’s start off with the question you all know and love.\n\nIf you’re here, someone on the host team probably knows all of this already. Still, we need some info!\n\n> Your **name**\n> Your **age**, *and* **birthday**\n> Your **pronouns**\n> Your **timezone**\n\nTo continue, do **`!recruit-2`**.",
                 "color": 15750750,
                 "image": {
                     "url": "https://static2.klipy.com/ii/39f2394ae36df6e199be9eb7c9fa1012/b9/38/bCBJCgXC.gif"
@@ -117,7 +117,7 @@ const steps = {
         "avatar_url": "https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/f/69d79c77-7a14-4d6e-a6e4-6aadb16f4fdb/dfyts5a-befb4a6c-e651-4361-91c0-ac23a65905d9.jpg?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1cm46YXBwOjdlMGQxODg5ODIyNjQzNzNhNWYwZDQxNWVhMGQyNmUwIiwiaXNzIjoidXJuOmFwcDo3ZTBkMTg4OTgyMjY0MzczYTVmMGQ0MTVlYTBkMjZlMCIsIm9iaiI6W1t7InBhdGgiOiIvZi82OWQ3OWM3Ny03YTE0LTRkNmUtYTZlNC02YWFkYjE2ZjRmZGIvZGZ5dHM1YS1iZWZiNGE2Yy1lNjUxLTQzNjEtOTFjMC1hYzIzYTY1OTA1ZDkuanBnIn1dXSwiYXVkIjpbInVybjpzZXJ2aWNlOmZpbGUuZG93bmxvYWQiXX0.9vYZfwklBp3Nk6SVhJkjus1HBhKv514jp84LOFkuJD0",        "embeds": [
             {
                 "title": "Interview 1",
-                "description": "Let's begin by making sure we have everything right for our **cast info**.\n\nPlease provide..\n> * Your **name**\n> * Your **age**\n> * Your **pronouns**\n> * Your **timezone**\n\nTo continue, **`!interview-2`**.",
+                "description": "Let's begin by making sure we have everything right for our **cast info**.\n\nPlease provide..\n> * Your **name**\n> * Your **age**, *and* **birthday**\n> * Your **pronouns**\n> * Your **timezone**\n\nTo continue, **`!interview-2`**.",
                 "color": 15750750,
                 "image": {
                     "url": "https://static2.klipy.com/ii/39f2394ae36df6e199be9eb7c9fa1012/b9/38/bCBJCgXC.gif"
