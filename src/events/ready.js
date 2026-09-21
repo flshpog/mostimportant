@@ -1,6 +1,5 @@
 const { Events, REST, Routes } = require('discord.js');
 const { startPeriodicCheck } = require('../handlers/stickyManager');
-const { startShopScheduler } = require('../handlers/shopScheduler');
 const { resumeAll: resumeBugFrenzy } = require('../handlers/bugFrenzy');
 const { resumeAll: resumeFishingFrenzy } = require('../handlers/fishingFrenzy');
 const { resumeAll: resumeGauntletFrenzy } = require('../handlers/gauntletFrenzy');
@@ -60,7 +59,6 @@ module.exports = {
         });
 
         startPeriodicCheck(client);
-        startShopScheduler(client);
         resumeBugFrenzy(client);
         resumeFishingFrenzy(client);
         resumeGauntletFrenzy(client);
