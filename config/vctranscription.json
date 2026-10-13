@@ -85,7 +85,7 @@
   "guilds": {
     "1414321682025545822": {
       "_name": "Everest Survivor (main)",
-      "transcript_channel": null,
+      "transcript_channel": "1559379669776601199",
       "required_category": "1414321682415357964"
     }
   }
