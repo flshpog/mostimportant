@@ -4,6 +4,10 @@ const { LOG_CHANNEL_ID, COLORS } = require('../config/logging');
 module.exports = {
     name: Events.VoiceStateUpdate,
     async execute(oldState, newState) {
+        // Live VC transcription (no-op unless recorder bots are configured).
+        require('../handlers/vcTranscription').handleVoiceStateUpdate(oldState, newState).catch(err =>
+            console.error('VC transcription error:', err));
+
         try {
             const logChannel = newState.guild.channels.cache.get(LOG_CHANNEL_ID);
             if (!logChannel) return;

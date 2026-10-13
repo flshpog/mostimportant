@@ -3,6 +3,7 @@ const { startPeriodicCheck } = require('../handlers/stickyManager');
 const { resumeAll: resumeBugFrenzy } = require('../handlers/bugFrenzy');
 const { resumeAll: resumeFishingFrenzy } = require('../handlers/fishingFrenzy');
 const { resumeAll: resumeGauntletFrenzy } = require('../handlers/gauntletFrenzy');
+const { start: startVcTranscription } = require('../handlers/vcTranscription');
 
 const GUILD_ID = '1414321682025545822';
 
@@ -62,5 +63,6 @@ module.exports = {
         resumeBugFrenzy(client);
         resumeFishingFrenzy(client);
         resumeGauntletFrenzy(client);
+        startVcTranscription(client).catch(err => console.error('VC transcription error:', err));
     },
 };

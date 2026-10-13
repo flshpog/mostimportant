@@ -8,10 +8,12 @@
           "dev": "nodemon src/index.js"
      },
      "dependencies": {
+          "@discordjs/voice": "^0.19.2",
           "discord.js": "^14.14.1",
           "dotenv": "^16.3.1",
           "jimp": "^0.22.10",
-          "openai": "^4.20.1"
+          "openai": "^4.20.1",
+          "opusscript": "^0.0.8"
      },
      "devDependencies": {
           "nodemon": "^3.0.2"
