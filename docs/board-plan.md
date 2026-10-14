@@ -145,13 +145,11 @@ all of the original questions have been answered (2026-10-14). the decisions are
 the VPS, plus an `A` record for `board.fiovivor.org` at spaceship (the registrar that
 runs fiovivor.org's DNS).
 
-remaining before/while building:
+remaining, none blocking phase 2:
 
-1. **star spawn spots:** after a purchase, does the star move only among the star-icon spaces, or to any blue space on the board?
-2. **swaps/merge:** do coins, stars and items carry over when players move to the swap board and then the merge board?
-3. **new boards:** is one new design used for both the 2×7 swap (two copies) and the merge, or should the merge get its own? (claude designs it either way, plus the redemption island mini-board.)
-4. **VPS (needed in phase 4, not now):** OS, whether anything already uses ports 80/443, and SSH access, or you run the setup commands yourself.
-5. **shop items and bowser wheel:** not needed until phase 3's content pass; the engine treats them as data.
+1. **VPS reverse proxy (phase 4):** ports 80/443 are already taken on the ubuntu 22.04 box, so find out what's serving them and add `board.fiovivor.org` alongside it without disturbing it.
+2. **shop items and bowser wheel:** content comes later; the engine treats them as data.
+3. **merge board (yoshi's island) and redemption island layouts:** designed later, before the merge.
 
 ---
 

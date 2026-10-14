@@ -86,13 +86,13 @@ interface Space {
 ### owner decisions (2026-10-14)
 
 **spaces**
-- **star-icon spaces** are regular blue spaces (+3 coins). they are the candidate star locations. each board picks one as its starting star space; the starting space is set in data, not code.
+- **star-icon spaces** are regular blue spaces (+3 coins). their only special role: each copy of the main board picks one of them as its starting star space (set in data, not code).
 - **boo icons:** ignore them. they have no effect and are not special spaces.
 - **the red X over the bowser figure (left side):** that space is a **green** space. the other bowser spaces stay bowser spaces.
 
 **star**
 - costs 20 coins. passing the star (or landing on it) prompts the player to buy it, one star per prompt.
-- when it's bought, it moves to a random **blue** star-candidate space on the same board, never the one it was just on. the space it left is a regular space again.
+- when it's bought, it moves to a random **blue space** (any blue space) on the same board, never the one it was just on. the space it left is a regular space again.
 
 **coins and items**
 - coins are only for the board: they buy stars and shop items. they are **not** S2 bells and are not used anywhere else in the survivor game.
@@ -111,10 +111,11 @@ interface Space {
 - hosts see everything.
 
 **season structure and boards**
-- the season moves through several phases, each with its own boards:
-  1. **original tribes:** 4 tribes of 4 on 4 copies of the main board (the DK jungle layout). channels: mario stadium `1560048708832337930`, luigi's mansion `1560048767212847205`, warioware inc `1560048807012470784`, waluigi pinball `1560048870036078754`.
-  2. **first swap:** 2 tribes of 7 on a **new board** (design is up to claude, with full creative control).
-  3. **second swap (4 tribes of 2) and merge:** everyone goes onto one shared **merge board**.
+- there are exactly **3 board designs**:
+  1. **main board** (the DK jungle layout), 4 identical copies, one per original tribe. channels: mario stadium `1560048708832337930`, luigi's mansion `1560048767212847205`, warioware inc `1560048807012470784`, waluigi pinball `1560048870036078754`. players stay on these boards until merge (hosts can still move individuals between boards from the dashboard).
+  2. **merge board**: its own design, yoshi's island theme (the owner may supply a reference). everyone remaining moves here when the game reaches 4 tribes of 2 / merge.
+  3. **redemption island board**: its own small design (see below).
+- there is no swap board.
 - **the exiled 17th player:** at the start, one player is secretly on exile; the other 16 don't know about them. they join the board of the **first tribe to go to tribal and eliminate someone**. that board ends up with 5 players; the others have 4. hosts move them in via the dashboard.
 - **redemption island:** eliminated players leave their board and go to a shared **redemption island mini-board** (channel `1560049266498469989`).
   - on arrival, their coins, stars and items are **reset to zero**.
@@ -128,11 +129,13 @@ interface Space {
 
 **infrastructure**
 - typescript for the new board code (existing bot stays JS). storage is JSON files (sqlite only if JSON truly can't work).
-- the bot runs on a VPS, always on. the game server is at `board.fiovivor.org`. `fiovivor.org` DNS is on spaceship (the registrar), not cloudflare.
+- the bot runs on an ubuntu 22.04 VPS, always on. ports 80/443 are already in use there, so the reverse-proxy config must be added alongside the existing setup without disturbing it (worked out in phase 4). the game server is at `board.fiovivor.org`. `fiovivor.org` DNS is on spaceship (the registrar), not cloudflare.
 - website source lives in this repo (`apps/web`) and the built files are copied into the `fiovivor.org` repo under `/board`.
 - dice: 1–10.
 
-**still not defined (ask the owner, do not invent):** shop inventory, prices and sprites; bowser wheel contents; what happens to coins/stars/items when players move to a swap or merge board.
+**moving between boards:** players keep their coins, stars and items whenever they move to another board. the only exception is going to redemption island, which resets everything (see above).
+
+**still not defined (ask the owner, do not invent):** shop inventory, prices and sprites; bowser wheel contents; merge and redemption island layouts.
 
 all numeric values (coin amounts, star price, cooldown and turn-window hours) live in `season-config.json`, never in code.
 
