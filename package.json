@@ -14,7 +14,8 @@
           "board:test": "npm run test -w @everest/board-data -w @everest/engine -w @everest/server",
           "board:web": "npm run dev -w @everest/web",
           "board:sample": "npm run sample -w @everest/engine",
-          "board:typecheck": "npm run typecheck -w @everest/board-data -w @everest/engine -w @everest/server"
+          "board:typecheck": "npm run typecheck -w @everest/board-data -w @everest/engine -w @everest/server",
+          "board:dev": "npm run dev -w @everest/server --"
      },
      "dependencies": {
           "@discordjs/voice": "^0.19.2",

@@ -145,6 +145,10 @@ interface Space {
 
 all numeric values (coin amounts, star price, cooldown and turn-window hours) live in `season-config.json`, never in code.
 
+## server (phase 4, `packages/server`)
+
+runs inside the bot. how to run it locally, the API and the live-update protocol: `docs/board-server.md`.
+
 ## engine behaviour (phase 3, `packages/engine`)
 
 - pure functions: `apply(ctx, state, action) -> { state, events }`. every action carries `now`; dice, the new star space and bowser outcomes are always passed in by the server.

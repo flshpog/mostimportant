@@ -9,8 +9,6 @@ export default defineConfig({
   plugins: [react()],
   resolve: {
     alias: {
-      // Use board-data's TypeScript source directly so edits to board.json hot-reload.
-      "@everest/board-data": fileURLToPath(new URL("../../packages/board-data/src/index.ts", import.meta.url)),
       "@docs": fileURLToPath(new URL("../../docs", import.meta.url)),
     },
   },

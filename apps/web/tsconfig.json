@@ -12,7 +12,6 @@
     "noEmit": true,
     "types": ["vite/client"],
     "paths": {
-      "@everest/board-data": ["../../packages/board-data/src/index.ts"],
       "@docs/*": ["../../docs/*"]
     }
   },
