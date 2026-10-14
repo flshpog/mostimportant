@@ -1,0 +1,33 @@
+{
+  "_comment": [
+    "Season 3 board server (website API + live updates). Game rules live in",
+    "packages/board-data/season-config.json; this file is only about running the server.",
+    "",
+    "enabled - set false to stop the board server starting with the bot.",
+    "port - local port the server listens on. In production a reverse proxy (caddy/nginx)",
+    "  forwards https://board.fiovivor.org to it.",
+    "public_url - the address browsers use to reach this server. Discord OAuth redirects to",
+    "  <public_url>/auth/callback, which must also be added in the Discord developer portal.",
+    "site_url - the website's board page. Login sends players back here.",
+    "allowed_origins - websites allowed to call the API and open live connections.",
+    "guild_id / host_role_id - who counts as a host: anyone with this role in this server.",
+    "host_user_ids - extra host Discord user IDs, for testing or emergencies.",
+    "data_dir - where board state and logs are saved, relative to the bot folder.",
+    "session_days - how long a website login lasts.",
+    "",
+    "Local testing: put any of these keys in config/board.local.json (gitignored) to override",
+    "them on your machine only, e.g. a test server's guild_id/host_role_id and localhost URLs.",
+    "Env overrides also work: BOARD_PORT, BOARD_PUBLIC_URL, BOARD_SITE_URL, BOARD_DATA_DIR.",
+    "Secrets go in .env, never here: DISCORD_CLIENT_SECRET, BOARD_SESSION_SECRET."
+  ],
+  "enabled": true,
+  "port": 8787,
+  "public_url": "https://board.fiovivor.org",
+  "site_url": "https://fiovivor.org/board/",
+  "allowed_origins": ["https://fiovivor.org", "http://localhost:5173"],
+  "guild_id": "1414321682025545822",
+  "host_role_id": "1414321682415357962",
+  "host_user_ids": [],
+  "data_dir": "data/board",
+  "session_days": 30
+}

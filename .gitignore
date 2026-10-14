@@ -90,6 +90,7 @@ jspm_packages/
 .Trashes
 ehthumbs.db
 Thumbs.db
-# Board build output
+# Board build output and local-only board settings
+config/board.local.json
 packages/*/dist/
 apps/*/dist/

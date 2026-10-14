@@ -1,0 +1,21 @@
+{
+  "name": "@everest/server",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Season 3 board game server: persistence, REST API, websockets, Discord login",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "scripts": {
+    "test": "vitest run",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@everest/board-data": "*",
+    "@everest/engine": "*",
+    "ws": "^8.22.0",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@types/ws": "^8.18.2"
+  }
+}

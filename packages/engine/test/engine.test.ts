@@ -480,3 +480,22 @@ describe("purity", () => {
     expect(snapshot.players.alice.space).toBe("s01");
   });
 });
+
+describe("describeEvent", () => {
+  it("writes a readable line for every event in a real turn", async () => {
+    const { describeEvent } = await import("../src");
+    const g = started(ctxFor(), ["alice", "bob"], "s02");
+    g.setup("alice", "s01", 25);
+    const ev = [...g.roll("alice", 2), ...g.do({ type: "buyStar", playerId: "alice", newStarSpace: "s08", now: g.now })];
+    const lines = ev.map((e) => describeEvent(e, (id) => id.toUpperCase())).filter(Boolean);
+    expect(lines).toEqual([
+      "ALICE rolled a 2.",
+      "ALICE reached the star! It costs 20 coins.",
+      "⭐ ALICE bought a star!",
+      "The star flew to a new spot.",
+      "ALICE landed on a red space.",
+      "ALICE lost 3 coins. Now 2.",
+      "It's BOB's turn.",
+    ]);
+  });
+});

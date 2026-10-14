@@ -120,7 +120,12 @@ export const SeasonConfigSchema = z
     bowser: z.object({ wheel: z.array(BowserOutcomeSchema) }).strict(),
     boards: z.array(BoardInstanceSchema).min(1),
     redemptionIsland: z
-      .object({ channelId: SnowflakeSchema, layout: z.string().nullable() })
+      .object({
+        channelId: SnowflakeSchema,
+        layout: z.string().nullable(),
+        // Coins a player is reset to on arrival (stars and items always reset to none).
+        resetCoins: z.number().int().nonnegative(),
+      })
       .strict(),
   })
   .strict()

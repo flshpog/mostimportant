@@ -36,6 +36,7 @@
   ],
   "redemptionIsland": {
     "channelId": "1560049266498469989",
-    "layout": null
+    "layout": null,
+    "resetCoins": 0
   }
 }

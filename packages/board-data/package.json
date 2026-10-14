@@ -3,10 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "description": "Season 3 board layouts, season config, schema and validator",
-  "main": "dist/src/index.js",
-  "types": "dist/src/index.d.ts",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
   "scripts": {
-    "build": "tsc -p tsconfig.json",
     "validate": "tsx scripts/validate.ts",
     "test": "vitest run",
     "typecheck": "tsc -p tsconfig.json --noEmit"
