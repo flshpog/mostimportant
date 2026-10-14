@@ -1,5 +1,7 @@
 # CLAUDE.md - Everest Hub Bot / Nook's Cranny Economy
 
+> **Season 3 board system:** read docs/board-spec.md before any work on the board system.
+
 ## What this is
 
 A Discord bot for **Everest Survivor S2**, an Animal Crossing–themed Survivor ORG.
