@@ -1,8 +1,8 @@
 import { z } from "zod";
 
 // Space types the engine understands. "star" is not a space type: the star sits on
-// a blue space and moves at runtime. Star-icon spaces are blue spaces with
-// `starIcon: true`, used only to pick each board's starting star space.
+// a blue space and moves at runtime. Each board's starting star space is set in
+// season-config.json (boards[].starStart).
 export const SpaceTypeSchema = z.enum(["blue", "red", "green", "shop", "bowser", "start"]);
 export type SpaceType = z.infer<typeof SpaceTypeSchema>;
 
@@ -17,9 +17,9 @@ export const SpaceSchema = z
     // Outgoing directed edges. More than one means a fork.
     next: z.array(SpaceIdSchema).min(1, "every space needs at least one exit"),
     label: z.string().optional(),
-    // True if passing (not only landing) triggers the space, e.g. shops.
+    // True if passing (not only landing) triggers the space, e.g. shops. Bowser
+    // spaces trigger on landing only.
     passEffect: z.boolean().optional(),
-    starIcon: z.boolean().optional(),
     // Transcription flags for the owner to confirm. Cleared once confirmed.
     needsReview: z.boolean().optional(),
     reviewNote: z.string().optional(),

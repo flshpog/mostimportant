@@ -48,10 +48,10 @@ describe("validateBoard", () => {
     expect(validateBoard(bad).errors.some((e) => e.includes("at least one exit"))).toBe(true);
   });
 
-  it("catches star icons on non-blue spaces", () => {
+  it("rejects unknown fields so typos don't slip through", () => {
     const bad = structuredClone(tiny);
-    Object.assign(bad.spaces[2], { starIcon: true });
-    expect(validateBoard(bad).errors).toContain("s03 has a star icon but is red, not blue");
+    Object.assign(bad.spaces[2], { pasEffect: true });
+    expect(validateBoard(bad).errors.some((e) => e.includes("pasEffect"))).toBe(true);
   });
 });
 

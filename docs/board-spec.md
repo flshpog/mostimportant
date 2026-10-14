@@ -68,7 +68,6 @@ interface Space {
   next: string[];        // outgoing edges; more than one = fork
   label?: string;        // e.g. "left fork", "top bridge"
   passEffect?: boolean;  // true if passing (not landing) triggers it, e.g. shop
-  starIcon?: boolean;    // blue star-icon space: a candidate starting star location
   needsReview?: boolean; // transcription not yet confirmed by the owner
   reviewNote?: string;
 }
@@ -91,9 +90,11 @@ interface Space {
 ### owner decisions (2026-10-14)
 
 **spaces**
-- **star-icon spaces** are regular blue spaces (+3 coins). their only special role: each copy of the main board picks one of them as its starting star space (set in data, not code).
+- **star-icon spaces** on the reference image are ignored: they are plain blue spaces with no marker. each board's starting star space is set in `season-config.json` (`boards[].starStart`); all four main boards start the star on **s62**.
 - **boo icons:** ignore them. they have no effect and are not special spaces.
-- **the red X over the bowser figure (left side):** that space is a **green** space. the other bowser spaces stay bowser spaces.
+- **the red X over the bowser figure (left side):** the space beside it (s57) stays **red**. the other bowser spaces stay bowser spaces.
+- **triggers:** shops trigger when passed or landed on. bowser spaces trigger **only on landing**. blue/red/green apply only on landing.
+- **starting coins:** 10.
 
 **star**
 - costs 20 coins. passing the star (or landing on it) prompts the player to buy it, one star per prompt.
@@ -156,6 +157,8 @@ all numeric values (coin amounts, star price, cooldown and turn-window hours) li
 - three.js via react-three-fiber + drei. vite build output must stay deployable as static files to the current host.
 - scenery: modeled in blender (via the blender MCP so claude can drive blender directly), exported as optimized `.glb` (draco/meshopt compressed). free CC0 low-poly packs (kenney, quaternius) are fine for trees and props. the owner is not an artist, so lean on a clean, readable, stylized low-poly look over realism.
 - spaces, path lines, star, shops and player tokens are generated in code from board.json, so they always match the game logic.
+- **visual direction (owner decision):** the reference image is only the **layout** (which spaces exist, how they connect, roughly where they sit). the 3D board is our own original design and should **not** look like DK's jungle. theme: classic **mushroom kingdom grassland**: rolling green plains and paths, with the giant mushroom pillar/platforms in the background. claude has full creative control over the look. use original models (blender, or CC0 packs); no ripped nintendo models, textures, logos or characters. inspired-by is fine, copies are not.
+- the star-icon spaces on the reference image get no special visual; they render as plain blue spaces.
 - camera modes (smooth animated transitions between them):
   1. **overview**: the whole board
   2. **me**: follow your own token (requires login, see auth)

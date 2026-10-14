@@ -63,6 +63,7 @@ export function DebugOverlay() {
   const starStarts = config.success
     ? config.data.boards.filter((b) => b.layout === layoutId && b.starStart)
     : [];
+  const starStartIds = new Set(starStarts.map((b) => b.starStart!));
 
   function onMove(e: MouseEvent<SVGSVGElement>) {
     const svg = e.currentTarget;
@@ -155,7 +156,7 @@ export function DebugOverlay() {
                   {s.needsReview && <circle cx={x} cy={y} r={R + 7} className="ring-review" />}
                   {isFork && <circle cx={x} cy={y} r={R + 4} className="ring-fork" />}
                   <circle cx={x} cy={y} r={R} fill={TYPE_COLORS[s.type]} className="dot" />
-                  {s.starIcon && <text x={x} y={y + 4} className="glyph">★</text>}
+                  {starStartIds.has(s.id) && <text x={x} y={y + 4} className="glyph">★</text>}
                   {s.type === "start" && <text x={x} y={y + 4} className="glyph">S</text>}
                   {showIds && (
                     <text x={x} y={y - R - 4} className="space-id">
@@ -187,7 +188,7 @@ export function DebugOverlay() {
                 <dt>type</dt>
                 <dd>
                   <span className="swatch" style={{ background: TYPE_COLORS[sel.type] }} /> {sel.type}
-                  {sel.starIcon ? " (star icon)" : ""}
+                  {starStartIds.has(sel.id) ? " (starting star)" : ""}
                 </dd>
                 {sel.label && (
                   <>

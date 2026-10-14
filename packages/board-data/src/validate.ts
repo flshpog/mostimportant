@@ -54,7 +54,6 @@ export function validateBoard(input: unknown): BoardReport {
       backward.set(n, [...(backward.get(n) ?? []), s.id]);
     }
     if (s.next.length > 1) report.forks.push(s.id);
-    if (s.starIcon && s.type !== "blue") report.errors.push(`${s.id} has a star icon but is ${s.type}, not blue`);
     if (s.needsReview) report.review.push({ id: s.id, note: s.reviewNote ?? "(no note)" });
   }
 

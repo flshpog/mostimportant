@@ -1,7 +1,7 @@
 {
   "timezone": "America/New_York",
   "coins": {
-    "starting": 0,
+    "starting": 10,
     "blue": 3,
     "red": -3,
     "green": 0,
@@ -22,10 +22,10 @@
     "firstTurnUnlimited": true
   },
   "boards": [
-    { "id": "mario-stadium", "name": "Mario Stadium", "layout": "main", "channelId": "1560048708832337930", "starStart": "s55" },
-    { "id": "luigis-mansion", "name": "Luigi's Mansion", "layout": "main", "channelId": "1560048767212847205", "starStart": "s55" },
-    { "id": "warioware-inc", "name": "WarioWare, Inc.", "layout": "main", "channelId": "1560048807012470784", "starStart": "s55" },
-    { "id": "waluigi-pinball", "name": "Waluigi Pinball", "layout": "main", "channelId": "1560048870036078754", "starStart": "s55" }
+    { "id": "mario-stadium", "name": "Mario Stadium", "layout": "main", "channelId": "1560048708832337930", "starStart": "s62" },
+    { "id": "luigis-mansion", "name": "Luigi's Mansion", "layout": "main", "channelId": "1560048767212847205", "starStart": "s62" },
+    { "id": "warioware-inc", "name": "WarioWare, Inc.", "layout": "main", "channelId": "1560048807012470784", "starStart": "s62" },
+    { "id": "waluigi-pinball", "name": "Waluigi Pinball", "layout": "main", "channelId": "1560048870036078754", "starStart": "s62" }
   ],
   "redemptionIsland": {
     "channelId": "1560049266498469989",
