@@ -90,3 +90,6 @@ jspm_packages/
 .Trashes
 ehthumbs.db
 Thumbs.db
+# Board build output
+packages/*/dist/
+apps/*/dist/

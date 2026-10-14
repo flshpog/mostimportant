@@ -55,17 +55,22 @@ the owner is not rushing this and wants it done right. that means:
 - the layout is two halves joined by two one-way bridges: the top bridge goes left only, the bottom bridge goes right only. the board therefore forms one large loop with branches inside each half.
 - forks are marked in orange on the image. at a fork the player chooses a direction (the engine pauses movement and emits `ForkChoiceRequired`; remaining steps resume after the choice).
 - arrows on the image show allowed travel direction. paths are directed edges.
-- the board is stored as a directed graph in `board.json`:
+- the board is stored as a directed graph in `packages/board-data/boards/main.json` (schema: `packages/board-data/src/schema.ts`; numeric rules: `packages/board-data/season-config.json`):
 
 ```ts
-type SpaceType = "blue" | "red" | "green" | "shop" | "bowser" | "star_slot" | "boo" | "start";
+// the star is not a space type: it sits on a blue space and moves at runtime.
+// boo icons are ignored (owner decision), so there is no boo type.
+type SpaceType = "blue" | "red" | "green" | "shop" | "bowser" | "start";
 interface Space {
   id: string;            // stable, e.g. "s01"
   type: SpaceType;
   pos: { x: number; y: number };   // 2D layout coords, normalized 0..1 from the reference image
   next: string[];        // outgoing edges; more than one = fork
   label?: string;        // e.g. "left fork", "top bridge"
-  passEffect?: boolean;  // true if passing (not landing) triggers it, e.g. shop or star
+  passEffect?: boolean;  // true if passing (not landing) triggers it, e.g. shop
+  starIcon?: boolean;    // blue star-icon space: a candidate starting star location
+  needsReview?: boolean; // transcription not yet confirmed by the owner
+  reviewNote?: string;
 }
 ```
 

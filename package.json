@@ -3,9 +3,16 @@
      "version": "1.0.0",
      "description": "A comprehensive Discord bot for Everest Hub",
      "main": "src/index.js",
+     "workspaces": [
+          "packages/*",
+          "apps/*"
+     ],
      "scripts": {
           "start": "node src/index.js",
-          "dev": "nodemon src/index.js"
+          "dev": "nodemon src/index.js",
+          "board:validate": "npm run validate -w @everest/board-data",
+          "board:test": "npm run test -w @everest/board-data",
+          "board:web": "npm run dev -w @everest/web"
      },
      "dependencies": {
           "@discordjs/voice": "^0.19.2",
@@ -16,7 +23,11 @@
           "opusscript": "^0.0.8"
      },
      "devDependencies": {
-          "nodemon": "^3.0.2"
+          "@types/node": "^22.20.5",
+          "nodemon": "^3.0.2",
+          "tsx": "^4.23.15",
+          "typescript": "^5.9.3",
+          "vitest": "^2.1.9"
      },
      "keywords": [
           "discord",

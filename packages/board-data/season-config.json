@@ -1,0 +1,34 @@
+{
+  "timezone": "America/New_York",
+  "coins": {
+    "starting": 0,
+    "blue": 3,
+    "red": -3,
+    "green": 0,
+    "floor": 0
+  },
+  "star": {
+    "price": 20,
+    "maxPerPrompt": 1,
+    "spawnOn": ["blue"]
+  },
+  "dice": {
+    "min": 1,
+    "max": 10
+  },
+  "turns": {
+    "cooldownHours": 4,
+    "windowHours": 12,
+    "firstTurnUnlimited": true
+  },
+  "boards": [
+    { "id": "mario-stadium", "name": "Mario Stadium", "layout": "main", "channelId": "1560048708832337930", "starStart": "s55" },
+    { "id": "luigis-mansion", "name": "Luigi's Mansion", "layout": "main", "channelId": "1560048767212847205", "starStart": "s55" },
+    { "id": "warioware-inc", "name": "WarioWare, Inc.", "layout": "main", "channelId": "1560048807012470784", "starStart": "s55" },
+    { "id": "waluigi-pinball", "name": "Waluigi Pinball", "layout": "main", "channelId": "1560048870036078754", "starStart": "s55" }
+  ],
+  "redemptionIsland": {
+    "channelId": "1560049266498469989",
+    "layout": null
+  }
+}
