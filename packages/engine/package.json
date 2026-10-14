@@ -1,0 +1,16 @@
+{
+  "name": "@everest/engine",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Season 3 board game engine: pure, deterministic, no IO",
+  "main": "dist/src/index.js",
+  "types": "dist/src/index.d.ts",
+  "scripts": {
+    "test": "vitest run",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "sample": "tsx --tsconfig tsconfig.json scripts/sample-turn.ts"
+  },
+  "dependencies": {
+    "@everest/board-data": "*"
+  }
+}

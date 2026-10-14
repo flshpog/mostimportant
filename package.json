@@ -11,8 +11,9 @@
           "start": "node src/index.js",
           "dev": "nodemon src/index.js",
           "board:validate": "npm run validate -w @everest/board-data",
-          "board:test": "npm run test -w @everest/board-data",
-          "board:web": "npm run dev -w @everest/web"
+          "board:test": "npm run test -w @everest/board-data -w @everest/engine",
+          "board:web": "npm run dev -w @everest/web",
+          "board:sample": "npm run sample -w @everest/engine"
      },
      "dependencies": {
           "@discordjs/voice": "^0.19.2",

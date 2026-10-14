@@ -1,0 +1,11 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "dist",
+    "lib": ["ES2022", "DOM"],
+    "paths": {
+      "@everest/board-data": ["../board-data/src/index.ts"]
+    }
+  },
+  "include": ["src", "test", "scripts"]
+}

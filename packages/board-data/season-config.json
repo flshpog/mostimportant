@@ -9,7 +9,6 @@
   },
   "star": {
     "price": 20,
-    "maxPerPrompt": 1,
     "spawnOn": ["blue"]
   },
   "dice": {
@@ -19,7 +18,15 @@
   "turns": {
     "cooldownHours": 4,
     "windowHours": 12,
-    "firstTurnUnlimited": true
+    "firstTurnUnlimited": true,
+    "choiceTimeoutMinutes": 60
+  },
+  "shop": {
+    "maxPerVisit": 1,
+    "items": []
+  },
+  "bowser": {
+    "wheel": []
   },
   "boards": [
     { "id": "mario-stadium", "name": "Mario Stadium", "layout": "main", "channelId": "1560048708832337930", "starStart": "s62" },

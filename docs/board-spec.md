@@ -145,6 +145,17 @@ interface Space {
 
 all numeric values (coin amounts, star price, cooldown and turn-window hours) live in `season-config.json`, never in code.
 
+## engine behaviour (phase 3, `packages/engine`)
+
+- pure functions: `apply(ctx, state, action) -> { state, events }`. every action carries `now`; dice, the new star space and bowser outcomes are always passed in by the server.
+- **prompts:** forks, the star and shops pause the move and wait for the player. each prompt times out after `turns.choiceTimeoutMinutes` (default 60, editable): a fork takes its **first listed exit**, the star and shop are **skipped**. the bowser spin isn't a player choice; the server resolves it right away.
+- **order on arrival:** star prompt, then shop prompt, then (on the final space only) the landing effect. landing on the star still pays the blue +3 after the prompt.
+- **cooldown** runs from the moment of the roll, not from the end of the move.
+- **pause** freezes every clock (windows, cooldowns, prompt timers) for the length of the pause.
+- **multiple dice** are summed, so items like double dice need no engine change.
+- **undo:** a board is stored as its initial state plus every action. undo drops actions and replays; `undoTurn` rewinds to just before the last roll.
+- **items:** the engine stores which items a player owns but applies no item effects yet (items not defined).
+
 ## dice
 
 - server-side secure RNG (`crypto.randomInt`), 1 to 10 by default (configurable), with the roll recorded in the event log.

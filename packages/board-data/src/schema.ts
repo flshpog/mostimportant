@@ -57,6 +57,30 @@ export const BoardInstanceSchema = z
   .strict();
 export type BoardInstance = z.infer<typeof BoardInstanceSchema>;
 
+export const ShopItemSchema = z
+  .object({
+    id: z.string().min(1),
+    name: z.string().min(1),
+    price: z.number().int().nonnegative(),
+    description: z.string().optional(),
+    sprite: z.string().optional(),
+  })
+  .strict();
+export type ShopItem = z.infer<typeof ShopItemSchema>;
+
+// Placeholder shape until the owner defines the wheel: each outcome is a weighted
+// slice that changes coins and/or stars.
+export const BowserOutcomeSchema = z
+  .object({
+    id: z.string().min(1),
+    label: z.string().min(1),
+    weight: z.number().positive(),
+    coins: z.number().int().default(0),
+    stars: z.number().int().default(0),
+  })
+  .strict();
+export type BowserOutcome = z.infer<typeof BowserOutcomeSchema>;
+
 export const SeasonConfigSchema = z
   .object({
     timezone: z.string(),
@@ -73,7 +97,6 @@ export const SeasonConfigSchema = z
     star: z
       .object({
         price: z.number().int().nonnegative(),
-        maxPerPrompt: z.number().int().positive(),
         // Space types the star may move to after it's bought.
         spawnOn: z.array(SpaceTypeSchema).min(1),
       })
@@ -84,8 +107,17 @@ export const SeasonConfigSchema = z
         cooldownHours: HoursSchema,
         windowHours: HoursSchema,
         firstTurnUnlimited: z.boolean(),
+        // How long a fork/shop/star prompt waits before the default is taken.
+        choiceTimeoutMinutes: z.number().positive(),
       })
       .strict(),
+    shop: z
+      .object({
+        maxPerVisit: z.number().int().positive(),
+        items: z.array(ShopItemSchema),
+      })
+      .strict(),
+    bowser: z.object({ wheel: z.array(BowserOutcomeSchema) }).strict(),
     boards: z.array(BoardInstanceSchema).min(1),
     redemptionIsland: z
       .object({ channelId: SnowflakeSchema, layout: z.string().nullable() })
