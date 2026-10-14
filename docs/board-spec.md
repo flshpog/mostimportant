@@ -83,14 +83,25 @@ interface Space {
 | bowser | spin a punishment wheel |
 | start | starting space |
 
-**not defined yet (ask the owner, do not invent):** star-icon spaces, boo spaces, the red X over the bowser figure on the left side (likely removed), star price and star movement rules, shop inventory and prices, bowser wheel contents, whether coins on the board are the same coins used for survivor advantages, how often players can roll (the "slowed down" pace), turn order, what happens to an exiled or eliminated player's token, whether players can view other tribes' boards.
+### owner decisions (2026-10-14)
 
-all numeric values (coin amounts, star price, roll limits) live in `season-config.json`, never in code.
+- **star-icon spaces** are regular blue spaces (+3 coins). they are the only spaces the star can sit on (`star_slot`). each of the four boards picks one of them as its starting star space; the starting space is set in data, not code.
+- **boo icons:** ignore them. they have no effect and are not special spaces.
+- **the red X over the bowser figure (left side):** that space is a regular space, not a bowser space.
+- **star:** costs 20 coins. a player can buy at most one star per pass. when the star is claimed, it moves to another star space.
+- **coins** are only for the board: they buy stars and shop items. they are **not** S2 bells and are not used anywhere else in the survivor game.
+- **shop:** the full item list comes later. each item should eventually have a small sprite (made for the game, or an existing item sprite the owner supplies).
+- **bowser wheel:** contents come later.
+- **turn pace (per tribe board):** turns go in a fixed order. when a player rolls, a **4-hour cooldown** starts. after the cooldown, the next player has a **12-hour window** to take their turn. if they don't take it within 12 hours, the turn automatically passes to the next player. when a player does roll, the 4-hour cooldown starts again, and the cycle repeats.
+
+**still not defined (ask the owner, do not invent):** shop inventory, prices and sprites; bowser wheel contents; what happens to an exiled or eliminated player's token; whether players can view other tribes' boards.
+
+all numeric values (coin amounts, star price, cooldown and turn-window hours) live in `season-config.json`, never in code.
 
 ## dice
 
 - server-side secure RNG (`crypto.randomInt`), 1 to 10 by default (configurable), with the roll recorded in the event log.
-- roll limits enforced by the server (e.g. one roll per player per game day, configurable).
+- turn order, the 4-hour cooldown and the 12-hour turn window are enforced by the server (see owner decisions above; the hours are configurable).
 - the website and discord both show a dice animation that lands on the server's result.
 - items may modify dice later (double dice, custom dice). design the roll action so modifiers can be added.
 

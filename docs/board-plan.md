@@ -142,15 +142,14 @@ either way:
 
 ### from the spec's "not defined yet" list
 
-1. **star-icon spaces** (the blue star icons on the board): what are they? possible star locations, or a space type of their own?
-2. **boo spaces** (the white boo icons near the top-right shop and the bottom-left shop): what does landing on or passing them do?
-3. **the red X over the bowser on the left side:** is that space removed? if so, is the path through it still there (as a different space type) or gone?
-4. **star:** price, where it starts, which spaces it can move to, when it moves (after purchase? on a timer?), and can you buy more than one when passing?
-5. **shop:** inventory, prices, stock limits, and what each item does on the board. is the shop the same at all three shop spaces?
-6. **bowser wheel:** the list of outcomes and their weights.
-7. **coins:** are board coins the same currency used for survivor advantages? if so, is that S2's bells system or a new S3 currency?
-8. **pace:** how often can a player roll (once per game day? per round?), and when does the window reset (america/new_york midnight?)
-9. **turn order:** does order matter (everyone rolls whenever within the window), or is there a strict sequence?
+1–8 answered (2026-10-14) and recorded under "owner decisions" in `docs/board-spec.md`:
+star-icon spaces are blue star slots, boos are ignored, the red-X spot is a regular
+space, the star costs 20 and moves when claimed, coins are board-only, shop items and
+the bowser wheel come later, and turns use a fixed order with a 4h cooldown and a 12h
+window. question 9 (turn order) is answered by 8.
+
+still open:
+
 10. **exiled/eliminated players:** what happens to their token, coins, stars and items?
 11. **cross-tribe viewing:** can players see other tribes' boards and the all-tribes leaderboard?
 
