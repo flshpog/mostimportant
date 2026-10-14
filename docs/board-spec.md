@@ -4,7 +4,7 @@
 
 ## what this is
 
-everest is a survivor-style online reality game (ORG) run entirely over discord. season 3 has 17 players: 16 split into four tribes, one exiled at the start. alongside the survivor game, each tribe plays its own slowed-down mario party-style board. there is one board design, copied four times (one instance per tribe). players earn coins on the board and spend them on advantages in the survivor game.
+everest is a survivor-style online reality game (ORG) run entirely over discord. season 3 has 17 players: 16 split into four tribes, one exiled at the start. alongside the survivor game, each tribe plays its own slowed-down mario party-style board. boards change with the season's phases (4 copies of the main board, then a swap board, a merge board, and a redemption island mini-board; see owner decisions). players earn coins on the board and spend them on advantages in the survivor game.
 
 the board system has three surfaces:
 
@@ -85,16 +85,54 @@ interface Space {
 
 ### owner decisions (2026-10-14)
 
-- **star-icon spaces** are regular blue spaces (+3 coins). they are the only spaces the star can sit on (`star_slot`). each of the four boards picks one of them as its starting star space; the starting space is set in data, not code.
+**spaces**
+- **star-icon spaces** are regular blue spaces (+3 coins). they are the candidate star locations. each board picks one as its starting star space; the starting space is set in data, not code.
 - **boo icons:** ignore them. they have no effect and are not special spaces.
-- **the red X over the bowser figure (left side):** that space is a regular space, not a bowser space.
-- **star:** costs 20 coins. a player can buy at most one star per pass. when the star is claimed, it moves to another star space.
-- **coins** are only for the board: they buy stars and shop items. they are **not** S2 bells and are not used anywhere else in the survivor game.
-- **shop:** the full item list comes later. each item should eventually have a small sprite (made for the game, or an existing item sprite the owner supplies).
-- **bowser wheel:** contents come later.
-- **turn pace (per tribe board):** turns go in a fixed order. when a player rolls, a **4-hour cooldown** starts. after the cooldown, the next player has a **12-hour window** to take their turn. if they don't take it within 12 hours, the turn automatically passes to the next player. when a player does roll, the 4-hour cooldown starts again, and the cycle repeats.
+- **the red X over the bowser figure (left side):** that space is a **green** space. the other bowser spaces stay bowser spaces.
 
-**still not defined (ask the owner, do not invent):** shop inventory, prices and sprites; bowser wheel contents; what happens to an exiled or eliminated player's token; whether players can view other tribes' boards.
+**star**
+- costs 20 coins. passing the star (or landing on it) prompts the player to buy it, one star per prompt.
+- when it's bought, it moves to a random **blue** star-candidate space on the same board, never the one it was just on. the space it left is a regular space again.
+
+**coins and items**
+- coins are only for the board: they buy stars and shop items. they are **not** S2 bells and are not used anywhere else in the survivor game.
+- shop: the full item list comes later. each item should eventually have a small sprite (made for the game, or an existing item sprite the owner supplies).
+- bowser wheel: contents come later.
+
+**turns (per board)**
+- fixed order, set by hosts per board.
+- when the game first starts, the first player has **no time limit** for their first turn.
+- after any roll, a **4-hour cooldown** starts. after the cooldown, the next player has a **12-hour window**.
+- if the window expires, that player loses the turn (they keep their place in the order) and the next player's 12-hour window starts **immediately**, with no cooldown.
+
+**visibility**
+- players can view **only their own board**. no cross-board viewing and no all-tribes leaderboard for players.
+- within a board, players can see each other's coins, stars and items (a tribe leaderboard). nothing crosses to other boards.
+- hosts see everything.
+
+**season structure and boards**
+- the season moves through several phases, each with its own boards:
+  1. **original tribes:** 4 tribes of 4 on 4 copies of the main board (the DK jungle layout). channels: mario stadium `1560048708832337930`, luigi's mansion `1560048767212847205`, warioware inc `1560048807012470784`, waluigi pinball `1560048870036078754`.
+  2. **first swap:** 2 tribes of 7 on a **new board** (design is up to claude, with full creative control).
+  3. **second swap (4 tribes of 2) and merge:** everyone goes onto one shared **merge board**.
+- **the exiled 17th player:** at the start, one player is secretly on exile; the other 16 don't know about them. they join the board of the **first tribe to go to tribal and eliminate someone**. that board ends up with 5 players; the others have 4. hosts move them in via the dashboard.
+- **redemption island:** eliminated players leave their board and go to a shared **redemption island mini-board** (channel `1560049266498469989`).
+  - on arrival, their coins, stars and items are **reset to zero**.
+  - the redemption board has **no star**, but it has coins and a **shop space** selling items from the standard item pool.
+  - if a player returns to the game, they go back to a real board and **keep** the coins and items they earned on redemption island.
+- every board is just data: the engine and renderers must support any number of boards and layouts, and hosts move players between boards.
+
+**hosts**
+- host commands can be used in any channel but are **always ephemeral**. access is gated on the existing host role (`channels.host_ping_role` in `config/economy.json`), not the host category.
+- automate the game flow (rolls, spaces, star, turns, timeouts). hosts also get a **web host dashboard** where they can view and edit everything at any time: coins, stars, items, positions, turn order, star location, which board each player is on, sending players to redemption island, moving everyone onto swap/merge boards, pausing a board, undo.
+
+**infrastructure**
+- typescript for the new board code (existing bot stays JS). storage is JSON files (sqlite only if JSON truly can't work).
+- the bot runs on a VPS, always on. the game server is at `board.fiovivor.org`. `fiovivor.org` DNS is on spaceship (the registrar), not cloudflare.
+- website source lives in this repo (`apps/web`) and the built files are copied into the `fiovivor.org` repo under `/board`.
+- dice: 1–10.
+
+**still not defined (ask the owner, do not invent):** shop inventory, prices and sprites; bowser wheel contents; what happens to coins/stars/items when players move to a swap or merge board.
 
 all numeric values (coin amounts, star price, cooldown and turn-window hours) live in `season-config.json`, never in code.
 
@@ -122,10 +160,10 @@ all numeric values (coin amounts, star price, cooldown and turn-window hours) li
 ## website: UI
 
 - per-player: coins, stars, items, current space
-- tribe leaderboard (stars first, then coins, like mario party), plus an all-tribes view if allowed
+- board leaderboard (stars first, then coins, like mario party). players never see other boards
 - dice roll overlay
 - live event feed ("X rolled a 7 and landed on a red space, -3 coins")
-- tribe switcher if viewing other tribes is allowed
+- host dashboard (host role only): view and edit everything, move players between boards, redemption island, swaps, merge
 
 ## discord (minimal by design)
 
@@ -136,7 +174,7 @@ all numeric values (coin amounts, star price, cooldown and turn-window hours) li
 
 ## auth
 
-- website login via discord OAuth2, so the site knows who you are (for "me" and tribemates) and which tribe you're in.
+- website login via discord OAuth2, so the site knows who you are (for "me" and tribemates). which board you're on comes from the game server's own data (hosts assign it), not discord roles. hosts are recognised by the existing host role.
 - only the server can change state. the website is read-only except for actions a logged-in player is allowed to take, if any.
 
 ## phases
