@@ -49,6 +49,16 @@ export type HostAction = Extract<
 >;
 export type HostActionInput = HostAction extends infer A ? (A extends { now: number } ? Omit<A, "now"> : never) : never;
 
+// Who did something and from where, passed along with every "events" emit so the
+// Discord side can tell its own actions from website rolls, timeouts and host edits.
+export type ActionSource = "web" | "discord" | "timer";
+export interface ActionMeta {
+  by: string | null;
+  source: ActionSource;
+  host: boolean;
+}
+const TIMER: ActionMeta = { by: null, source: "timer", host: false };
+
 export interface ServiceOptions {
   dataDir: string;
   layouts: Record<string, Board>;
@@ -95,8 +105,8 @@ interface BoardRuntime {
 // Owns every board: loads them from disk, applies actions through the engine one at
 // a time, persists each result, rolls the dice, and runs the turn/prompt timers.
 // Emits:
-//   "events" (boardId, StoredEvent[], state)  after every accepted change
-//   "reset"  (boardId, state, seq)            after an undo; viewers should reload
+//   "events" (boardId, StoredEvent[], state, ActionMeta)  after every accepted change
+//   "reset"  (boardId, state, seq)                        after an undo; viewers should reload
 export class BoardService extends EventEmitter {
   private readonly boards = new Map<string, BoardRuntime>();
   private queue: Promise<unknown> = Promise.resolve();
@@ -167,7 +177,7 @@ export class BoardService extends EventEmitter {
     rt.seq = events.length ? events[events.length - 1].seq : 0;
     if (!entries.length) {
       const state = createBoardState(this.ctx(rt), { boardId: rt.id, starSpace: rt.id === REDEMPTION_ISLAND_ID ? null : starStart, players: [] });
-      this.commit(rt, { kind: "init", by: null, state }, state, []);
+      this.commit(rt, { kind: "init", by: null, state }, state, [], TIMER);
       return;
     }
     const last = entries[entries.length - 1];
@@ -189,6 +199,7 @@ export class BoardService extends EventEmitter {
     entry: { kind: "init"; by: string | null; state: BoardState } | { kind: "action"; by: string | null; action: Action; before: BoardState } | { kind: "undo"; by: string | null; count: number; state: BoardState },
     state: BoardState,
     events: WireEvent[],
+    meta: ActionMeta,
   ): StoredEvent[] {
     const at = this.clock();
     const n = rt.entry + 1;
@@ -201,7 +212,7 @@ export class BoardService extends EventEmitter {
     rt.entry = n;
     rt.state = state;
     rt.store.writeSnapshot({ state, entry: n, seq: rt.seq });
-    if (stored.length) this.emit("events", rt.id, stored, state);
+    if (stored.length) this.emit("events", rt.id, stored, state, meta);
     return stored;
   }
 
@@ -214,18 +225,18 @@ export class BoardService extends EventEmitter {
   }
 
   // Applies one action and any follow-ups the server owns (bowser spins).
-  private applyLocked(rt: BoardRuntime, action: Action, by: string | null): StoredEvent[] {
+  private applyLocked(rt: BoardRuntime, action: Action, meta: ActionMeta): StoredEvent[] {
     const before = rt.state;
     const result = apply(this.ctx(rt), before, action);
     if (action.type === "tick" && !result.events.length) return [];
-    const out = this.commit(rt, { kind: "action", by, action, before }, result.state, result.events);
+    const out = this.commit(rt, { kind: "action", by: meta.by, action, before }, result.state, result.events, meta);
     // A bowser landing waits for a spin. That's the server's job, not the player's.
     while (rt.state.move?.choice?.kind === "bowser") {
       const wheel = this.ctx(rt).rules.bowser.wheel;
       const outcome = pickWeighted(this.rng, wheel);
       const spin: Action = { type: "spinBowser", playerId: rt.state.move.playerId, outcomeId: outcome.id, now: this.clock() };
       const r = apply(this.ctx(rt), rt.state, spin);
-      out.push(...this.commit(rt, { kind: "action", by: null, action: spin, before: rt.state }, r.state, r.events));
+      out.push(...this.commit(rt, { kind: "action", by: null, action: spin, before: rt.state }, r.state, r.events, meta));
     }
     this.schedule(rt);
     return out;
@@ -312,67 +323,68 @@ export class BoardService extends EventEmitter {
 
   // ---- player actions (Discord buttons or the website) ----
 
-  roll(userId: string): Promise<StoredEvent[]> {
+  roll(userId: string, source: ActionSource = "web"): Promise<StoredEvent[]> {
     return this.enqueue(() => {
       const rt = this.boardOfPlayer(userId);
       const { min, max } = this.ctx(rt).rules.dice;
-      return this.applyLocked(rt, { type: "roll", playerId: userId, dice: [this.rng.int(min, max)], now: this.clock() }, userId);
+      const action: Action = { type: "roll", playerId: userId, dice: [this.rng.int(min, max)], now: this.clock() };
+      return this.applyLocked(rt, action, { by: userId, source, host: false });
     });
   }
 
-  chooseFork(userId: string, next: string) {
-    return this.playerAction(userId, (now) => ({ type: "chooseFork", playerId: userId, next, now }));
+  chooseFork(userId: string, next: string, source: ActionSource = "web") {
+    return this.playerAction(userId, source, (now) => ({ type: "chooseFork", playerId: userId, next, now }));
   }
 
-  buyStar(userId: string) {
+  buyStar(userId: string, source: ActionSource = "web") {
     return this.enqueue(() => {
       const rt = this.boardOfPlayer(userId);
       const candidates = starCandidates(this.ctx(rt), rt.state);
       if (!candidates.length) throw new EngineError("invalid_star_space", "There's nowhere for the star to move to.");
       const newStarSpace = pick(this.rng, candidates);
-      return this.applyLocked(rt, { type: "buyStar", playerId: userId, newStarSpace, now: this.clock() }, userId);
+      return this.applyLocked(rt, { type: "buyStar", playerId: userId, newStarSpace, now: this.clock() }, { by: userId, source, host: false });
     });
   }
 
-  skipStar(userId: string) {
-    return this.playerAction(userId, (now) => ({ type: "skipStar", playerId: userId, now }));
+  skipStar(userId: string, source: ActionSource = "web") {
+    return this.playerAction(userId, source, (now) => ({ type: "skipStar", playerId: userId, now }));
   }
 
-  shopBuy(userId: string, itemId: string) {
-    return this.playerAction(userId, (now) => ({ type: "shopBuy", playerId: userId, itemId, now }));
+  shopBuy(userId: string, itemId: string, source: ActionSource = "web") {
+    return this.playerAction(userId, source, (now) => ({ type: "shopBuy", playerId: userId, itemId, now }));
   }
 
-  shopSkip(userId: string) {
-    return this.playerAction(userId, (now) => ({ type: "shopSkip", playerId: userId, now }));
+  shopSkip(userId: string, source: ActionSource = "web") {
+    return this.playerAction(userId, source, (now) => ({ type: "shopSkip", playerId: userId, now }));
   }
 
-  private playerAction(userId: string, make: (now: number) => Action): Promise<StoredEvent[]> {
+  private playerAction(userId: string, source: ActionSource, make: (now: number) => Action): Promise<StoredEvent[]> {
     return this.enqueue(() => {
       const rt = this.boardOfPlayer(userId);
-      return this.applyLocked(rt, make(this.clock()), userId);
+      return this.applyLocked(rt, make(this.clock()), { by: userId, source, host: false });
     });
   }
 
   tick(boardId: string): Promise<StoredEvent[]> {
-    return this.enqueue(() => this.applyLocked(this.runtime(boardId), { type: "tick", now: this.clock() }, null));
+    return this.enqueue(() => this.applyLocked(this.runtime(boardId), { type: "tick", now: this.clock() }, TIMER));
   }
 
   // ---- host actions ----
 
-  hostAction(boardId: string, input: HostActionInput, by: string): Promise<StoredEvent[]> {
+  hostAction(boardId: string, input: HostActionInput, by: string, source: ActionSource = "web"): Promise<StoredEvent[]> {
     return this.enqueue(() => {
       const rt = this.runtime(boardId);
       if (input.type === "addPlayer") {
         const other = this.boardIdOf(input.player.id);
         if (other) throw new EngineError("duplicate_player", `${input.player.name} is already on ${this.runtime(other).name}. Use a transfer instead.`);
       }
-      return this.applyLocked(rt, { ...input, now: this.clock() } as Action, by);
+      return this.applyLocked(rt, { ...input, now: this.clock() } as Action, { by, source, host: true });
     });
   }
 
   // Undo the last `count` changes, or with turn: true, everything back to just
   // before the most recent roll. Undos themselves can't be undone.
-  undo(boardId: string, opts: { count?: number; turn?: boolean }, by: string): Promise<StoredEvent[]> {
+  undo(boardId: string, opts: { count?: number; turn?: boolean }, by: string, source: ActionSource = "web"): Promise<StoredEvent[]> {
     return this.enqueue(() => {
       const rt = this.runtime(boardId);
       const stack = this.activeStack(rt);
@@ -386,7 +398,7 @@ export class BoardService extends EventEmitter {
         throw new EngineError("invalid_amount", `There ${stack.length === 1 ? "is" : "are"} only ${stack.length} change(s) to undo.`);
       }
       const restored = stack[stack.length - count].before;
-      const out = this.commit(rt, { kind: "undo", by, count, state: restored }, restored, [{ type: "Undone", count }]);
+      const out = this.commit(rt, { kind: "undo", by, count, state: restored }, restored, [{ type: "Undone", count }], { by, source, host: true });
       this.schedule(rt);
       this.emit("reset", rt.id, rt.state, rt.seq);
       return out;
@@ -409,7 +421,7 @@ export class BoardService extends EventEmitter {
     playerId: string,
     toBoardId: string,
     by: string,
-    opts: { name?: string; reset?: boolean } = {},
+    opts: { name?: string; reset?: boolean; source?: ActionSource } = {},
   ): Promise<{ from: string | null; to: string; player: PlayerState }> {
     return this.enqueue(() => {
       const to = this.runtime(toBoardId);
@@ -425,8 +437,9 @@ export class BoardService extends EventEmitter {
         ? { id: playerId, name, coins: config.redemptionIsland.resetCoins, stars: 0, items: [] as string[] }
         : { id: playerId, name, coins: existing?.coins, stars: existing?.stars, items: existing?.items };
       apply(this.ctx(to), to.state, { type: "addPlayer", player: carried, now: this.clock() });
-      if (fromId) this.applyLocked(this.runtime(fromId), { type: "removePlayer", playerId, now: this.clock() }, by);
-      this.applyLocked(to, { type: "addPlayer", player: carried, now: this.clock() }, by);
+      const meta: ActionMeta = { by, source: opts.source ?? "web", host: true };
+      if (fromId) this.applyLocked(this.runtime(fromId), { type: "removePlayer", playerId, now: this.clock() }, meta);
+      this.applyLocked(to, { type: "addPlayer", player: carried, now: this.clock() }, meta);
       return { from: fromId, to: to.id, player: to.state.players[playerId] };
     });
   }

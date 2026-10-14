@@ -145,6 +145,8 @@ interface Space {
 
 all numeric values (coin amounts, star price, cooldown and turn-window hours) live in `season-config.json`, never in code.
 
+**playing from the website (owner decision):** players can roll and make their choices on the website as well as in Discord. both go through the same server, and Discord shows website rolls too.
+
 ## server (phase 4, `packages/server`)
 
 runs inside the bot. how to run it locally, the API and the live-update protocol: `docs/board-server.md`.

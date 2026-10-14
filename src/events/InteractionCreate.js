@@ -63,6 +63,22 @@ module.exports = {
                 }
             }
             
+            // Season 3 board buttons: roll, forks, star, shop
+            else if (interaction.customId.startsWith('board:')) {
+                try {
+                    if (interaction.client.boardDiscord) {
+                        await interaction.client.boardDiscord.handleButton(interaction);
+                    } else {
+                        await interaction.reply({ content: "The board isn't running right now.", ephemeral: true });
+                    }
+                } catch (error) {
+                    console.error('Error handling board button:', error);
+                    if (!interaction.replied && !interaction.deferred) {
+                        await interaction.reply({ content: 'Something went wrong with that button.', ephemeral: true });
+                    }
+                }
+            }
+
             // Handle Stop Rocks button
             else if (interaction.customId.startsWith('stop_rocks_')) {
                 try {

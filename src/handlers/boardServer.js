@@ -3,6 +3,8 @@
 // load them directly, so there is no build step.
 const fs = require('fs');
 const path = require('path');
+const board = require('./boardTs');
+const { logToHost } = require('./economyLog');
 
 const ROOT = path.join(__dirname, '..', '..');
 const SEASON_CONFIG = path.join(ROOT, 'packages', 'board-data', 'season-config.json');
@@ -53,9 +55,8 @@ function hostChecker(client, config) {
 
 async function start(client) {
     if (running) return running;
-    require('tsx/cjs');
-    const { loadServerConfig, startBoardServer } = require('@everest/server');
-    const { loadLayouts, SeasonConfigSchema } = require('@everest/board-data');
+    const { loadServerConfig, startBoardServer } = board.server();
+    const { loadLayouts, SeasonConfigSchema } = board.boardData();
 
     const config = loadServerConfig(path.join(ROOT, 'config', 'board.json'));
     if (!config.enabled) {
@@ -70,18 +71,33 @@ async function start(client) {
     const clientSecret = process.env.DISCORD_CLIENT_SECRET;
     if (!clientSecret) console.warn('[board] DISCORD_CLIENT_SECRET is not set: the API runs, but website login is off.');
 
+    const dataDir = path.resolve(ROOT, config.data_dir);
+    const loadConfig = seasonConfigLoader(SeasonConfigSchema);
+    const isHost = hostChecker(client, config);
     running = await startBoardServer({
         config,
-        dataDir: path.resolve(ROOT, config.data_dir),
+        dataDir,
         layouts: loadLayouts(),
-        loadConfig: seasonConfigLoader(SeasonConfigSchema),
+        loadConfig,
         sessionSecret,
         oauth: clientSecret
             ? { clientId: client.user.id, clientSecret, redirectUri: `${config.public_url}/auth/callback` }
             : null,
-        isHost: hostChecker(client, config),
+        isHost,
     });
     client.boardServer = running;
+
+    // Discord side: /roll, choice buttons, the board image in each tribe channel.
+    const { BoardDiscord } = board.discord();
+    client.boardDiscord = new BoardDiscord({
+        client,
+        service: running.service,
+        loadConfig,
+        dataDir,
+        isHost: async (id) => config.host_user_ids.includes(id) || (await isHost(id)),
+        logToHost: (text) => logToHost(client, text),
+    });
+    await client.boardDiscord.start();
     return running;
 }
 

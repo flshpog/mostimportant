@@ -104,3 +104,23 @@ Messages are plain language and safe to show players.
 Every event has a `seq` (1, 2, 3... per board, never reused). A client that reconnects sends
 the last `seq` it saw and gets exactly what it missed. Players are cut off a board's feed
 the moment they're moved off it.
+
+## discord (phase 5, `packages/discord`)
+
+Started by the bot alongside the server. Everything it posts comes from board events,
+whatever caused them: a `/roll`, a website roll, a button, a timeout or a host.
+
+| in each tribe's board channel | |
+|---|---|
+| board image | one message, edited in place after every change (`/board refresh` re-posts it at the bottom) |
+| dice | a short animation (a few quick edits) that lands on the server's roll, then what happened |
+| prompts | fork / star / shop buttons, mentioning the player. Only they can click. Buttons disappear once the choice is made (on Discord, the website or by timeout) |
+| turn pings | "it's your turn" with a Roll button, or "you're up next, your turn opens at ..." and a second ping the moment it opens |
+| host edits | silent: the image and prompts update, nothing is announced. An undo posts "the hosts rewound the board" |
+
+Commands:
+
+- `/roll`: players. Problems ("it isn't your turn yet") are private; the roll itself shows in the board channel.
+- `/board status|start|pause|resume|send|remove|coins|stars|give|take|move|star|order|undo|refresh`: hosts only (host role), always private, logged to the host log channel. `/board send` puts a player on a board or moves them; Redemption Island resets them.
+
+Message ids (board image, live prompt, last turn ping) are saved in `data/board/discord.json` so a restart picks up where it left off.

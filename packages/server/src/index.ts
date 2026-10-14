@@ -9,7 +9,7 @@ import { BoardService } from "./service";
 import { attachWebSocket } from "./ws";
 
 export { loadServerConfig, type ServerConfig } from "./config";
-export { BoardService, REDEMPTION_ISLAND_ID, ServiceError, type HostActionInput, type LeaderboardRow, type BoardSummary } from "./service";
+export { BoardService, REDEMPTION_ISLAND_ID, ServiceError, type HostActionInput, type LeaderboardRow, type BoardSummary, type ActionMeta, type ActionSource } from "./service";
 export type { StoredEvent, WireEvent, ServerEvent } from "./store";
 export { signToken, verifyToken, type SessionUser } from "./auth";
 
