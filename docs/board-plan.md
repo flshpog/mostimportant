@@ -140,31 +140,18 @@ either way:
 
 ## 6. open questions
 
-### from the spec's "not defined yet" list
+all of the original questions have been answered (2026-10-14). the decisions are in
+`docs/board-spec.md` under "owner decisions". hosting resolves to **option A**: caddy on
+the VPS, plus an `A` record for `board.fiovivor.org` at spaceship (the registrar that
+runs fiovivor.org's DNS).
 
-1–8 answered (2026-10-14) and recorded under "owner decisions" in `docs/board-spec.md`:
-star-icon spaces are blue star slots, boos are ignored, the red-X spot is a regular
-space, the star costs 20 and moves when claimed, coins are board-only, shop items and
-the bowser wheel come later, and turns use a fixed order with a 4h cooldown and a 12h
-window. question 9 (turn order) is answered by 8.
+remaining before/while building:
 
-still open:
-
-10. **exiled/eliminated players:** what happens to their token, coins, stars and items?
-11. **cross-tribe viewing:** can players see other tribes' boards and the all-tribes leaderboard?
-
-### found during recon
-
-12. **where is the bot hosted?** (your PC, a VPS, a managed host?) is it on 24/7? can it open a port, or do we need a tunnel? this decides section 4.
-13. **typescript:** OK to add TS for the new packages only, while the existing bot stays JS?
-14. **storage:** JSON-file event log (matches the CLAUDE.md "no new database" rule), or do you want sqlite for the board?
-15. **privacy conflict:** the S2 rules say balances and item ownership are private, but the S3 spec puts coins, items and a leaderboard on the website. what's public in S3, and to whom? (everyone? tribe-only? items hidden but coins/stars shown?)
-16. **automation conflict:** the S2 rules say "the bot does not adjudicate gameplay, hosts do". the S3 engine *does* apply spaces, shop and bowser automatically. confirm the board is automated and the S2 manual-control rule only covers S2-style economy. and should S3 host commands use the same host-category gate (`ensureHost`)?
-17. **web source location:** in this repo under `apps/web`, built and copied into `fiovivor.org/board` (recommended), or developed directly inside `fiovivor.org`?
-18. **discord server:** is S3 in the same guild as S2? we'll need the four tribe channel IDs, tribe role IDs and the exile channel (all go in config).
-19. **the 17th/exiled player:** no token at all, a token on a separate board, or they join a tribe board later?
-20. **domain:** is a `board.fiovivor.org` subdomain OK? who manages `fiovivor.org` DNS, and is it on cloudflare?
-21. **dice:** keep 1–10 as the default range? (it's configurable either way.)
+1. **star spawn spots:** after a purchase, does the star move only among the star-icon spaces, or to any blue space on the board?
+2. **swaps/merge:** do coins, stars and items carry over when players move to the swap board and then the merge board?
+3. **new boards:** is one new design used for both the 2×7 swap (two copies) and the merge, or should the merge get its own? (claude designs it either way, plus the redemption island mini-board.)
+4. **VPS (needed in phase 4, not now):** OS, whether anything already uses ports 80/443, and SSH access, or you run the setup commands yourself.
+5. **shop items and bowser wheel:** not needed until phase 3's content pass; the engine treats them as data.
 
 ---
 
