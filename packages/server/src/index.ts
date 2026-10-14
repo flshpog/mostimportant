@@ -20,6 +20,7 @@ export interface StartOptions {
   loadConfig: () => SeasonConfig;
   sessionSecret: string;
   oauth: OAuthSettings | null;
+  devLogins?: { id: string; name: string }[]; // local testing only, see scripts/dev.ts
   // Host check, normally "has the host role in the guild" via the bot.
   isHost: (userId: string) => Promise<boolean>;
   random?: RandomSource;
@@ -53,6 +54,7 @@ export async function startBoardServer(opts: StartOptions): Promise<RunningBoard
     config: opts.config,
     sessionSecret: opts.sessionSecret,
     oauth: opts.oauth,
+    devLogins: opts.devLogins,
     isHost: async (id) => opts.config.host_user_ids.includes(id) || (await opts.isHost(id)),
     fetch: opts.fetch ?? fetch,
     clock,

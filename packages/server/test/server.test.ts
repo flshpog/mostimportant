@@ -26,6 +26,12 @@ describe("http basics", () => {
     expect(evil.status).toBe(403);
   });
 
+  it("health says whether Discord login is on, and the real server has no test logins", async () => {
+    const r = await h.api("/api/health");
+    expect(r.body).toEqual({ ok: true, discordLogin: true, devLogins: [] });
+    expect((await h.api("/dev/login/100000000000000001")).status).toBe(404);
+  });
+
   it("needs a login token, and rejects forged ones", async () => {
     expect((await h.api("/api/me")).status).toBe(401);
     const forged = await fetch(h.srv.url + "/api/me", { headers: { origin: ORIGIN, authorization: `Bearer ${h.token(ALICE)}x` } });

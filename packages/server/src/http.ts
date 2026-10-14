@@ -9,6 +9,9 @@ export interface HttpDeps {
   config: ServerConfig;
   sessionSecret: string;
   oauth: OAuthSettings | null; // null when DISCORD_CLIENT_SECRET isn't set: login is off
+  // Local testing only (npm run board:dev): log in as a fake user with one click.
+  // Never set by the bot, so production has no such route.
+  devLogins?: { id: string; name: string }[];
   isHost: (userId: string) => Promise<boolean>;
   fetch: typeof fetch;
   clock: () => number;
@@ -105,7 +108,26 @@ export function createHttpHandler(deps: HttpDeps) {
 
   type Handler = (req: IncomingMessage, res: ServerResponse, params: string[], url: URL) => Promise<void>;
   const routes: [string, RegExp, Handler][] = [
-    ["GET", /^\/api\/health$/, async (_q, res) => send(res, 200, { ok: true })],
+    [
+      "GET",
+      /^\/api\/health$/,
+      async (_q, res) =>
+        send(res, 200, {
+          ok: true,
+          discordLogin: !!deps.oauth,
+          devLogins: deps.devLogins?.map((u) => ({ id: u.id, name: u.name })) ?? [],
+        }),
+    ],
+    [
+      "GET",
+      /^\/dev\/login\/(\d+)$/,
+      async (_q, res, [id]) => {
+        const user = deps.devLogins?.find((u) => u.id === id);
+        if (!user) throw new HttpError(404, "not_found", "No such endpoint.");
+        const session: SessionUser = { sub: user.id, name: user.name, avatar: null, exp: deps.clock() + config.session_days * DAY };
+        redirect(res, `${config.site_url}#/auth?token=${encodeURIComponent(signToken(deps.sessionSecret, session))}`);
+      },
+    ],
 
     [
       "GET",

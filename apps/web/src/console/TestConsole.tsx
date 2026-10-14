@@ -12,6 +12,11 @@ interface Me {
   boardId: string | null;
   isHost: boolean;
 }
+interface Health {
+  ok: boolean;
+  discordLogin: boolean;
+  devLogins: { id: string; name: string }[];
+}
 interface Summary {
   id: string;
   name: string;
@@ -30,12 +35,12 @@ export function TestConsole() {
   const [me, setMe] = useState<Me | null>(null);
   const [boards, setBoards] = useState<Summary[]>([]);
   const [boardId, setBoardId] = useState<string | null>(null);
-  const [health, setHealth] = useState<"checking" | "up" | "down">("checking");
+  const [health, setHealth] = useState<"checking" | "down" | Health>("checking");
   const [message, setMessage] = useState<{ kind: "ok" | "error"; text: string } | null>(null);
   const { state, feed, status } = useLiveBoard(token, boardId);
 
   useEffect(() => {
-    api("/api/health").then(() => setHealth("up"), () => setHealth("down"));
+    api<Health>("/api/health").then(setHealth, () => setHealth("down"));
   }, []);
 
   useEffect(() => {
@@ -51,8 +56,10 @@ export function TestConsole() {
         if (e.status === 401) {
           setToken(null);
           setTok(null);
+          setMessage({ kind: "error", text: "That login didn't work or has expired. Log in again." });
+        } else {
+          setMessage({ kind: "error", text: e.message });
         }
-        setMessage({ kind: "error", text: e.message });
       });
   }, [token]);
 
@@ -70,16 +77,37 @@ export function TestConsole() {
   const name = (id: string) => state?.players[id]?.name ?? (id === me?.user.id ? me.user.name : id);
 
   if (!token || !me) {
+    const loginError = window.location.hash.includes("error=");
     return (
       <div className="console">
         <h1>Board test console</h1>
         <p className="muted">
-          Server <span className="mono">{API_BASE}</span>: {health === "up" ? "reachable" : health === "down" ? "not reachable" : "checking..."}
+          Server <span className="mono">{API_BASE}</span>:{" "}
+          {health === "checking" ? "checking..." : health === "down" ? "not reachable. Is the board server running?" : "reachable"}
         </p>
+        {loginError && <p className="error-text">Discord login didn't go through. Try again.</p>}
         {message && <p className={message.kind === "error" ? "error-text" : "ok"}>{message.text}</p>}
-        <a className="button primary" href={loginUrl()}>
-          Log in with Discord
-        </a>
+        {token && !message && <p className="muted">Logging in...</p>}
+        {typeof health === "object" && (
+          <>
+            {health.discordLogin ? (
+              <a className="button primary" href={loginUrl()}>
+                Log in with Discord
+              </a>
+            ) : (
+              <p className="muted">Discord login isn't set up on this server{health.devLogins.length ? ", so use a test login below" : " yet"}.</p>
+            )}
+            {health.devLogins.length > 0 && (
+              <div className="row">
+                {health.devLogins.map((u) => (
+                  <a key={u.id} className="button" href={`${API_BASE}/dev/login/${u.id}`}>
+                    Log in as {u.name}
+                  </a>
+                ))}
+              </div>
+            )}
+          </>
+        )}
       </div>
     );
   }

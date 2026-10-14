@@ -1,10 +1,10 @@
 // Runs the board server on its own, with no Discord bot, for local testing.
 //   npm run board:dev            (add -- --seed to put fake players on mario-stadium)
-// Prints login links for a fake host and fake players, so the website test console
-// works without Discord OAuth. Data goes to data/board-dev, separate from real data.
+// The website's login screen then offers one-click logins as a fake host and fake
+// players, so nothing needs Discord. Data goes to data/board-dev, separate from real data.
 import { join } from "node:path";
 import { loadLayouts, loadSeasonConfig } from "@everest/board-data";
-import { loadServerConfig, signToken, startBoardServer } from "../src";
+import { loadServerConfig, startBoardServer } from "../src";
 
 const ROOT = join(__dirname, "..", "..", "..");
 const SECRET = "dev-only-secret-not-for-production";
@@ -34,6 +34,7 @@ async function main() {
     loadConfig: loadSeasonConfig,
     sessionSecret: SECRET,
     oauth: null,
+    devLogins: [HOST, ...PLAYERS],
     isHost: async () => false, // only host_user_ids above
   });
 
@@ -44,11 +45,8 @@ async function main() {
     console.log("seeded mario-stadium with", PLAYERS.map((p) => p.name).join(", "));
   }
 
-  const link = (u: { id: string; name: string }) =>
-    `${SITE}#/auth?token=${encodeURIComponent(signToken(SECRET, { sub: u.id, name: u.name, avatar: null, exp: Date.now() + 30 * 86_400_000 }))}`;
-  console.log("\nOpen these (website dev server must be running: npm run board:web):");
-  console.log(`  ${HOST.name} (host):\n    ${link(HOST)}`);
-  for (const p of PLAYERS) console.log(`  ${p.name}:\n    ${link(p)}`);
+  console.log(`\nOpen ${SITE}#/console (website dev server: npm run board:web)`);
+  console.log(`and pick who to log in as. ${HOST.name} is the host.`);
   console.log("\nCtrl+C to stop.");
 }
 

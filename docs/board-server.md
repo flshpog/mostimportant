@@ -13,9 +13,11 @@ npm run board:dev -- --seed     # board server on :8787, fake players on Mario S
 npm run board:web               # website on :5173
 ```
 
-`board:dev` prints login links for a fake host and four fake players. Open the host link,
-press **Start board**, then open a player's link in another browser (or a private window)
-and play. Data goes to `data/board-dev/`; delete that folder to start over.
+Open `http://localhost:5173/board/#/console`. Discord login is off in this mode, so the
+page shows **Log in as ...** buttons for a fake host and four fake players. Log in as the
+host, press **Start board**, then log in as a player in a private window and play. Data
+goes to `data/board-dev/`; delete that folder to start over. (These test logins only
+exist in `board:dev`; the real server has no such route.)
 
 ## option B: the real bot against a test Discord server
 
