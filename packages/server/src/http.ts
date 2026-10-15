@@ -117,6 +117,15 @@ export function createHttpHandler(deps: HttpDeps) {
 
   type Handler = (req: IncomingMessage, res: ServerResponse, params: string[], url: URL) => Promise<void>;
   const routes: [string, RegExp, Handler][] = [
+    // the server's own address on its own: send people to the board page
+    [
+      "GET",
+      /^\/$/,
+      async (_q, res) => {
+        res.writeHead(302, { location: config.site_url });
+        res.end();
+      },
+    ],
     [
       "GET",
       /^\/api\/health$/,
