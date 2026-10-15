@@ -46,7 +46,7 @@ def clear_board():
             if o.type == "MESH" or o.type == "EMPTY" or o.type == "CURVE" or o.type == "FONT":
                 bpy.data.objects.remove(o, do_unlink=True)
     for name in ["Terrain", "Water", "Paths", "Spaces", "Bridges", "Trees", "Bushes", "Rocks", "Flowers", "Grass",
-                 "Mushrooms", "Fences", "Shops", "Signposts", "Start", "Sky", "Eggs", "Graves", "House", "Lanterns"]:
+                 "Mushrooms", "Fences", "Shops", "Signposts", "Start", "Sky", "Eggs", "Graves", "House", "Lanterns", "Boos"]:
         if name not in bpy.data.collections:
             c = bpy.data.collections.new(name)
             bpy.context.scene.collection.children.link(c)
@@ -414,6 +414,42 @@ def house_meshes():
     wm.materials.append(glow_material())
     return me, wm
 
+def boo_mesh():
+    """A Boo: round white ghost with a little tail, arms, big dark eyes and a grin."""
+    if "Kit_boo" in bpy.data.meshes:
+        return bpy.data.meshes["Kit_boo"]
+    bm = bmesh.new()
+    bmesh.ops.create_uvsphere(bm, u_segments=18, v_segments=12, radius=0.6)
+    # a tail: pull the lower back out into a point
+    for v in bm.verts:
+        back = max(0.0, v.co.y) / 0.6
+        low = max(0.0, -v.co.z) / 0.6
+        v.co.y += back * low * 0.55
+        v.co.z -= back * low * 0.25
+    for side in (-1, 1):  # stubby arms
+        arm = bmesh.ops.create_uvsphere(bm, u_segments=8, v_segments=6, radius=0.17)
+        bmesh.ops.scale(bm, vec=(1.0, 0.8, 0.8), verts=arm["verts"])
+        bmesh.ops.translate(bm, verts=arm["verts"], vec=(side * 0.58, -0.12, -0.08))
+    me = bpy.data.meshes.new("Kit_boo")
+    bm.to_mesh(me)
+    bm.free()
+    for p in me.polygons:
+        p.use_smooth = True
+    me.materials.append(bpy.data.materials["Props"])
+    white, eye, mouth, tongue = srgb((0.97, 0.96, 1.0)), srgb((0.10, 0.06, 0.14)), srgb((0.20, 0.06, 0.12)), srgb((0.95, 0.42, 0.55))
+    def shade(poly, vi):
+        c = me.polygons[poly.index].center
+        if c.y < -0.3:  # the face is at -y
+            for ex in (-0.2, 0.2):
+                if ((c.x - ex) / 0.11) ** 2 + ((c.z - 0.16) / 0.19) ** 2 < 1:
+                    return eye
+            # a wide grin, with a pink tongue in the middle
+            if abs(c.x) < 0.3 and -0.28 < c.z < -0.05 + 0.6 * c.x * c.x:
+                return tongue if c.z < -0.18 and abs(c.x) < 0.12 else mouth
+        return white
+    paint(me, shade)
+    return me
+
 def lantern_meshes():
     if "Kit_lantern" in bpy.data.meshes:
         return bpy.data.meshes["Kit_lantern"], bpy.data.meshes["Kit_lantern_light"]
@@ -520,6 +556,18 @@ def scatter_night(L, terrain, rng):
         ob.scale = (s, s, s)
         link(ob, "House")
     taken.append(best)
+    # Boos floating about, turned towards the middle of the board
+    boo = boo_mesh()
+    # they float, so only the tiles and the house need room, not the grass below
+    boo_room = [q.copy() for q in L.pos.values()] + [best]
+    for i, p in enumerate(free_spots(L, terrain, 9, 1.4, 3.0, boo_room, rng)):
+        ob = bpy.data.objects.new(f"Boo {i}", boo)
+        ob.location = (p.x, p.y, p.z + rng.uniform(1.4, 2.8))
+        face = L.centre - p
+        ob.rotation_euler = (rng.uniform(-0.15, 0.15), rng.uniform(-0.2, 0.2), math.atan2(face.x, -face.y) + rng.uniform(-0.6, 0.6))
+        s = rng.uniform(0.75, 1.3)
+        ob.scale = (s, s, s)
+        link(ob, "Boos")
     # lanterns along the path
     post, light = lantern_meshes()
     for k, sid in enumerate(L.loop[2::4]):
@@ -541,7 +589,7 @@ def setup_light(T):
     bg.inputs[0].default_value = (*T["world"], 1)
 
 INCLUDE = ["Terrain", "Water", "Paths", "Bridges", "Trees", "Bushes", "Rocks", "Flowers", "Grass", "Mushrooms", "Fences",
-           "Shops", "Signposts", "Start", "Sky", "Eggs", "Graves", "House", "Lanterns"]
+           "Shops", "Signposts", "Start", "Sky", "Eggs", "Graves", "House", "Lanterns", "Boos"]
 
 def export(L):
     board_id = L.data["id"]
