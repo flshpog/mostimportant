@@ -234,22 +234,36 @@ export class BoardService extends EventEmitter {
     return run;
   }
 
-  // Applies one action and any follow-ups the server owns (drawing events).
+  // Applies one action and any follow-ups the server owns (stocking shops, drawing events).
   private applyLocked(rt: BoardRuntime, action: Action, meta: ActionMeta): StoredEvent[] {
     const before = rt.state;
     const result = apply(this.ctx(rt), before, action);
     if (action.type === "tick" && !result.events.length) return [];
     const out = this.commit(rt, { kind: "action", by: meta.by, action, before }, result.state, result.events, meta);
-    // An event landing waits for the draw. That's the server's job, not the player's.
-    while (rt.state.move?.choice?.kind === "eventDraw") {
+    // Shops and event spaces wait on the server, not the player: a shop for its stock
+    // (a few distinct items at random), an event space for its draw. One can lead
+    // straight on to the other, so keep going until neither is waiting.
+    for (;;) {
+      const m = rt.state.move;
       const ctx = this.ctx(rt);
-      // only events that can actually happen; if none can, any enabled one (it fizzles)
-      const possible = possibleEvents(ctx, rt.state, rt.state.move.playerId);
-      const { event } = pickWeighted(this.rng, possible.length ? possible : enabledEvents(ctx));
-      const percent = pick(this.rng, ctx.rules.events.coinSteal.percents);
-      const draw: Action = { type: "drawEvent", playerId: rt.state.move.playerId, event, percent, now: this.clock() };
-      const r = apply(ctx, rt.state, draw);
-      out.push(...this.commit(rt, { kind: "action", by: null, action: draw, before: rt.state }, r.state, r.events, meta));
+      let next: Action | null = null;
+      if (m?.choice?.kind === "shopDraw") {
+        const pool = ctx.rules.shop.items.map((i) => i.id);
+        const items: string[] = [];
+        while (items.length < Math.min(ctx.rules.shop.stockSize, pool.length)) {
+          items.push(pick(this.rng, pool.filter((x) => !items.includes(x))));
+        }
+        next = { type: "stockShop", playerId: m.playerId, items, now: this.clock() };
+      } else if (m?.choice?.kind === "eventDraw") {
+        // only events that can actually happen; if none can, any enabled one (it fizzles)
+        const possible = possibleEvents(ctx, rt.state, m.playerId);
+        const { event } = pickWeighted(this.rng, possible.length ? possible : enabledEvents(ctx));
+        const percent = pick(this.rng, ctx.rules.events.coinSteal.percents);
+        next = { type: "drawEvent", playerId: m.playerId, event, percent, now: this.clock() };
+      }
+      if (!next) break;
+      const r = apply(ctx, rt.state, next);
+      out.push(...this.commit(rt, { kind: "action", by: null, action: next, before: rt.state }, r.state, r.events, meta));
     }
     this.schedule(rt);
     return out;
@@ -262,7 +276,7 @@ export class BoardService extends EventEmitter {
     const s = rt.state;
     if (!s.started || s.paused) return;
     const c = s.move?.choice;
-    const wake = c && c.kind !== "eventDraw" ? c.expiresAt : !s.move ? s.turn.deadline : null;
+    const wake = c && c.kind !== "eventDraw" && c.kind !== "shopDraw" ? c.expiresAt : !s.move ? s.turn.deadline : null;
     if (wake === null) return;
     const delay = Math.min(Math.max(0, wake - this.clock()) + 25, MAX_TIMER_MS);
     rt.timer = setTimeout(() => {

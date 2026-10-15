@@ -655,11 +655,21 @@ describe("the shop and items", () => {
     expect(g.state.move).toBeNull();
   };
 
-  it("each shop sells its own variant's stock", () => {
-    const g = new Game(ctxFor(loadLayouts().main, { shop: season.shop }));
-    const ids = (space: string) => shopStock(g.ctx, g.state, space).items.map((i) => i.id);
-    expect(ids("s43")).toEqual(season.shop.variants.purple.items);
-    expect(ids("s14")).toEqual(season.shop.variants.pink.items);
+  it("a shop offers the items drawn for this visit, and only those", () => {
+    const g = atShop();
+    g.stock = ["boo-bell", "magic-lamp"];
+    g.roll("alice", 1);
+    expect(g.state.move?.choice).toMatchObject({ kind: "shop", stock: ["boo-bell", "magic-lamp"] });
+    expectError(() => buy(g, "mushroom"), "unknown_item");
+    buy(g, "boo-bell");
+    expect(g.p("alice").items).toEqual(["boo-bell"]);
+  });
+
+  it("a shop can't be stocked with the same item twice", () => {
+    const g = started(shopCtx());
+    g.setup("alice", "s04", 100);
+    g.stock = ["mushroom", "mushroom"];
+    expectError(() => g.roll("alice", 1), "unknown_item");
   });
 
   it("the bag holds three items; a full bag can't buy", () => {
@@ -673,12 +683,12 @@ describe("the shop and items", () => {
     const g = atShop(50);
     g.state.boardId = "mario-stadium";
     g.roll("alice", 1);
-    expect(shopStock(g.ctx, g.state, "s05").advantage?.name).toBe("Launch Star");
+    expect(shopStock(g.ctx, g.state, []).advantage?.name).toBe("Launch Star");
     const ev = buy(g, ADVANTAGE_ID);
     expect(ev).toContainEqual({ type: "AdvantagePurchased", playerId: "alice", price: 40 });
     expect(g.p("alice")).toMatchObject({ coins: 10, items: [] });
     expect(g.state.advantageSold).toBe(true);
-    expect(shopStock(g.ctx, g.state, "s05").advantage).toBeNull();
+    expect(shopStock(g.ctx, g.state, []).advantage).toBeNull();
   });
 
   it("a Mushroom means two dice, and only one item a turn", () => {

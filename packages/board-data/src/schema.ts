@@ -155,10 +155,12 @@ export const SeasonConfigSchema = z
         maxPerVisit: z.number().int().positive(),
         // Most items a player can carry.
         bagSize: z.number().int().positive(),
+        // How many items a shop offers each visit, drawn at random from `items`
+        // (the tribe advantage comes on top).
+        stockSize: z.number().int().positive(),
         items: z.array(ShopItemSchema),
-        // Shop stock by variant; shop spaces name theirs (spaces[].shop). A shop
-        // space with no variant sells every item.
-        variants: z.record(z.object({ name: z.string(), colour: z.string(), items: z.array(z.string()) }).strict()).default({}),
+        // Shop looks by variant (name and colour); shop spaces name theirs (spaces[].shop).
+        variants: z.record(z.object({ name: z.string(), colour: z.string() }).strict()).default({}),
         // Each board's tribe advantage, sold in every shop on that board, once per
         // board. Buying it doesn't go in the bag; the hosts get pinged instead.
         advantage: z

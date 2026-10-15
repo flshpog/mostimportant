@@ -89,6 +89,9 @@ export function apply(ctx: EngineContext, state: BoardState, action: Action): Ac
     case "pickDie":
       r.pickDie(action.playerId, action.value);
       break;
+    case "stockShop":
+      r.stockShop(action.playerId, action.items);
+      break;
     case "drawEvent":
       r.drawEvent(action.playerId, action.event, action.percent);
       break;
@@ -205,22 +208,24 @@ export function itemDef(ctx: EngineContext, itemId: string): ShopItem | undefine
   return ctx.rules.shop.items.find((i) => i.id === itemId);
 }
 
-// What a shop space sells: its variant's items (every item if it has none) and, if
-// it's still for sale, this board's tribe advantage.
-export function shopStock(ctx: EngineContext, state: BoardState, spaceId: string): { items: ShopItem[]; advantage: { price: number; name: string; image: string } | null } {
+// What a shop offers this visit: the items drawn for it and, if it's still for sale,
+// this board's tribe advantage.
+export function shopStock(
+  ctx: EngineContext,
+  state: BoardState,
+  stockIds: string[],
+): { items: ShopItem[]; advantage: { price: number; name: string; image: string; description?: string } | null } {
   const shop = ctx.rules.shop;
-  const variant = ctx.layout.spaces.find((s) => s.id === spaceId)?.shop;
-  const ids = variant ? shop.variants[variant]?.items ?? [] : shop.items.map((i) => i.id);
-  const items = ids.map((id) => shop.items.find((i) => i.id === id)).filter((i): i is ShopItem => !!i);
+  const items = stockIds.map((id) => shop.items.find((i) => i.id === id)).filter((i): i is ShopItem => !!i);
   const adv = shop.advantage?.perBoard[state.boardId];
-  const advantage = adv && shop.advantage && !state.advantageSold ? { price: shop.advantage.price, name: adv.name, image: adv.image } : null;
+  const advantage = adv && shop.advantage && !state.advantageSold ? { price: shop.advantage.price, name: adv.name, image: adv.image, description: adv.description } : null;
   return { items, advantage };
 }
 
 // What this player could buy at a shop right now: coins, and room in the bag.
-export function shopOffer(ctx: EngineContext, state: BoardState, spaceId: string, playerId: string): { items: ShopItem[]; advantage: boolean; bagFull: boolean } {
+export function shopOffer(ctx: EngineContext, state: BoardState, stockIds: string[], playerId: string): { items: ShopItem[]; advantage: boolean; bagFull: boolean } {
   const p = state.players[playerId];
-  const { items, advantage } = shopStock(ctx, state, spaceId);
+  const { items, advantage } = shopStock(ctx, state, stockIds);
   const bagFull = !!p && p.items.length >= ctx.rules.shop.bagSize;
   return {
     items: p && !bagFull ? items.filter((i) => i.price <= p.coins) : [],
@@ -353,7 +358,7 @@ class Run {
     for (let i = 0; i < MAX_CATCH_UP; i++) {
       const m = this.s.move;
       const c = m?.choice;
-      if (m && c && c.kind !== "eventDraw" && this.now >= c.expiresAt) {
+      if (m && c && c.kind !== "eventDraw" && c.kind !== "shopDraw" && this.now >= c.expiresAt) {
         if (c.kind === "fork") this.resolveFork(c.options[0], true);
         else if (c.kind === "star") this.resolveSkipStar(true);
         else if (c.kind === "shop") this.closeShop(true);
@@ -417,7 +422,7 @@ class Run {
     if (this.s.move) {
       this.s.move.rolledAt += shift;
       const c = this.s.move.choice;
-      if (c && c.kind !== "eventDraw") c.expiresAt += shift;
+      if (c && c.kind !== "eventDraw" && c.kind !== "shopDraw") c.expiresAt += shift;
     }
     this.s.paused = false;
     this.s.pausedAt = null;
@@ -609,13 +614,9 @@ class Run {
           m.arrival.shopDone = true;
           if (sp.type === "shop" && (final || sp.passEffect)) {
             if (!final) this.emit({ type: "PassedSpace", playerId: p.id, spaceId: sp.id, spaceType: sp.type });
-            const offer = shopOffer(this.ctx, this.s, sp.id, p.id);
-            if (offer.items.length || offer.advantage) {
-              m.choice = { kind: "shop", spaceId: sp.id, bought: 0, expiresAt: this.choiceExpiry() };
-              this.emit({ type: "ShopOpened", playerId: p.id, spaceId: sp.id, affordable: [...offer.items.map((i) => i.id), ...(offer.advantage ? [ADVANTAGE_ID] : [])] });
-              return;
-            }
-            this.emit({ type: "ShopUnaffordable", playerId: p.id, spaceId: sp.id, ...(offer.bagFull ? { bagFull: true } : {}) });
+            // the server draws this visit's stock, then stockShop opens (or skips) it
+            m.choice = { kind: "shopDraw", spaceId: sp.id };
+            return;
           }
         }
         if (final) {
@@ -710,7 +711,7 @@ class Run {
   shopBuy(playerId: string, itemId: string) {
     const { choice } = this.requireChoice(playerId, "shop");
     const p = this.player(playerId);
-    const stock = shopStock(this.ctx, this.s, choice.spaceId);
+    const stock = shopStock(this.ctx, this.s, choice.stock);
     if (itemId === ADVANTAGE_ID) {
       if (!stock.advantage) throw new EngineError("unknown_item", "The tribe advantage isn't for sale here.");
       if (p.coins < stock.advantage.price) throw new EngineError("not_enough_coins", `You need ${stock.advantage.price} coins for the Tribe Advantage.`);
@@ -727,10 +728,29 @@ class Run {
       this.emit({ type: "ShopPurchase", playerId, itemId: item.id, price: item.price });
     }
     choice.bought++;
-    const offer = shopOffer(this.ctx, this.s, choice.spaceId, playerId);
+    const offer = shopOffer(this.ctx, this.s, choice.stock, playerId);
     if (choice.bought >= this.ctx.rules.shop.maxPerVisit || (!offer.items.length && !offer.advantage)) {
       this.closeShop(false);
     }
+  }
+
+  // The items this shop offers this visit (drawn by the server). Opens the shop if the
+  // player can buy anything, otherwise walks on.
+  stockShop(playerId: string, itemIds: string[]) {
+    const { m, choice } = this.requireChoice(playerId, "shopDraw");
+    const p = this.player(playerId);
+    if (new Set(itemIds).size !== itemIds.length || itemIds.some((id) => !itemDef(this.ctx, id))) {
+      throw new EngineError("unknown_item", "A shop can only stock items from the config, once each.");
+    }
+    const offer = shopOffer(this.ctx, this.s, itemIds, p.id);
+    if (offer.items.length || offer.advantage) {
+      m.choice = { kind: "shop", spaceId: choice.spaceId, bought: 0, expiresAt: this.choiceExpiry(), stock: [...itemIds] };
+      this.emit({ type: "ShopOpened", playerId: p.id, spaceId: choice.spaceId, affordable: [...offer.items.map((i) => i.id), ...(offer.advantage ? [ADVANTAGE_ID] : [])] });
+      return;
+    }
+    m.choice = null;
+    this.emit({ type: "ShopUnaffordable", playerId: p.id, spaceId: choice.spaceId, ...(offer.bagFull ? { bagFull: true } : {}) });
+    this.continueMove();
   }
 
   shopSkip(playerId: string) {

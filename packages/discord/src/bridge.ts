@@ -407,7 +407,7 @@ export class BoardDiscord {
     const c = state.move?.choice;
     if (c?.kind !== "shop") return [];
     const ctx = { layout: this.opts.service.layout(boardId), rules: this.opts.loadConfig() };
-    if (!shopStock(ctx, state, c.spaceId).advantage) return [];
+    if (!shopStock(ctx, state, c.stock).advantage) return [];
     const file = this.advantageFile(boardId);
     return file ? [new AttachmentBuilder(file.path, { name: file.name })] : [];
   }

@@ -109,7 +109,7 @@ export function direction(layout: Board, from: string, to: string): string {
 // can be retired and a new one posted.
 export function promptKey(state: BoardState): string | null {
   const m = state.move;
-  if (!m?.choice || m.choice.kind === "eventDraw") return null;
+  if (!m?.choice || m.choice.kind === "eventDraw" || m.choice.kind === "shopDraw") return null;
   return `${m.playerId}:${m.choice.kind}:${m.choice.spaceId}:${m.rolledAt}:${m.remaining}`;
 }
 
@@ -132,7 +132,7 @@ function rows(buttons: ButtonBuilder[]): ActionRowBuilder<ButtonBuilder>[] {
 export function promptMessage(boardId: string, state: BoardState, layout: Board, config: SeasonConfig, boardImageUrl?: string): OutgoingMessage | null {
   const m = state.move;
   const c = m?.choice;
-  if (!m || !c || c.kind === "eventDraw") return null;
+  if (!m || !c || c.kind === "eventDraw" || c.kind === "shopDraw") return null;
   const p = state.players[m.playerId];
   if (!p) return null;
   const who = `<@${p.id}>`;
@@ -198,8 +198,8 @@ export function promptMessage(boardId: string, state: BoardState, layout: Board,
   }
   // the shop: what this one sells, what you can afford, and the tribe advantage
   const ctx = { layout, rules: config };
-  const stock = shopStock(ctx, state, c.spaceId);
-  const offer = shopOffer(ctx, state, c.spaceId, p.id);
+  const stock = shopStock(ctx, state, c.stock);
+  const offer = shopOffer(ctx, state, c.stock, p.id);
   const canBuy = new Set(offer.items.map((i) => i.id));
   const lines = stock.items.map((i) => `${canBuy.has(i.id) ? "•" : "◦"} ${bold(i.name)} · ${i.price} coins${i.description ? ` — ${i.description}` : ""}`);
   if (stock.advantage) lines.push(`✦ ${bold("Tribe Advantage")} · ${stock.advantage.price} coins (one per tribe)`);

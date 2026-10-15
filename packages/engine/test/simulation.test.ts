@@ -138,7 +138,13 @@ function simulate(seed: number, players: number, turns: number) {
     while (state.move) {
       const c = state.move.choice!;
       now += Math.floor(rnd() * 30) * 60_000;
-      if (c.kind === "eventDraw") {
+      if (c.kind === "shopDraw") {
+        // what the server does: a couple of distinct items at random
+        const pool = ctx.rules.shop.items.map((i) => i.id);
+        const items: string[] = [];
+        while (items.length < Math.min(ctx.rules.shop.stockSize, pool.length)) items.push(pick(pool.filter((x) => !items.includes(x))));
+        step({ type: "stockShop", playerId: pid, items, now });
+      } else if (c.kind === "eventDraw") {
         // what the server does
         const event = pick(["coinSteal", "starSteal", "swap"] as const);
         step({ type: "drawEvent", playerId: pid, event, percent: pick(ctx.rules.events.coinSteal.percents), now });
@@ -149,7 +155,7 @@ function simulate(seed: number, players: number, turns: number) {
       else if (c.kind === "star")
         step(rnd() < 0.7 ? { type: "buyStar", playerId: pid, newStarSpace: pick(starCandidates(ctx, state)), now } : { type: "skipStar", playerId: pid, now });
       else if (c.kind === "shop") {
-        const offer = shopOffer(ctx, state, c.spaceId, pid);
+        const offer = shopOffer(ctx, state, c.stock, pid);
         const ids = [...offer.items.map((i) => i.id), ...(offer.advantage ? [ADVANTAGE_ID] : [])];
         step(rnd() < 0.6 && ids.length ? { type: "shopBuy", playerId: pid, itemId: pick(ids), now } : { type: "shopSkip", playerId: pid, now });
       } else if (c.kind === "dicePick") step({ type: "pickDie", playerId: pid, value: pick(c.options), now });

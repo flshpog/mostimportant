@@ -24,6 +24,7 @@
   "shop": {
     "maxPerVisit": 1,
     "bagSize": 3,
+    "stockSize": 2,
     "items": [
       { "id": "mushroom", "name": "Mushroom", "price": 10, "description": "Roll two dice and add them together.", "effect": { "kind": "dice", "count": 2, "min": 1, "max": 10 } },
       { "id": "golden-mushroom", "name": "Golden Mushroom", "price": 20, "description": "Roll three dice and add them together.", "effect": { "kind": "dice", "count": 3, "min": 1, "max": 10 } },
@@ -37,8 +38,8 @@
       { "id": "boo-bell", "name": "Boo Bell", "price": 9, "description": "Steals 7 coins from a tribemate.", "effect": { "kind": "steal", "coins": 7 } }
     ],
     "variants": {
-      "purple": { "name": "Purple shop", "colour": "#8e4ec6", "items": ["mushroom", "slow-mushroom", "reroll-block", "magic-lamp", "guard-charm"] },
-      "pink": { "name": "Pink shop", "colour": "#e0569b", "items": ["golden-mushroom", "fast-mushroom", "star-compass", "poison-mushroom", "boo-bell"] }
+      "purple": { "name": "Purple shop", "colour": "#8e4ec6" },
+      "pink": { "name": "Pink shop", "colour": "#e0569b" }
     },
     "advantage": {
       "price": 40,

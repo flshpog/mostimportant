@@ -249,8 +249,8 @@ export function BoardHud(props: {
     );
   } else if (props.ready && choice?.kind === "shop") {
     // the tribe advantage in the middle, this shop's items around it
-    const stock = shopStock(ctx, state, choice.spaceId);
-    const offer = shopOffer(ctx, state, choice.spaceId, meId);
+    const stock = shopStock(ctx, state, choice.stock);
+    const offer = shopOffer(ctx, state, choice.stock, meId);
     const canBuy = new Set(offer.items.map((i) => i.id));
     const variant = layout.spaces.find((s) => s.id === choice.spaceId)?.shop;
     const tile = (i: (typeof stock.items)[number]) => (

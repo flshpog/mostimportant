@@ -23,7 +23,9 @@ export interface PlayerState {
 export type Choice =
   | { kind: "fork"; spaceId: string; options: string[]; expiresAt: number }
   | { kind: "star"; spaceId: string; price: number; expiresAt: number }
-  | { kind: "shop"; spaceId: string; bought: number; expiresAt: number }
+  // Reached a shop; the server draws what it sells this visit straight away.
+  | { kind: "shopDraw"; spaceId: string }
+  | { kind: "shop"; spaceId: string; bought: number; expiresAt: number; stock: string[] }
   // Landed on an event space; the server draws the event straight away.
   | { kind: "eventDraw"; spaceId: string }
   // The drawn event, waiting for the player to pick a target. `percent` is rolled at
@@ -36,7 +38,7 @@ export type Choice =
 
 export type ChoiceKind = Choice["kind"];
 // Choices that wait on the player (and time out), as opposed to ones the server settles.
-export type PlayerChoice = Exclude<Choice, { kind: "eventDraw" }>;
+export type PlayerChoice = Exclude<Choice, { kind: "eventDraw" } | { kind: "shopDraw" }>;
 export type EventChoiceKind = "coinSteal" | "starSteal" | "swap";
 
 // A roll in progress. Movement pauses here while a choice is pending.
@@ -146,6 +148,8 @@ export type Action =
   // Use an item before rolling. The server fills in nextStarSpace for a Star Compass.
   | { type: "useItem"; playerId: string; itemId: string; targetId?: string | null; nextStarSpace?: string; now: number }
   | { type: "pickDie"; playerId: string; value: number; now: number }
+  // Server-only: settles a shopDraw with the items this shop offers this visit.
+  | { type: "stockShop"; playerId: string; items: string[]; now: number }
   // Server-only: settles an eventDraw with the event it drew (and the coin-steal roll).
   | { type: "drawEvent"; playerId: string; event: EventChoiceKind; percent: number; now: number }
   // Player picks the event's target, or null to decline (not allowed for coin steal).

@@ -16,6 +16,7 @@ export const rules: Rules = {
       { id: "golden-pipe", name: "Golden Pipe", price: 30, effect: { kind: "dice", count: 3, min: 1, max: 10 } },
     ],
     bagSize: 3,
+    stockSize: 2,
     variants: {},
   },
   events: {
@@ -74,12 +75,26 @@ export class Game {
     this.initial = this.state;
   }
 
+  // What shops offer when the test reaches one (the server draws this at random);
+  // by default the first items in the config.
+  stock: string[] | null = null;
+
   do(action: Action): EngineEvent[] {
     const r = apply(this.ctx, this.state, action);
     this.state = r.state;
     this.actions.push(action);
-    this.lastEvents = r.events;
-    return r.events;
+    const events = [...r.events];
+    // stock any shop reached, like the server does
+    while (this.state.move?.choice?.kind === "shopDraw") {
+      const items = this.stock ?? this.ctx.rules.shop.items.slice(0, this.ctx.rules.shop.stockSize).map((i) => i.id);
+      const stock: Action = { type: "stockShop", playerId: this.state.move.playerId, items, now: action.now };
+      const s = apply(this.ctx, this.state, stock);
+      this.state = s.state;
+      this.actions.push(stock);
+      events.push(...s.events);
+    }
+    this.lastEvents = events;
+    return events;
   }
 
   start() {
