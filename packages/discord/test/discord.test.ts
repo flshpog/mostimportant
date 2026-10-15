@@ -169,6 +169,28 @@ describe("the bridge", () => {
     expect(r.channel.live().find((m) => m.content.startsWith("🔀"))!.buttons).toEqual([]);
   });
 
+  it("/board trusts the host role on the command itself", async () => {
+    r.discord.stop();
+    const { BoardDiscord } = await import("../src");
+    const d = new BoardDiscord({
+      client: {} as any,
+      service: r.service,
+      loadConfig: () => r.season,
+      dataDir: r.dataDir,
+      isHost: async () => false, // the lookup fails...
+      hostRoleId: "555555555555555555",
+      getChannel: async () => null,
+      log: () => undefined,
+    });
+    const options = { getSubcommand: () => "coins", getUser: () => ({ id: PEACH, username: "peach" }), getInteger: () => 5, getString: () => null, getBoolean: () => null, getMember: () => null };
+    const withRole = fakeInteraction("100000000000000077", { options, member: { roles: ["555555555555555555"] } });
+    await d.handleHostCommand(withRole);
+    expect(withRole.calls[1].payload).toBe("✅ **Peach** lost 5 coins (host). Now 5."); // ...but the role on the command is enough
+    const without = fakeInteraction("100000000000000078", { options, member: { roles: [] } });
+    await d.handleHostCommand(without);
+    expect(without.calls[0].payload).toEqual({ content: "Only hosts can use /board.", ephemeral: true });
+  });
+
   it("/board is refused for non-hosts and works for hosts", async () => {
     const options = {
       getSubcommand: () => "coins",

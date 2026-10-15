@@ -8,7 +8,10 @@ const { logToHost } = require('./economyLog');
 
 const ROOT = path.join(__dirname, '..', '..');
 const SEASON_CONFIG = path.join(ROOT, 'packages', 'board-data', 'season-config.json');
+// A "yes" is remembered for a minute; a "no" only briefly, so granting the role
+// takes effect right away.
 const HOST_CACHE_MS = 60_000;
+const NOT_HOST_CACHE_MS = 5_000;
 
 let running = null;
 
@@ -63,7 +66,7 @@ function hostChecker(client, config) {
         } catch (error) {
             console.error('[board] host check failed:', error.message);
         }
-        cache.set(userId, { value, until: Date.now() + HOST_CACHE_MS });
+        cache.set(userId, { value, until: Date.now() + (value ? HOST_CACHE_MS : NOT_HOST_CACHE_MS) });
         return value;
     };
 }
@@ -110,6 +113,7 @@ async function start(client) {
         loadConfig,
         dataDir,
         isHost: async (id) => config.host_user_ids.includes(id) || (await isHost(id)),
+        hostRoleId: config.host_role_id,
         logToHost: (text) => logToHost(client, text),
     });
     await client.boardDiscord.start();

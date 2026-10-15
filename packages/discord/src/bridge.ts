@@ -29,6 +29,9 @@ export interface BoardDiscordOptions {
   loadConfig: () => SeasonConfig;
   dataDir: string;
   isHost: (userId: string) => Promise<boolean>;
+  // The host role. Slash commands carry the user's roles, so /board checks them
+  // directly before falling back to isHost.
+  hostRoleId?: string;
   logToHost?: (text: string) => Promise<unknown>;
   clock?: () => number;
   // Overridable so tests run fast.
@@ -376,7 +379,10 @@ export class BoardDiscord {
   async handleHostCommand(interaction: ChatInputCommandInteraction) {
     const { service } = this.opts;
     const uid = interaction.user.id;
-    if (!(await this.opts.isHost(uid))) return interaction.reply({ content: "Only hosts can use /board.", ephemeral: true });
+    if (!(await this.isHostInteraction(interaction))) {
+      this.log(`[board] /board refused for ${interaction.user.tag} (${uid}): no host role ${this.opts.hostRoleId ?? "(none set)"} in this server, and not a host by config`);
+      return interaction.reply({ content: "Only hosts can use /board.", ephemeral: true });
+    }
     const sub = interaction.options.getSubcommand();
     await interaction.deferReply({ ephemeral: true });
 
@@ -481,6 +487,15 @@ export class BoardDiscord {
     } catch (e) {
       await interaction.editReply(this.friendly(e));
     }
+  }
+
+  private async isHostInteraction(interaction: ChatInputCommandInteraction): Promise<boolean> {
+    const roleId = this.opts.hostRoleId;
+    const roles = (interaction.member as { roles?: string[] | { cache?: Map<string, unknown> } } | null)?.roles;
+    if (roleId && roles) {
+      if (Array.isArray(roles) ? roles.includes(roleId) : roles.cache?.has(roleId)) return true;
+    }
+    return this.opts.isHost(interaction.user.id);
   }
 
   private async statusReply(interaction: ChatInputCommandInteraction, boardId: string) {
