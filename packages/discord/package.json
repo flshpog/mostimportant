@@ -8,7 +8,7 @@
   "scripts": {
     "test": "vitest run",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "preview": "tsx scripts/preview.ts"
+    "preview": "tsx scripts/preview.mts"
   },
   "dependencies": {
     "@everest/board-data": "*",

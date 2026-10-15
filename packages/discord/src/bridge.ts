@@ -15,7 +15,7 @@ import type { SeasonConfig } from "@everest/board-data";
 import { currentPlayerId, describeEvent, EngineError, type BoardState, type EngineEvent } from "@everest/engine";
 import { ServiceError, type ActionMeta, type BoardService, type HostActionInput, type StoredEvent, type WireEvent } from "@everest/server";
 import { bold, narrate, parseButtonId, promptKey, promptMessage, rollButton, ts, turnMessage } from "./messages";
-import { renderBoard } from "./render";
+import { prepareBackdrops, renderBoard } from "./render";
 
 // What the bot needs to send. Text channels, threads and test fakes all fit.
 export interface BoardChannel {
@@ -83,6 +83,9 @@ export class BoardDiscord {
   }
 
   async start() {
+    await prepareBackdrops([...new Set(this.opts.service.boardIds().map((id) => this.opts.service.summary(id).layoutId))]).catch((e) =>
+      this.log("[board] couldn't load the Discord board backdrop; using the flat drawing", e),
+    );
     if (existsSync(this.file)) {
       try {
         this.saved = JSON.parse(readFileSync(this.file, "utf8"));
@@ -335,8 +338,8 @@ export class BoardDiscord {
     const summary = this.opts.service.summary(boardId);
     const avatars = new Map<string, Image | null>();
     await Promise.all(state.turn.order.map(async (id) => avatars.set(id, await this.avatar(id))));
-    const png = renderBoard({ layout: this.opts.service.layout(boardId), state, boardName: summary.name, avatars, now: this.clock() });
-    const files = [new AttachmentBuilder(png, { name: `${boardId}.png` })];
+    const img = renderBoard({ layout: this.opts.service.layout(boardId), state, boardName: summary.name, avatars, now: this.clock() });
+    const files = [new AttachmentBuilder(img, { name: `${boardId}.jpg` })];
     const saved = this.board(boardId);
     if (this.opts.updatesThread?.enabled) await this.feed(boardId); // make sure the thread exists to link to
     const playIn = saved.threadId ? ` · play in <#${saved.threadId}>` : "";
@@ -558,7 +561,7 @@ export class BoardDiscord {
         return `${i + 1}. ${bold(p.name)} <@${p.id}> · ${p.space} · ⭐ ${p.stars} · 🪙 ${p.coins} · ${p.items.map(this.itemName).join(", ") || "no items"}`;
       }),
     ].filter((l, i) => l !== "" || i === 4);
-    const png = renderBoard({ layout: service.layout(boardId), state, boardName: summary.name, now: this.clock() });
-    await interaction.editReply({ content: lines.join("\n"), files: [new AttachmentBuilder(png, { name: `${boardId}.png` })], allowedMentions: NO_MENTIONS });
+    const img = renderBoard({ layout: service.layout(boardId), state, boardName: summary.name, now: this.clock() });
+    await interaction.editReply({ content: lines.join("\n"), files: [new AttachmentBuilder(img, { name: `${boardId}.jpg` })], allowedMentions: NO_MENTIONS });
   }
 }

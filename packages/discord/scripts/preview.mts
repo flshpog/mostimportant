@@ -4,9 +4,10 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { loadLayouts, loadSeasonConfig } from "@everest/board-data";
 import { apply, createBoardState, type BoardState, type EngineContext } from "@everest/engine";
-import { renderBoard } from "../src/render";
+import { prepareBackdrops, renderBoard } from "../src/render.ts";
 
 const out = process.argv[2] ?? "board-preview";
+await prepareBackdrops(["main"]);
 mkdirSync(out, { recursive: true });
 const ctx: EngineContext = { layout: loadLayouts().main, rules: loadSeasonConfig() };
 const t0 = Date.parse("2026-11-02T12:00:00-05:00");
@@ -22,7 +23,7 @@ let state: BoardState = createBoardState(ctx, {
     { id: "1005", name: "Wario" },
   ],
 });
-writeFileSync(join(out, "1-not-started.png"), renderBoard({ layout: ctx.layout, state, boardName: "Mario Stadium", now: t0 }));
+writeFileSync(join(out, "1-not-started.jpg"), renderBoard({ layout: ctx.layout, state, boardName: "Mario Stadium", now: t0 }));
 
 state = apply(ctx, state, { type: "startBoard", now: t0 }).state;
 // Spread everyone out a bit, like mid-season.
@@ -33,5 +34,5 @@ for (const [id, [space, coins, stars]] of Object.entries(spots)) {
   state = apply(ctx, state, { type: "setStars", playerId: id, stars, now: t0 }).state;
 }
 state = apply(ctx, state, { type: "roll", playerId: "1001", dice: [3], now: t0 + 1000 }).state;
-writeFileSync(join(out, "2-mid-game.png"), renderBoard({ layout: ctx.layout, state, boardName: "Mario Stadium", now: t0 + 2000 }));
+writeFileSync(join(out, "2-mid-game.jpg"), renderBoard({ layout: ctx.layout, state, boardName: "Mario Stadium", now: t0 + 2000 }));
 console.log(`wrote previews to ${out}`);

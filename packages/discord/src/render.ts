@@ -1,4 +1,6 @@
-import { createCanvas, GlobalFonts, type Image, type SKRSContext2D } from "@napi-rs/canvas";
+import { existsSync, readFileSync } from "node:fs";
+import { join } from "node:path";
+import { createCanvas, GlobalFonts, loadImage, type Image, type SKRSContext2D } from "@napi-rs/canvas";
 import type { Board, SpaceType } from "@everest/board-data";
 import { currentPlayerId, type BoardState, type PlayerState } from "@everest/engine";
 
@@ -18,6 +20,8 @@ export interface RenderInput {
   // Loaded avatar images by player id; missing or null draws an initial instead.
   avatars?: Map<string, Image | null>;
   now: number;
+  // Force the flat 2D drawing even when a Blender backdrop exists.
+  flat?: boolean;
 }
 
 const W = 1400;
@@ -401,22 +405,76 @@ function drawPanel(ctx: SKRSContext2D, input: RenderInput, avatars: Map<string, 
 }
 
 // Draws the board as a PNG. Pure apart from fonts: same input, same image.
+// A still of the 3D board rendered in Blender (art/board.blend, DiscordCam), plus where
+// each space landed in it. When one exists for a layout, it replaces the flat drawing.
+interface Backdrop {
+  image: Image;
+  width: number;
+  height: number;
+  spaces: Record<string, [number, number]>;
+}
+const backdrops = new Map<string, Backdrop | null>();
+
+// Image decoding is async, so backdrops are loaded once up front. Call before rendering;
+// until it has run, boards fall back to the flat drawing.
+export async function prepareBackdrops(layoutIds: string[]): Promise<void> {
+  const dir = join(__dirname, "..", "assets");
+  for (const id of layoutIds) {
+    const metaPath = join(dir, `backdrop-${id}.json`);
+    if (!existsSync(metaPath)) {
+      backdrops.set(id, null);
+      continue;
+    }
+    const meta = JSON.parse(readFileSync(metaPath, "utf8"));
+    const image = await loadImage(readFileSync(join(dir, meta.image)));
+    backdrops.set(id, { image, width: meta.width, height: meta.height, spaces: meta.spaces });
+  }
+}
+
+function backdropFor(layoutId: string): Backdrop | null {
+  return backdrops.get(layoutId) ?? null;
+}
+
+function drawSky(ctx: SKRSContext2D) {
+  const g = ctx.createLinearGradient(0, 0, 0, H);
+  g.addColorStop(0, "#3d8fe8");
+  g.addColorStop(1, "#a9dcff");
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, W, H);
+}
+
+// Draws the board as a JPEG. Pure apart from fonts and the backdrop file: same input,
+// same image.
 export function renderBoard(input: RenderInput): Buffer {
   registerFonts();
   const canvas = createCanvas(W, H);
   const ctx = canvas.getContext("2d");
-  const project = projector(input.layout);
-  const byId = new Map(input.layout.spaces.map((s) => [s.id, s]));
-  const at = (id: string) => project(byId.get(id)!.pos);
   const avatars = input.avatars ?? new Map();
-
-  drawBackground(ctx);
-  drawPaths(ctx, input.layout, at);
-  drawSpaces(ctx, input.layout, at);
-  if (input.state.star && byId.has(input.state.star)) drawStar(ctx, at(input.state.star));
+  const backdrop = input.flat ? null : backdropFor(input.layout.id);
+  let at: (id: string) => Pt;
+  if (backdrop) {
+    // Fit the render into the board area, left of the panel.
+    const scale = Math.min((PANEL_X - 20) / backdrop.width, (H - 20) / backdrop.height);
+    const ox = 10 + (PANEL_X - 20 - backdrop.width * scale) / 2;
+    const oy = 10 + (H - 20 - backdrop.height * scale) / 2;
+    drawSky(ctx);
+    ctx.drawImage(backdrop.image, ox, oy, backdrop.width * scale, backdrop.height * scale);
+    at = (id) => {
+      const [x, y] = backdrop.spaces[id] ?? [0, 0];
+      return { x: ox + x * scale, y: oy + y * scale };
+    };
+  } else {
+    const project = projector(input.layout);
+    const byId = new Map(input.layout.spaces.map((s) => [s.id, s]));
+    at = (id) => project(byId.get(id)!.pos);
+    drawBackground(ctx);
+    drawPaths(ctx, input.layout, at);
+    drawSpaces(ctx, input.layout, at);
+  }
+  if (input.state.star && input.layout.spaces.some((s) => s.id === input.state.star)) drawStar(ctx, at(input.state.star));
   drawTokens(ctx, input.state, at, avatars);
   drawPanel(ctx, input, avatars);
-  return canvas.toBuffer("image/png");
+  return canvas.toBuffer("image/jpeg", 88);
 }
 
 export const BOARD_IMAGE_SIZE = { width: W, height: H };

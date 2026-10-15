@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { loadLayouts, loadSeasonConfig } from "@everest/board-data";
 import { createBoardState } from "@everest/engine";
-import { buildBoardCommand, buildRollCommand, buttonId, direction, parseButtonId, renderBoard } from "../src";
+import { buildBoardCommand, buildRollCommand, buttonId, direction, parseButtonId, prepareBackdrops, renderBoard } from "../src";
 import { narrate } from "../src/messages";
 import { fakeInteraction, HOST, PEACH, rig, settle, TOAD, type Rig } from "./fakes";
 
@@ -51,11 +51,14 @@ describe("message helpers", () => {
     );
   });
 
-  it("renders a PNG", () => {
+  it("renders the board image, with and without the Blender backdrop", async () => {
+    await prepareBackdrops(["main"]);
     const state = createBoardState({ layout: main, rules: loadSeasonConfig() }, { boardId: "x", starSpace: "s62", players: [{ id: "1", name: "Peach" }] });
-    const png = renderBoard({ layout: main, state, boardName: "Test", now: 0 });
-    expect(png.subarray(1, 4).toString()).toBe("PNG");
-    expect(png.length).toBeGreaterThan(20_000);
+    const img = renderBoard({ layout: main, state, boardName: "Test", now: 0 });
+    expect([img[0], img[1]]).toEqual([0xff, 0xd8]); // JPEG
+    expect(img.length).toBeGreaterThan(20_000);
+    const flat = renderBoard({ layout: main, state, boardName: "Test", now: 0, flat: true });
+    expect(flat.length).toBeGreaterThan(20_000);
   });
 });
 
