@@ -22,8 +22,8 @@ THEMES = {
         sea=True, sun=(1.0, 0.92, 0.80), sun_energy=4.2, world=(0.38, 0.62, 1.0),
     ),
     "night": dict(  # the underworld: purple ground, dead trees, graves, a haunted house
-        grass=(0.20, 0.13, 0.30), grass2=(0.26, 0.17, 0.38), slope=(0.09, 0.06, 0.14), path=(0.36, 0.32, 0.46),
-        sea=False, sun=(0.70, 0.62, 1.0), sun_energy=2.2, world=(0.10, 0.06, 0.18),
+        grass=(0.17, 0.11, 0.26), grass2=(0.23, 0.14, 0.33), slope=(0.08, 0.05, 0.12), path=(0.33, 0.29, 0.43),
+        sea=False, sun=(0.66, 0.58, 1.0), sun_energy=1.9, world=(0.09, 0.05, 0.16),
     ),
 }
 
@@ -540,77 +540,251 @@ def scatter_day(L, terrain, rng):
         r = rng.uniform(34, 44)
         place(f"Kit_cloud_{rng.randrange(3)}", f"Cloud {i}", (L.centre.x + math.cos(a) * r, L.centre.y + math.sin(a) * r * 0.75, rng.uniform(-2, 4)), rng.uniform(0, 6.28), rng.uniform(1.2, 2.0), "Sky")
 
+def dead_tree_mesh(k):
+    """A gnarled dead tree: a bent, tapering trunk with crooked branches, some forked."""
+    name = f"Kit_tree_gnarl_{k}"
+    if name in bpy.data.meshes:
+        return bpy.data.meshes[name]
+    from mathutils import Matrix
+    r = random.Random(100 + k)
+    bm = bmesh.new()
+
+    def limb(base, direction, length, r0, r1):
+        """A tapered limb from `base` along `direction`; returns its tip."""
+        d = direction.normalized()
+        res = bmesh.ops.create_cone(bm, cap_ends=True, segments=6, radius1=r0, radius2=r1, depth=length)
+        rot = Vector((0, 0, 1)).rotation_difference(d).to_matrix().to_4x4()
+        bmesh.ops.transform(bm, matrix=Matrix.Translation(base + d * length / 2) @ rot, verts=res["verts"])
+        return base + d * length
+
+    # the trunk in three bent segments
+    tip = Vector((0, 0, 0))
+    lean = Vector((r.uniform(-0.25, 0.25), r.uniform(-0.25, 0.25), 1))
+    radii = [0.26, 0.19, 0.13, 0.07]
+    joints = []
+    for seg in range(3):
+        bend = lean + Vector((r.uniform(-0.35, 0.35), r.uniform(-0.35, 0.35), 0))
+        nxt = limb(tip, bend, r.uniform(0.75, 1.0), radii[seg], radii[seg + 1])
+        joints.append((tip, nxt))
+        tip = nxt
+    # crooked branches off the upper trunk, some forking again
+    for j in range(r.randint(4, 6)):
+        a0, a1 = joints[r.randint(1, 2)]
+        base = a0.lerp(a1, r.uniform(0.3, 1.0))
+        ang = r.uniform(0, 6.28)
+        out = Vector((math.cos(ang), math.sin(ang), r.uniform(0.3, 0.9)))
+        end = limb(base, out, r.uniform(0.6, 1.1), 0.08, 0.03)
+        if r.random() < 0.7:
+            ang2 = ang + r.uniform(-1.0, 1.0)
+            limb(end, Vector((math.cos(ang2), math.sin(ang2), r.uniform(0.2, 1.0))), r.uniform(0.35, 0.6), 0.035, 0.01)
+    # a few roots at the bottom
+    for j in range(4):
+        ang = j * 1.57 + r.uniform(-0.4, 0.4)
+        limb(Vector((0, 0, 0.18)), Vector((math.cos(ang), math.sin(ang), -0.35)), 0.55, 0.11, 0.03)
+    me = bpy.data.meshes.new(name)
+    bm.to_mesh(me)
+    bm.free()
+    me.materials.append(bpy.data.materials["Props"])
+    bark = srgb((0.17, 0.13, 0.21))
+    paint(me, lambda poly, vi: tuple(x * (0.8 + 0.25 * max(0.0, me.polygons[poly.index].normal.z)) for x in bark))
+    return me
+
+def fence_mesh():
+    """A short run of iron graveyard fence: spiked bars between two posts."""
+    if "Kit_iron_fence" in bpy.data.meshes:
+        return bpy.data.meshes["Kit_iron_fence"]
+    bm = bmesh.new()
+    for x in (-1.0, 1.0):
+        box(bm, (x - 0.06, -0.06, 0), (x + 0.06, 0.06, 1.05))
+    box(bm, (-1.0, -0.025, 0.2), (1.0, 0.025, 0.26))
+    box(bm, (-1.0, -0.025, 0.72), (1.0, 0.025, 0.78))
+    for i in range(9):
+        x = -0.8 + i * 0.2
+        box(bm, (x - 0.018, -0.018, 0.05), (x + 0.018, 0.018, 0.9))
+        sp = bmesh.ops.create_cone(bm, cap_ends=True, segments=4, radius1=0.04, radius2=0.0, depth=0.12)
+        bmesh.ops.translate(bm, verts=sp["verts"], vec=(x, 0, 0.96))
+    me = bpy.data.meshes.new("Kit_iron_fence")
+    bm.to_mesh(me)
+    bm.free()
+    me.materials.append(bpy.data.materials["Props"])
+    iron = srgb((0.09, 0.08, 0.12))
+    paint(me, lambda poly, vi: iron)
+    return me
+
 def scatter_night(L, terrain, rng):
-    taken = [p.copy() for p in L.pos.values()]
-    # dead trees: the pines drained to a dark purple-grey (by brightness, so no green survives)
-    def dark(rgb):
-        l = (rgb[0] + rgb[1] + rgb[2]) / 3
-        return (l * 0.55 + 0.05, l * 0.42 + 0.03, l * 0.75 + 0.08)
-    dead = [recolour_mesh(f"Kit_tree_pine_{k}", f"Kit_tree_dead2_{k}", dark).name for k in range(3)]
-    for i, p in enumerate(free_spots(L, terrain, 26, 2.4, 2.4, taken, rng)):
-        place(rng.choice(dead), f"tree_dead_{i}", p, rng.uniform(0, 6.28), rng.uniform(0.8, 1.2), "Trees")
-    rocks = [recolour_mesh(f"Kit_rock_{k}", f"Kit_rock_night_{k}", lambda c: (c[0] * 0.55, c[1] * 0.5, c[2] * 0.7)).name for k in range(4)]
-    for i, p in enumerate(free_spots(L, terrain, 16, 1.8, 1.8, taken, rng)):
-        place(rng.choice(rocks), f"rock_{i}", (p.x, p.y, p.z - 0.3), rng.uniform(0, 6.28), rng.uniform(0.8, 1.3), "Rocks")
-    grass = [recolour_mesh(f"Kit_grass_{k}", f"Kit_grass_night_{k}", lambda c: (c[0] * 0.5 + 0.08, c[1] * 0.35, c[2] * 0.6 + 0.1)).name for k in range(3)]
-    for i, p in enumerate(free_spots(L, terrain, 160, 1.0, 0.5, taken, rng)):
-        place(rng.choice(grass), f"grass_{i}", p, rng.uniform(0, 6.28), rng.uniform(1.1, 1.6), "Grass")
-    mush = [recolour_mesh(k, k + "_night", lambda c: (c[2] * 0.8 + 0.15, c[1] * 0.4, c[0] * 0.9 + 0.1)).name for k in ("Kit_mushroom_small_red", "Kit_mushroom_small_brown")]
-    for i, p in enumerate(free_spots(L, terrain, 16, 1.4, 1.0, taken, rng)):
-        place(rng.choice(mush), f"mushroom_small_{i}", p, rng.uniform(0, 6.28), rng.uniform(0.9, 1.4), "Mushrooms")
-    # graves, in little clusters
-    for i, p in enumerate(free_spots(L, terrain, 24, 1.5, 1.2, taken, rng)):
-        ob = bpy.data.objects.new(f"Grave {i}", grave_mesh(rng.randrange(2)))
-        ob.location = (p.x, p.y, p.z - 0.05)
-        ob.rotation_euler = (rng.uniform(-0.12, 0.12), rng.uniform(-0.1, 0.1), rng.uniform(0, 6.28))
-        s = rng.uniform(0.8, 1.15)
-        ob.scale = (s, s, s)
-        link(ob, "Graves")
+    """The underworld. Everything is placed with a footprint radius, biggest first,
+    so nothing ends up inside anything else."""
+    occupied = []  # (point, radius) on the ground
+
+    def clear(p, r):
+        return all((p.xy - q.xy).length >= r + qr for q, qr in occupied)
+
+    # the island's extent, for picking random spots
+    xs = [v.co.x for v in terrain.data.vertices]
+    ys = [v.co.y for v in terrain.data.vertices]
+    x0, x1, y0, y1 = min(xs), max(xs), min(ys), max(ys)
+
+    def spot(r, min_path, inside=None, tries=600, max_z=1.4):
+        for _ in range(tries):
+            p = Vector((rng.uniform(x0, x1), rng.uniform(y0, y1), 0))
+            if inside is not None and L.inside(p) != inside:
+                continue
+            if L.path_dist(p) < min_path:
+                continue
+            z = ground(terrain, p)
+            if z is None or z < -0.05 or z > max_z or not clear(p, r):
+                continue
+            p.z = z
+            return p
+        return None
+
+    # what's already there: tiles, shops, the start gate, signposts
+    for q in L.pos.values():
+        occupied.append((q, 0.8))
+    for c, r in (("Shops", 2.2), ("Start", 1.3), ("Signposts", 0.8)):
+        for o in col(c).objects:
+            occupied.append((o.location.copy(), r))
+
     # the haunted house: the open spot inside the loop furthest from any path
     best, best_d = None, -1
-    for _ in range(400):
+    for _ in range(500):
         p = Vector((rng.uniform(L.centre.x - 12, L.centre.x + 12), rng.uniform(L.centre.y - 9, L.centre.y + 9), 0))
-        if not L.inside(p):
+        if not L.inside(p) or not clear(p, 0.5):
             continue
         d = L.path_dist(p)
         if d > best_d:
             best, best_d = p, d
     walls, windows = house_meshes()
-    s = max(0.6, min(1.15, (best_d - 1.2) / 3.2))
+    hs = max(0.6, min(1.15, (best_d - 1.2) / 3.2))
     g = ground(terrain, best) or 0
-    toward = (L.pos[L.data["startSpace"]] - best)
+    toward = L.pos[L.data["startSpace"]] - best
     rot = math.atan2(-toward.x, toward.y) + math.pi
     for mesh, name in ((walls, "House"), (windows, "House windows")):
         ob = bpy.data.objects.new(name, mesh)
         ob.location = (best.x, best.y, g - 0.05)
         ob.rotation_euler = (0, 0, rot)
-        ob.scale = (s, s, s)
+        ob.scale = (hs, hs, hs)
         link(ob, "House")
-    taken.append(best)
-    # Boos floating about
-    boo = boo_mesh()
-    # they float, so only the tiles and the house need room, not the grass below
-    boo_room = [q.copy() for q in L.pos.values()] + [best]
-    for i, p in enumerate(free_spots(L, terrain, 9, 1.4, 3.0, boo_room, rng)):
-        ob = bpy.data.objects.new(f"Boo {i}", boo)
-        ob.location = (p.x, p.y, p.z + rng.uniform(1.4, 2.8))
-        # upright, facing the front of the board (where the camera usually is), with
-        # a slight random wobble
-        ob.rotation_euler = (rng.uniform(-0.18, 0.08), rng.uniform(-0.15, 0.15), rng.uniform(-0.65, 0.65))
-        s = rng.uniform(0.75, 1.3)
-        ob.scale = (s, s, s)
-        link(ob, "Boos")
+    occupied.append((best, 3.4 * hs))
+
     # lanterns along the path
     post, light = lantern_meshes()
-    for k, sid in enumerate(L.loop[2::4]):
+    for k, sid in enumerate(L.loop[2::3]):
         q = L.pos[sid]
         d = L.direction(sid)
-        side = Vector((-d.y, d.x, 0)) * (1.25 if k % 2 else -1.25)
-        spot = q + side
+        # on the far side of the path from the camera (which looks from -y), so a
+        # lantern never stands between the camera and a pawn
+        side = Vector((-d.y, d.x, 0))
+        if side.y < 0:
+            side = -side
+        p = q + side * 1.5
+        if not clear(p, 0.3):
+            continue
         for mesh, name in ((post, f"Lantern {k}"), (light, f"Lantern light {k}")):
             ob = bpy.data.objects.new(name, mesh)
-            ob.location = (spot.x, spot.y, (ground(terrain, spot) or 0) - 0.02)
+            ob.location = (p.x, p.y, (ground(terrain, p) or 0) - 0.02)
             link(ob, "Lanterns")
+        occupied.append((p, 0.35))
+
+    # two little fenced graveyards: rows of graves inside a broken iron fence
+    fence = fence_mesh()
+    for gy in range(2):
+        c = spot(3.2, 3.0)
+        if c is None:
+            continue
+        ang = rng.uniform(0, 6.28)
+        u, v = Vector((math.cos(ang), math.sin(ang), 0)), Vector((-math.sin(ang), math.cos(ang), 0))
+        for row in (-0.8, 0.8):
+            for colm in (-1.4, 0, 1.4):
+                if rng.random() < 0.15:
+                    continue
+                p = c + u * (colm + rng.uniform(-0.15, 0.15)) + v * (row + rng.uniform(-0.1, 0.1))
+                ob = bpy.data.objects.new(f"Grave {gy}-{row}-{colm}", grave_mesh(rng.randrange(2)))
+                ob.location = (p.x, p.y, (ground(terrain, p) or 0) - 0.05)
+                ob.rotation_euler = (rng.uniform(-0.15, 0.15), rng.uniform(-0.1, 0.1), ang + rng.uniform(-0.25, 0.25))
+                sc = rng.uniform(0.85, 1.15)
+                ob.scale = (sc, sc, sc)
+                link(ob, "Graves")
+        # the fence round it, with a gap and a few leaning or missing pieces
+        sides = [(u * 0 + v * 1.9, u, 3), (u * 0 - v * 1.9, u, 3), (u * 2.8, v, 2), (-u * 2.8, v, 2)]
+        n = 0
+        for mid, along, count in sides:
+            for i in range(count):
+                if rng.random() < 0.18:
+                    continue
+                offset = (i - (count - 1) / 2) * 2.0
+                p = c + mid + along * offset
+                ob = bpy.data.objects.new(f"Fence {gy}-{n}", fence)
+                ob.location = (p.x, p.y, (ground(terrain, p) or 0) - 0.03)
+                ob.rotation_euler = (rng.uniform(-0.12, 0.12), rng.uniform(-0.05, 0.05), math.atan2(along.y, along.x))
+                link(ob, "Fences")
+                n += 1
+        occupied.append((c, 3.3))
+
+    # gnarled dead trees, clear of everything
+    trees = [dead_tree_mesh(k) for k in range(4)]
+    for i in range(30):
+        sc = rng.uniform(0.85, 1.3)
+        p = spot(1.0 * sc, 2.2)
+        if p is None:
+            break
+        place(rng.choice(trees).name, f"tree_dead_{i}", p, rng.uniform(0, 6.28), sc, "Trees")
+        occupied.append((p, 1.0 * sc))
+    # lone graves and rocks between the trees
+    rocks = [recolour_mesh(f"Kit_rock_{k}", f"Kit_rock_night_{k}", lambda c: (c[0] * 0.55, c[1] * 0.5, c[2] * 0.7)).name for k in range(4)]
+    for i in range(16):
+        p = spot(0.7, 1.8)
+        if p is None:
+            break
+        place(rng.choice(rocks), f"rock_{i}", (p.x, p.y, p.z - 0.3), rng.uniform(0, 6.28), rng.uniform(0.8, 1.3), "Rocks")
+        occupied.append((p, 0.7))
+    for i in range(14):
+        p = spot(0.5, 1.5)
+        if p is None:
+            break
+        ob = bpy.data.objects.new(f"Grave {i}", grave_mesh(rng.randrange(2)))
+        ob.location = (p.x, p.y, p.z - 0.05)
+        ob.rotation_euler = (rng.uniform(-0.2, 0.2), rng.uniform(-0.15, 0.15), rng.uniform(0, 6.28))
+        sc = rng.uniform(0.8, 1.15)
+        ob.scale = (sc, sc, sc)
+        link(ob, "Graves")
+        occupied.append((p, 0.5))
+    mush = [recolour_mesh(k, k + "_night", lambda c: (c[2] * 0.8 + 0.15, c[1] * 0.4, c[0] * 0.9 + 0.1)).name for k in ("Kit_mushroom_small_red", "Kit_mushroom_small_brown")]
+    for i in range(20):
+        p = spot(0.35, 1.3)
+        if p is None:
+            break
+        place(rng.choice(mush), f"mushroom_small_{i}", p, rng.uniform(0, 6.28), rng.uniform(0.9, 1.4), "Mushrooms")
+        occupied.append((p, 0.35))
+    # dead grass last: it only has to stay out of the bigger things
+    grass = [recolour_mesh(f"Kit_grass_{k}", f"Kit_grass_night_{k}", lambda c: (c[0] * 0.5 + 0.08, c[1] * 0.35, c[2] * 0.6 + 0.1)).name for k in range(3)]
+    for i in range(180):
+        p = spot(0.15, 1.0, tries=60)
+        if p is None:
+            continue
+        place(rng.choice(grass), f"grass_{i}", p, rng.uniform(0, 6.28), rng.uniform(1.1, 1.6), "Grass")
+
+    # Boos drifting about at different heights, clear of the trees, house and shop
+    boo = boo_mesh()
+    high = [(q, r) for q, r in occupied if r >= 0.8]
+    for i in range(16):
+        for _ in range(300):
+            p = Vector((rng.uniform(x0, x1), rng.uniform(y0, y1), 0))
+            z = ground(terrain, p)
+            # well back from the path, so a Boo never hangs over a tile or a pawn
+            if z is None or z < -0.05 or L.path_dist(p) < 2.3:
+                continue
+            if any((p.xy - q.xy).length < r + 0.8 for q, r in high):
+                continue
+            if any((p.xy - o.location.xy).length < 2.2 for o in col("Boos").objects):
+                continue
+            ob = bpy.data.objects.new(f"Boo {i}", boo)
+            ob.location = (p.x, p.y, z + rng.uniform(1.2, 3.4))
+            ob.rotation_euler = (rng.uniform(-0.18, 0.08), rng.uniform(-0.15, 0.15), rng.uniform(-0.65, 0.65))
+            sc = rng.uniform(0.7, 1.35)
+            ob.scale = (sc, sc, sc)
+            link(ob, "Boos")
+            break
 
 def setup_light(T):
     sun = bpy.data.objects["Sun"]

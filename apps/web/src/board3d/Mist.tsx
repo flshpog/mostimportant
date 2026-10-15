@@ -20,9 +20,9 @@ export function Mist({ centre = [0, 0] as [number, number], radius = 16 }: { cen
   }, []);
   const puffs = useMemo(
     () =>
-      Array.from({ length: 26 }, (_, i) => ({
-        r: radius * (0.25 + ((i * 37) % 100) / 100) * 1.1,
-        a: (i / 26) * Math.PI * 2 * 3.1,
+      Array.from({ length: 40 }, (_, i) => ({
+        r: radius * (0.2 + ((i * 37) % 100) / 100) * 1.15,
+        a: (i / 40) * Math.PI * 2 * 3.1,
         speed: (0.025 + ((i * 13) % 10) / 300) * (i % 2 ? 1 : -1),
         y: 0.4 + ((i * 7) % 10) / 10 * 1.6,
         size: 7 + ((i * 11) % 10) * 0.7,

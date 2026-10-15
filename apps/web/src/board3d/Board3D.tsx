@@ -9,6 +9,7 @@ import { occluders, Scenery, SceneryBoundary } from "./Scenery";
 import { ForkArrows } from "./ForkArrows";
 import { Flights, type FlightDirector } from "./Flights";
 import { Mist } from "./Mist";
+import { Moon, Wisps } from "./Spooky";
 import { GhostStar, Star, type StarDirector } from "./Star";
 import { Tiles } from "./Tiles";
 import { Tokens, type Popup, type TokenAnimator } from "./Tokens";
@@ -206,8 +207,10 @@ export function Board3D(props: {
           {/* the underworld: moonlight, purple fog and drifting mist */}
           <hemisphereLight args={["#8f7bd6", "#1c1030", 0.75]} />
           <ambientLight intensity={0.35} color="#b9a6ff" />
-          <fog attach="fog" args={["#1a1030", 34, 95]} />
+          <fog attach="fog" args={["#170d2b", 26, 82]} />
           <Mist radius={15} />
+          <Moon />
+          <Wisps />
         </>
       ) : (
         <>
