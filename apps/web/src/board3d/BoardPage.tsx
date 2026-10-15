@@ -7,6 +7,7 @@ import { Board3D, type CamMode } from "./Board3D";
 import { TokenAnimator } from "./Tokens";
 import { BoardHud } from "./BoardHud";
 import { Banner } from "./Banner";
+import { EventReveal, StealWheel } from "./EventOverlays";
 import { DiceOverlay } from "./DiceRoll";
 import { useBoardAnimations } from "./useBoardAnimations";
 
@@ -73,7 +74,7 @@ export function BoardPage() {
   const animator = useRef(new TokenAnimator()).current;
   const stateRef = useRef<ReturnType<typeof useLiveBoard>["state"]>(null);
   const meRef = useRef<string | null>(null);
-  const { play, popups, dice, clearDice, banner, clearBanner, starDirector, settled } = useBoardAnimations({ animator, season, followTurns, setMode });
+  const { play, popups, dice, clearDice, banner, clearBanner, starDirector, flights, settled, reveal, clearReveal, wheel, clearWheel, hold } = useBoardAnimations({ animator, season, followTurns, setMode });
 
   useEffect(() => {
     if (!token) return;
@@ -153,17 +154,19 @@ export function BoardPage() {
   return (
     <div className="board-page">
       <div className="board-canvas">
-        <Board3D layout={lay} state={state} meId={me.user.id} avatars={{ ...avatars, [me.user.id]: me.user.avatar }} animator={animator} starDirector={starDirector} ready={settled} onFork={(next) => run(() => api("/api/play/fork", { body: { next } }))} popups={popups} mode={mode} setMode={setMode} />
+        <Board3D layout={lay} state={state} meId={me.user.id} avatars={{ ...avatars, [me.user.id]: me.user.avatar }} animator={animator} starDirector={starDirector} flights={flights} ready={settled} onFork={(next) => run(() => api("/api/play/fork", { body: { next } }))} popups={popups} mode={mode} setMode={setMode} />
       </div>
       <DiceOverlay roll={dice} onDone={clearDice} />
       <Banner banner={banner} onDone={clearBanner} />
+      <EventReveal show={reveal} onDone={clearReveal} />
+      <StealWheel show={wheel} onDone={clearWheel} />
       <BoardHud
         boardName={boards.find((b) => b.id === boardId)?.name ?? boardId}
         boards={boards}
         boardId={boardId}
         onBoard={setBoardId}
         status={status}
-        state={state}
+        state={hold("state", state)}
         layout={lay}
         season={season}
         meId={me.user.id}
@@ -173,7 +176,7 @@ export function BoardPage() {
         setFollowTurns={setFollowTurns}
         error={error}
         ready={settled}
-        feed={lines}
+        feed={hold("feed", lines)}
         actions={{
           roll: () => run(() => api("/api/play/roll", { body: {} })),
           fork: (next) => run(() => api("/api/play/fork", { body: { next } })),

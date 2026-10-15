@@ -1416,3 +1416,143 @@ button.link {
     animation-duration: 0.01s;
   }
 }
+
+/* ---- event reveal and steal wheel ---- */
+.event-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+  background: rgba(43, 35, 64, 0.22);
+  animation: fade-in 0.2s ease both;
+  padding: 16px;
+}
+.event-panel {
+  width: min(560px, 100%);
+  border-radius: 16px;
+  border: 3px solid var(--ink);
+  background: var(--paper);
+  box-shadow: 0 6px 0 var(--ink);
+  overflow: hidden;
+  text-align: center;
+  animation: dock-in 0.25s ease-out both;
+}
+.event-head {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 9px 16px 8px;
+  background: var(--t-yellow);
+  border-bottom: 3px solid var(--ink);
+  font: 900 24px/1.1 "Nunito", system-ui, sans-serif;
+  color: var(--ink);
+}
+.event-head .icon {
+  width: 26px;
+  height: 26px;
+  vertical-align: 0;
+}
+.event-cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  padding: 18px 16px 6px;
+}
+.event-card {
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  padding: 16px 8px 14px;
+  border-radius: 12px;
+  border: 2.5px solid var(--ink);
+  background: #fff;
+  box-shadow: 0 4px 0 var(--ink);
+  transition: transform 0.08s ease, background 0.08s ease, opacity 0.3s ease;
+}
+.event-card.lit {
+  background: var(--t-yellow);
+  transform: translateY(-6px);
+}
+.event-card.chosen {
+  transform: translateY(-8px) scale(1.06);
+}
+.event-card.out {
+  opacity: 0.35;
+}
+.event-card-icon .icon {
+  width: 46px;
+  height: 46px;
+  vertical-align: 0;
+}
+.event-card-name {
+  font: 900 17px/1.1 "Nunito", system-ui, sans-serif;
+}
+.event-result {
+  padding: 10px 16px 16px;
+  font: 800 20px "Nunito", system-ui, sans-serif;
+  opacity: 0;
+  transform: translateY(6px);
+  transition: opacity 0.25s ease, transform 0.25s ease;
+}
+.event-result.on {
+  opacity: 1;
+  transform: none;
+}
+.event-result b {
+  font-weight: 900;
+}
+.wheel-panel {
+  width: min(400px, 100%);
+}
+.wheel-sub {
+  padding: 12px 16px 0;
+  font-weight: 700;
+  color: var(--ink-soft);
+}
+.wheel-sub b {
+  color: var(--ink);
+  font-weight: 900;
+}
+.wheel-wrap {
+  position: relative;
+  width: 260px;
+  height: 260px;
+  margin: 26px auto 4px;
+}
+.wheel {
+  width: 100%;
+  height: 100%;
+  transition-property: transform;
+  transition-timing-function: cubic-bezier(0.15, 0.7, 0.15, 1);
+}
+.wheel-pointer {
+  position: absolute;
+  top: -22px;
+  left: 50%;
+  width: 40px;
+  margin-left: -20px;
+  z-index: 1;
+}
+.wheel-label {
+  font: 900 26px "Nunito", system-ui, sans-serif;
+  fill: var(--ink);
+}
+@media (max-width: 720px) {
+  .event-cards {
+    gap: 8px;
+    padding: 14px 10px 4px;
+  }
+  .event-card-icon .icon {
+    width: 34px;
+    height: 34px;
+  }
+  .event-card-name {
+    font-size: 14px;
+  }
+  .event-head {
+    font-size: 20px;
+  }
+}

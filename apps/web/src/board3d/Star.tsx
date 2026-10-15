@@ -2,7 +2,7 @@ import { useMemo, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import { ExtrudeGeometry, Shape, Vector3, type Group } from "three";
 
-function starGeometry() {
+export function starGeometry() {
   const shape = new Shape();
   for (let i = 0; i < 10; i++) {
     const r = i % 2 ? 0.26 : 0.6;

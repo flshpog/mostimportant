@@ -82,3 +82,12 @@ export const BangIcon = ({ className }: P) =>
       <circle cx="12" cy="19.5" r="2" fill="currentColor" />
     </>,
   );
+
+export const SwapIcon = ({ className }: P) =>
+  svg(
+    className,
+    <>
+      {line("M4 8h13M13.5 4.5L17 8l-3.5 3.5")}
+      {line("M20 16H7M10.5 12.5L7 16l3.5 3.5")}
+    </>,
+  );

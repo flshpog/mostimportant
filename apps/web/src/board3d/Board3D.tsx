@@ -7,6 +7,7 @@ import type { BoardState } from "@everest/engine";
 import { allSpacePositions } from "./coords";
 import { occluders, Scenery, SceneryBoundary } from "./Scenery";
 import { ForkArrows } from "./ForkArrows";
+import { Flights, type FlightDirector } from "./Flights";
 import { Star, type StarDirector } from "./Star";
 import { Tiles } from "./Tiles";
 import { Tokens, type Popup, type TokenAnimator } from "./Tokens";
@@ -168,6 +169,7 @@ export function Board3D(props: {
   avatars: Record<string, string | null>;
   animator: TokenAnimator;
   starDirector: StarDirector;
+  flights: FlightDirector;
   // Picking a path by clicking its arrow on the board.
   onFork?: (next: string) => void;
   // False while the show is still catching up (dice, hops): fork arrows wait for it.
@@ -218,6 +220,7 @@ export function Board3D(props: {
       </SceneryBoundary>
       <Tiles layout={layout} />
       {starPos && <Star position={starPos} director={props.starDirector} offered={state.move?.choice?.kind === "star"} />}
+      <Flights director={props.flights} animator={animator} />
       <ForkArrows
         layout={layout}
         state={state}

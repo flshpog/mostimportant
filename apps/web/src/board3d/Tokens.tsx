@@ -16,17 +16,23 @@ const HOP_SECONDS = 0.34;
 const HOP_HEIGHT = 0.6;
 
 // One queued step for a token: a hop to a spot, or a pause (the dice, a cutscene).
-export type TokenStep = { to: Vector3 } | { wait: number };
+// One queued step for a token: a hop to a spot, a pause (the dice, a cutscene), or a
+// flight (up into the sky, across, and down: swapping places).
+export type TokenStep = { to: Vector3; fly?: number } | { wait: number };
+const FLY_HEIGHT = 6;
 
 // Shared, mutable animation state (outside React so 60fps updates don't re-render).
 export class TokenAnimator {
   shown = new Map<string, Vector3>(); // where each token is drawn right now
   queue = new Map<string, TokenStep[]>(); // steps still to play, in order
-  hop = new Map<string, { from: Vector3; to: Vector3; t: number }>();
+  hop = new Map<string, { from: Vector3; to: Vector3; t: number; fly?: number }>();
   // A token in a pause stands still until this time (performance.now()).
   holdUntil = new Map<string, number>();
   held(id: string) {
     return (this.holdUntil.get(id) ?? 0) > performance.now();
+  }
+  fly(id: string, to: Vector3, ms: number) {
+    this.queue.set(id, [...(this.queue.get(id) ?? []), { to: to.clone(), fly: ms }]);
   }
   enqueue(id: string, to: Vector3) {
     this.queue.set(id, [...(this.queue.get(id) ?? []), { to: to.clone() }]);
@@ -80,7 +86,7 @@ function Token(props: {
       if (!next) break;
       if ("wait" in next) animator.holdUntil.set(id, performance.now() + next.wait);
       else {
-        hop = { from: shown.clone(), to: next.to, t: 0 };
+        hop = { from: shown.clone(), to: next.to, t: 0, fly: next.fly };
         animator.hop.set(id, hop);
       }
     }
@@ -91,10 +97,26 @@ function Token(props: {
       return;
     }
     if (hop) {
-      hop.t = Math.min(1, hop.t + dt / HOP_SECONDS);
-      const e = hop.t < 0.5 ? 2 * hop.t * hop.t : 1 - (-2 * hop.t + 2) ** 2 / 2;
-      shown.lerpVectors(hop.from, hop.to, e);
-      shown.y += Math.sin(Math.PI * hop.t) * HOP_HEIGHT;
+      hop.t = Math.min(1, hop.t + dt / (hop.fly ? hop.fly / 1000 : HOP_SECONDS));
+      if (hop.fly) {
+        // up, across high above the board, then down
+        const t = hop.t;
+        const k = (x: number) => (x < 0.5 ? 2 * x * x : 1 - (-2 * x + 2) ** 2 / 2);
+        if (t < 0.3) {
+          shown.copy(hop.from);
+          shown.y += FLY_HEIGHT * k(t / 0.3);
+        } else if (t < 0.7) {
+          shown.lerpVectors(hop.from, hop.to, k((t - 0.3) / 0.4));
+          shown.y += FLY_HEIGHT;
+        } else {
+          shown.copy(hop.to);
+          shown.y += FLY_HEIGHT * (1 - k((t - 0.7) / 0.3));
+        }
+      } else {
+        const e = hop.t < 0.5 ? 2 * hop.t * hop.t : 1 - (-2 * hop.t + 2) ** 2 / 2;
+        shown.lerpVectors(hop.from, hop.to, e);
+        shown.y += Math.sin(Math.PI * hop.t) * HOP_HEIGHT;
+      }
       if (hop.t >= 1) {
         shown.copy(hop.to);
         animator.hop.delete(id);

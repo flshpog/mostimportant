@@ -69,7 +69,8 @@ export function BoardHud(props: {
     <>
       <span className="dot" style={{ background: tokenColour(current) }} />
       <span className="turn-text">
-        {myTurn ? <b>Your turn!</b> : <><b>{nameOf(current)}</b>'s turn</>}
+        {/* one line: the column layout would otherwise split the name from "'s turn" */}
+        <span>{myTurn ? <b>Your turn!</b> : <><b>{nameOf(current)}</b>'s turn</>}</span>
         {waiting && <span className="when">Opens {NY.format(opens!)}</span>}
       </span>
     </>
@@ -168,7 +169,14 @@ export function BoardHud(props: {
         {targets.map((id) => {
           const t = state.players[id];
           return (
-            <button key={id} className="dock-button target" onClick={() => actions.event(id)}>
+            <button
+              key={id}
+              className="dock-button target"
+              onClick={() => actions.event(id)}
+              // hovering a name (desktop) flies the camera over to them
+              onMouseEnter={() => setMode({ kind: "follow", playerId: id })}
+              onMouseLeave={() => setMode({ kind: "follow", playerId: meId })}
+            >
               <span className="dot" style={{ background: tokenColour(id) }} />
               {t.name}
               {choice.kind === "coinSteal" && <span className="price">{t.coins} <CoinIcon /></span>}

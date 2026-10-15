@@ -5,6 +5,7 @@ import { Board3D, type CamMode } from "./Board3D";
 import { TokenAnimator } from "./Tokens";
 import { BoardHud } from "./BoardHud";
 import { Banner } from "./Banner";
+import { EventReveal, StealWheel } from "./EventOverlays";
 import { DiceOverlay } from "./DiceRoll";
 import { useBoardAnimations } from "./useBoardAnimations";
 
@@ -35,7 +36,10 @@ export function Preview() {
     // and ?fork puts her just before the s03 fork
     const hash = window.location.hash;
     // and ?event puts her just before the s21 event space (her first roll is a 1)
-    const p1Start = hash.includes("star") ? "s61" : hash.includes("fork") ? "s02" : hash.includes("event") ? "s20" : "s45";
+    const p1Start = hash.includes("event") ? "s20" : hash.includes("star") ? "s61" : hash.includes("fork") ? "s02" : "s45";
+    // a star for Toad, so a forced star steal has something to take
+    if (hash.includes("starSteal")) s = apply(ctx, s, { type: "setStars", playerId: "p2", stars: 2, now: 0 }).state;
+    if (hash.includes("starSteal")) s = apply(ctx, s, { type: "setCoins", playerId: "p1", coins: 60, now: 0 }).state;
     for (const [id, space] of [["p1", p1Start], ["p2", "s45"], ["p3", "s88"], ["p4", "s12"]] as const) {
       s = apply(ctx, s, { type: "movePlayer", playerId: id, spaceId: space, now: 0 }).state;
     }
@@ -47,7 +51,7 @@ export function Preview() {
   const animator = useRef(new TokenAnimator()).current;
   const [mode, setMode] = useState<CamMode>({ kind: "overview" });
   const [followTurns, setFollowTurns] = useState(true);
-  const { play, popups, dice, clearDice, banner, clearBanner, starDirector, settled } = useBoardAnimations({ animator, season, followTurns, setMode });
+  const { play, popups, dice, clearDice, banner, clearBanner, starDirector, flights, settled, reveal, clearReveal, wheel, clearWheel, hold } = useBoardAnimations({ animator, season, followTurns, setMode });
 
   // Applies a player's action, then answers every prompt except the star (which waits
   // for the HUD buttons) with a default, and plays the result.
@@ -68,7 +72,9 @@ export function Preview() {
       if (s.move!.choice!.kind === "shop") s = step(s, { type: "shopSkip", playerId: pid, now });
       else {
         const pick = <T,>(xs: readonly T[]) => xs[Math.floor(Math.random() * xs.length)];
-        s = step(s, { type: "drawEvent", playerId: pid, event: pick(["coinSteal", "starSteal", "swap"] as const), percent: pick(season.events.coinSteal.percents), now });
+        // ?event=coinSteal (or starSteal, swap) forces the draw
+        const forced = window.location.hash.match(/event=(coinSteal|starSteal|swap)/)?.[1] as "coinSteal" | "starSteal" | "swap" | undefined;
+        s = step(s, { type: "drawEvent", playerId: pid, event: forced ?? pick(["coinSteal", "starSteal", "swap"] as const), percent: pick(season.events.coinSteal.percents), now });
       }
     }
     // the next player's window opens at once
@@ -111,17 +117,19 @@ export function Preview() {
   return (
     <div className="board-page">
       <div className="board-canvas">
-        <Board3D layout={layout} state={state} meId={currentPlayerId(state) ?? "p1"} avatars={{}} animator={animator} starDirector={starDirector} ready={settled} onFork={fork} popups={popups} mode={mode} setMode={setMode} quality={window.location.hash.includes("lite") ? "lite" : "full"} />
+        <Board3D layout={layout} state={state} meId={currentPlayerId(state) ?? "p1"} avatars={{}} animator={animator} starDirector={starDirector} flights={flights} ready={settled} onFork={fork} popups={popups} mode={mode} setMode={setMode} quality={window.location.hash.includes("lite") ? "lite" : "full"} />
       </div>
       <DiceOverlay roll={dice} onDone={clearDice} />
       <Banner banner={banner} onDone={clearBanner} />
+      <EventReveal show={reveal} onDone={clearReveal} />
+      <StealWheel show={wheel} onDone={clearWheel} />
       <BoardHud
         boardName="Preview"
         boards={[{ id: "preview", name: "Preview" }]}
         boardId="preview"
         onBoard={() => undefined}
         status="live"
-        state={state}
+        state={hold("state", state)}
         layout={layout}
         season={season}
         meId={currentPlayerId(state) ?? "p1"}
@@ -131,7 +139,7 @@ export function Preview() {
         setFollowTurns={setFollowTurns}
         error={null}
         ready={settled}
-        feed={feed}
+        feed={hold("feed", feed)}
         actions={{ roll, fork, star, shop: () => undefined, event }}
       />
     </div>
