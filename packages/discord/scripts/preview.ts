@@ -4,9 +4,10 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { loadLayouts, loadSeasonConfig } from "@everest/board-data";
 import { apply, createBoardState, type BoardState, type EngineContext } from "@everest/engine";
-import { prepareBackdrops, renderBoard } from "../src/render.ts";
+import { prepareBackdrops, renderBoard } from "../src/render";
 
 const out = process.argv[2] ?? "board-preview";
+async function main() {
 await prepareBackdrops(["main"]);
 mkdirSync(out, { recursive: true });
 const ctx: EngineContext = { layout: loadLayouts().main, rules: loadSeasonConfig() };
@@ -36,3 +37,8 @@ for (const [id, [space, coins, stars]] of Object.entries(spots)) {
 state = apply(ctx, state, { type: "roll", playerId: "1001", dice: [3], now: t0 + 1000 }).state;
 writeFileSync(join(out, "2-mid-game.jpg"), renderBoard({ layout: ctx.layout, state, boardName: "Mario Stadium", now: t0 + 2000 }));
 console.log(`wrote previews to ${out}`);
+}
+main().catch((e) => {
+  console.error(e);
+  process.exit(1);
+});
