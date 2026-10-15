@@ -12,5 +12,7 @@ export default defineConfig({
       "@docs": fileURLToPath(new URL("../../docs", import.meta.url)),
     },
   },
-  server: { port: 5173 },
+  // The board server only accepts this origin (config/board.json allowed_origins), so
+  // fail loudly if 5173 is taken instead of quietly moving to 5174.
+  server: { port: 5173, strictPort: true },
 });
