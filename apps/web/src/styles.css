@@ -1579,7 +1579,18 @@ button.link {
   align-items: stretch;
 }
 .shop-grid.with-advantage {
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1.5fr) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.8fr) minmax(0, 0.8fr);
+}
+/* the two items either side: compact, centred against the advantage */
+.shop-grid.with-advantage .item-tile.side {
+  align-self: center;
+  padding: 7px 5px 6px;
+}
+.item-tile.side b {
+  font-size: 12px;
+}
+.item-tile.side small {
+  font-size: 10px;
 }
 .item-tile {
   display: grid;
@@ -1637,16 +1648,6 @@ button.link {
   background: #fff4cf;
   gap: 4px;
 }
-.item-tile.advantage .adv-label {
-  font-size: 10px;
-  font-weight: 900;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  padding: 1px 8px;
-  border: 2px solid var(--ink);
-  border-radius: 999px;
-  background: #ffd43b;
-}
 .item-tile.advantage b {
   font-size: 16px;
 }
@@ -1655,9 +1656,9 @@ button.link {
   display: block;
   color: var(--ink);
 }
-.item-tile.advantage em {
-  font-size: 10px;
-  font-style: normal;
+.item-tile.advantage .adv-kind {
+  margin-top: -3px;
+  font-size: 11px;
   font-weight: 700;
   color: var(--ink-soft);
 }

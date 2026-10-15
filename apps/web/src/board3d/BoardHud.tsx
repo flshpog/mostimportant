@@ -258,8 +258,8 @@ export function BoardHud(props: {
     const canBuy = new Set(offer.items.map((i) => i.id));
     const variant = layout.spaces.find((s) => s.id === choice.spaceId)?.shop;
     const tile = (i: (typeof stock.items)[number]) => (
-      <button key={i.id} className="item-tile" disabled={!canBuy.has(i.id)} onClick={() => actions.shop(i.id)} title={i.description}>
-        <ItemArt id={i.id} size={52} />
+      <button key={i.id} className="item-tile side" disabled={!canBuy.has(i.id)} onClick={() => actions.shop(i.id)} title={i.description}>
+        <ItemArt id={i.id} size={40} />
         <b>{i.name}</b>
         <small>{i.description}</small>
         <span className="price">
@@ -280,11 +280,10 @@ export function BoardHud(props: {
           {stock.items.slice(0, 1).map(tile)}
           {stock.advantage && (
             <button className="item-tile advantage" disabled={!offer.advantage} onClick={() => actions.shop(ADVANTAGE_ID)}>
-              <span className="adv-label">Tribe Advantage</span>
               <img src={`${import.meta.env.BASE_URL}advantages/${stock.advantage.image}`} alt="" />
               <b>{stock.advantage.name}</b>
+              <span className="adv-kind">Tribe advantage</span>
               {stock.advantage.description && <small>{stock.advantage.description}</small>}
-              <em>One per tribe · doesn't take a bag slot · the hosts hand it over</em>
               <span className="price">
                 {stock.advantage.price} <CoinIcon />
               </span>
