@@ -58,6 +58,9 @@ function Login({ message }: { message: string | null }) {
           {!health.discordLogin && !health.devLogins.length && <p className="muted">Login isn't set up on this server yet.</p>}
         </>
       )}
+      <a className="muted" href={`${import.meta.env.BASE_URL}credits.html`}>
+        Credits
+      </a>
     </div>
   );
 }
