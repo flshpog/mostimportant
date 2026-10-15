@@ -8,11 +8,12 @@ import { allSpacePositions } from "./coords";
 import { occluders, Scenery, SceneryBoundary } from "./Scenery";
 import { ForkArrows } from "./ForkArrows";
 import { Flights, type FlightDirector } from "./Flights";
-import { Star, type StarDirector } from "./Star";
+import { GhostStar, Star, type StarDirector } from "./Star";
 import { Tiles } from "./Tiles";
 import { Tokens, type Popup, type TokenAnimator } from "./Tokens";
 
-export type CamMode = { kind: "overview" } | { kind: "follow"; playerId: string } | { kind: "star" } | { kind: "free" };
+// "star" with `at` looks at a space instead (where a Star Compass says it's going).
+export type CamMode = { kind: "overview" } | { kind: "follow"; playerId: string } | { kind: "star"; at?: string } | { kind: "free" };
 
 const OVERVIEW = { pos: new Vector3(0, 31, 30), target: new Vector3(0, -1, 1.5) };
 const FOLLOW_OFFSET = new Vector3(0, 8.5, 9.5);
@@ -170,6 +171,8 @@ export function Board3D(props: {
   animator: TokenAnimator;
   starDirector: StarDirector;
   flights: FlightDirector;
+  // A Star Compass result: where the star goes next (only this player's view).
+  ghostStar?: string | null;
   // Picking a path by clicking its arrow on the board.
   onFork?: (next: string) => void;
   // False while the show is still catching up (dice, hops): fork arrows wait for it.
@@ -219,6 +222,7 @@ export function Board3D(props: {
         </Suspense>
       </SceneryBoundary>
       <Tiles layout={layout} />
+      {props.ghostStar && spacePos.get(props.ghostStar) && <GhostStar position={spacePos.get(props.ghostStar)!} />}
       {starPos && <Star position={starPos} director={props.starDirector} offered={state.move?.choice?.kind === "star"} />}
       <Flights director={props.flights} animator={animator} />
       <ForkArrows
@@ -235,7 +239,7 @@ export function Board3D(props: {
         }}
       />
       <Tokens state={state} spacePos={spacePos} animator={animator} meId={meId} avatars={avatars} popups={popups} />
-      <CameraRig mode={mode} setMode={setMode} animator={animator} starPos={starPos} />
+      <CameraRig mode={mode} setMode={setMode} animator={animator} starPos={mode.kind === "star" && mode.at ? spacePos.get(mode.at) ?? starPos : starPos} />
     </Canvas>
   );
 }

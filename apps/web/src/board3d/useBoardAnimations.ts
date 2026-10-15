@@ -7,6 +7,7 @@ import { spaceToWorld } from "./coords";
 import { DICE_TOTAL_MS, type DiceShow } from "./DiceRoll";
 import { REVEAL_MS, WHEEL_MS, type RevealShow, type WheelShow } from "./EventOverlays";
 import { COIN_FLIGHT_MS, FlightDirector, STAR_FLIGHT_MS } from "./Flights";
+import { ITEM_DICE_COLOURS } from "./ItemArt";
 import { STAR_CAMERA_AT, STAR_LANDED_AT, StarDirector } from "./Star";
 import type { Popup, TokenAnimator } from "./Tokens";
 
@@ -56,6 +57,8 @@ export function useBoardAnimations(opts: {
   const play = useCallback(
     (events: AnyEvent[], state: BoardState, layout: Board, meId: string | null) => {
       const name = (id: string) => state.players[id]?.name ?? "Someone";
+      const itemName = (id: string) => season.shop.items.find((i) => i.id === id)?.name ?? "an item";
+      const itemEffect = (id: string) => season.shop.items.find((i) => i.id === id)?.effect.kind;
       const who = (id: string, you: string, them: string) => (id === meId ? you : `${name(id)} ${them}`);
       const start = performance.now();
       let cursor = Math.max(0, endAt.current - start);
@@ -82,7 +85,18 @@ export function useBoardAnimations(opts: {
           case "DiceRolled":
             mover = pid;
             {
-              const roll: DiceShow = { key: ++nextId.current, playerId: pid, name: name(pid), total: e.total as number, mine: pid === meId };
+              const item = e.item as string | undefined;
+              const roll: DiceShow = {
+                key: ++nextId.current,
+                playerId: pid,
+                name: name(pid),
+                total: e.total as number,
+                mine: pid === meId,
+                dice: e.dice as number[],
+                colour: item ? ITEM_DICE_COLOURS[item] : undefined,
+                choose: !!e.choose,
+                halvedFrom: e.halvedFrom as number | undefined,
+              };
               later(cursor, () => {
                 setDice(roll);
                 if (followTurns) setMode({ kind: "follow", playerId: pid });
@@ -116,8 +130,57 @@ export function useBoardAnimations(opts: {
             break;
           }
           case "CoinsChanged":
-            // event coins get their own timing in the steal cutscenes
-            if (e.reason !== "host" && e.reason !== "event" && e.delta !== 0) popup(pid, e.delta as number, "coin");
+            // event and item coins get their own timing in the steal cutscenes
+            if (e.reason !== "host" && e.reason !== "event" && e.reason !== "item" && e.delta !== 0) popup(pid, e.delta as number, "coin");
+            break;
+          case "DiePicked":
+            showBanner(cursor, {
+              tone: "info",
+              text:
+                e.halvedFrom !== undefined
+                  ? who(pid, `You picked ${e.value}, halved to ${e.total} by poison`, `picked ${e.value}, halved to ${e.total} by poison`)
+                  : who(pid, `You picked ${e.value}!`, `picked ${e.value}!`),
+            });
+            cursor += 900;
+            break;
+          case "ItemUsed": {
+            const item = itemName(e.itemId as string);
+            const target = e.targetId as string | undefined;
+            showBanner(cursor, {
+              tone: "info",
+              text: target ? who(pid, `You used ${item} on ${name(target)}!`, `used ${item} on ${name(target)}!`) : who(pid, `You used ${item}!`, `used ${item}!`),
+            });
+            cursor += 1100;
+            break;
+          }
+          case "BooBellRang": {
+            // the Boo goes over, and the coins fly back
+            const target = e.targetId as string;
+            const amount = e.amount as number;
+            camera(cursor, { kind: "follow", playerId: target });
+            cursor += CAMERA_MS;
+            if (amount > 0) {
+              popup(target, -amount, "coin");
+              later(cursor + 250, () => flights.add({ kind: "coins", from: target, to: pid, count: Math.min(12, Math.max(3, amount)) }));
+              camera(cursor + 450, { kind: "follow", playerId: pid });
+              cursor += 250 + COIN_FLIGHT_MS;
+              popup(pid, amount, "coin");
+            } else cameraBack(cursor, pid);
+            cursor += 800;
+            break;
+          }
+          case "StealBlocked":
+            camera(cursor, { kind: "follow", playerId: e.targetId as string });
+            showBanner(cursor + 400, { tone: "info", text: `${name(e.targetId as string)}'s Guard Charm blocked it!` });
+            cursor += 2200;
+            cameraBack(cursor, pid);
+            break;
+          case "ItemSpent":
+            if (itemEffect(e.itemId as string) === "starDiscount") showBanner(cursor, { tone: "star", text: who(pid, "Your Magic Lamp took 10 off the star!", "used a Magic Lamp on the star!") });
+            break;
+          case "AdvantagePurchased":
+            showBanner(cursor, { tone: "star", text: who(pid, "You bought the Tribe Advantage!", "bought the Tribe Advantage!") });
+            cursor += 1200;
             break;
           case "StarsChanged":
             if (e.reason !== "host" && e.reason !== "event" && e.delta !== 0) popup(pid, e.delta as number, "star");

@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 import type { Board, SeasonConfig } from "@everest/board-data";
-import { currentPlayerId, type BoardState } from "@everest/engine";
+import { ADVANTAGE_ID, currentPlayerId, itemDef, shopOffer, shopStock, usableItems, type BoardState } from "@everest/engine";
 import type { LiveStatus } from "../lib/useLiveBoard";
 import type { CamMode } from "./Board3D";
 import { directionOf, FORK_COLOURS } from "./coords";
-import { ArrowIcon, BangIcon, CoinIcon, DiceIcon, ShopIcon, FollowIcon, MapIcon, OutlineStarIcon, PinIcon, StarIcon } from "./Icons";
+import { ArrowIcon, BagIcon, BangIcon, CoinIcon, DiceIcon, ShopIcon, FollowIcon, MapIcon, OutlineStarIcon, PinIcon, StarIcon } from "./Icons";
 import { tokenColour } from "./Tokens";
+import { ItemArt } from "./ItemArt";
 
 const NY = new Intl.DateTimeFormat("en-US", { timeZone: "America/New_York", weekday: "short", hour: "numeric", minute: "2-digit", timeZoneName: "short" });
 
@@ -15,6 +16,8 @@ export interface HudActions {
   star(buy: boolean): void;
   shop(itemId: string | null): void;
   event(targetId: string | null): void;
+  item(itemId: string, targetId: string | null): void;
+  pick(value: number): void;
 }
 
 // Everything drawn over the 3D board. On wide screens: title top-left, a side panel
@@ -52,6 +55,10 @@ export function BoardHud(props: {
   const opens = state.turn.windowOpensAt;
   const me = state.players[meId];
   const waiting = !state.move && opens !== null && opens > Date.now();
+  const ctx = { layout, rules: season };
+  // the Items menu on the roll card: closed, open, or choosing who to use an item on
+  const [bag, setBag] = useState<null | { itemId?: string }>(null);
+  useEffect(() => setBag(null), [opens, state.move?.rolledAt]);
   // Nothing else re-renders the HUD when a cooldown runs out, so wake up when it does
   // (otherwise Roll stays greyed out until some unrelated update).
   const [, setTick] = useState(0);
@@ -92,16 +99,123 @@ export function BoardHud(props: {
     </div>
   );
 
+  // who an item or event can be aimed at, with the camera flying over on hover
+  const targetButton = (id: string, onClick: () => void, extra?: React.ReactNode) => (
+    <button
+      key={id}
+      className="dock-button target"
+      onClick={onClick}
+      onMouseEnter={() => setMode({ kind: "follow", playerId: id })}
+      onMouseLeave={() => setMode({ kind: "follow", playerId: meId })}
+    >
+      <span className="dot" style={{ background: tokenColour(id) }} />
+      {state.players[id]?.name}
+      {extra}
+    </button>
+  );
+
   let dock: React.ReactNode = null;
   if (props.ready && myTurn && !state.move && !waiting && !state.paused) {
+    const usable = usableItems(ctx, state, meId);
+    const aiming = bag?.itemId ? itemDef(ctx, bag.itemId) : undefined;
+    if (aiming) {
+      dock = card(
+        "items",
+        <ItemArt id={aiming.id} size={28} />,
+        `${aiming.name}: who?`,
+        aiming.description,
+        <>
+          {state.turn.order
+            .filter((id) => id !== meId && state.players[id])
+            .map((id) =>
+              targetButton(
+                id,
+                () => {
+                  actions.item(aiming.id, id);
+                  setBag(null);
+                },
+                aiming.effect.kind === "steal" ? (
+                  <span className="price">
+                    {state.players[id].coins} <CoinIcon />
+                  </span>
+                ) : state.players[id].poisoned ? (
+                  <span className="price">poisoned</span>
+                ) : null,
+              ),
+            )}
+          <button className="dock-button quiet" onClick={() => setBag({})}>
+            Back
+          </button>
+        </>,
+      );
+    } else if (bag) {
+      const seen = new Set<string>();
+      dock = card(
+        "items",
+        <BagIcon />,
+        "Your items",
+        "One item per turn, before you roll.",
+        <>
+          {usable
+            .filter((i) => (seen.has(i.id) ? false : (seen.add(i.id), true)))
+            .map((i) => {
+              const n = usable.filter((x) => x.id === i.id).length;
+              const needsTarget = i.effect.kind === "poison" || i.effect.kind === "steal";
+              return (
+                <button
+                  key={i.id}
+                  className="item-tile"
+                  onClick={() => {
+                    if (needsTarget) setBag({ itemId: i.id });
+                    else {
+                      actions.item(i.id, null);
+                      setBag(null);
+                    }
+                  }}
+                >
+                  <ItemArt id={i.id} size={52} />
+                  <b>
+                    {i.name}
+                    {n > 1 ? ` ×${n}` : ""}
+                  </b>
+                  <small>{i.description}</small>
+                </button>
+              );
+            })}
+          <button className="dock-button quiet" onClick={() => setBag(null)}>
+            Back
+          </button>
+        </>,
+      );
+    } else {
+      dock = card(
+        "roll",
+        <DiceIcon />,
+        "Your turn!",
+        state.pendingRoll?.playerId === meId ? <>Rolling with your {itemDef(ctx, state.pendingRoll.itemId)?.name}</> : null,
+        <>
+          <button className="dock-button go big" onClick={actions.roll}>
+            <DiceIcon /> Roll
+          </button>
+          {usable.length > 0 && !state.itemUsed && (
+            <button className="dock-button items" onClick={() => setBag({})}>
+              <BagIcon /> Items ({usable.length})
+            </button>
+          )}
+        </>,
+      );
+    }
+  } else if (props.ready && choice?.kind === "dicePick") {
     dock = card(
       "roll",
       <DiceIcon />,
-      "Your turn!",
-      null,
-      <button className="dock-button go big" onClick={actions.roll}>
-        <DiceIcon /> Roll
-      </button>,
+      "Pick your roll!",
+      "Your Reroll Block rolled two numbers. Which one do you take?",
+      choice.options.map((v) => (
+        <button key={v} className="dock-button pick big" onClick={() => actions.pick(v)}>
+          {v}
+        </button>
+      )),
     );
   } else if (props.ready && choice?.kind === "fork") {
     dock = card(
@@ -134,19 +248,45 @@ export function BoardHud(props: {
       </>,
     );
   } else if (props.ready && choice?.kind === "shop") {
+    // the tribe advantage in the middle, this shop's items around it
+    const stock = shopStock(ctx, state, choice.spaceId);
+    const offer = shopOffer(ctx, state, choice.spaceId, meId);
+    const canBuy = new Set(offer.items.map((i) => i.id));
+    const variant = layout.spaces.find((s) => s.id === choice.spaceId)?.shop;
+    const tile = (i: (typeof stock.items)[number]) => (
+      <button key={i.id} className="item-tile" disabled={!canBuy.has(i.id)} onClick={() => actions.shop(i.id)} title={i.description}>
+        <ItemArt id={i.id} size={52} />
+        <b>{i.name}</b>
+        <small>{i.description}</small>
+        <span className="price">
+          {i.price} <CoinIcon />
+        </span>
+      </button>
+    );
     dock = card(
-      "shop",
+      `shop ${variant ?? ""}`,
       <ShopIcon />,
-      "Welcome to the Shop!",
-      <>You have {me?.coins ?? 0} coins</>,
+      variant ? `${season.shop.variants[variant]?.name ?? "Shop"}` : "Welcome to the Shop!",
       <>
-        {season.shop.items
-          .filter((i) => i.price <= (me?.coins ?? 0))
-          .map((i) => (
-            <button key={i.id} className="dock-button shopitem" onClick={() => actions.shop(i.id)}>
-              {i.name} <span className="price">{i.price} <CoinIcon /></span>
+        You have {me?.coins ?? 0} coins · bag {me?.items.length ?? 0}/{season.shop.bagSize}
+        {offer.bagFull ? " (full)" : ""}
+      </>,
+      <>
+        <div className="shop-grid">
+          {stock.advantage && (
+            <button className="item-tile advantage" disabled={!offer.advantage} onClick={() => actions.shop(ADVANTAGE_ID)}>
+              <img src={`${import.meta.env.BASE_URL}advantages/${stock.advantage.image}`} alt="" />
+              <span className="adv-text">
+                <b>Tribe Advantage</b>
+                <small>One per tribe. The hosts hand it over.</small>
+              </span>
+              <span className="price">
+                {stock.advantage.price} <CoinIcon />
+              </span>
             </button>
-          ))}
+          )}
+          {stock.items.map(tile)}
+        </div>
         <button className="dock-button quiet" onClick={() => actions.shop(null)}>
           Leave
         </button>
@@ -219,7 +359,15 @@ export function BoardHud(props: {
               {p.coins} <CoinIcon />
             </span>
           </button>
-          {p.items.length > 0 && <div className="items">{p.items.map(itemName).join(", ")}</div>}
+          {p.items.length > 0 && (
+            <div className="items">
+              {p.items.map((id, i) => (
+                <span key={i} title={itemName(id)}>
+                  <ItemArt id={id} size={22} />
+                </span>
+              ))}
+            </div>
+          )}
         </li>
       ))}
     </ol>
@@ -305,6 +453,18 @@ export function BoardHud(props: {
               <span>
                 <CoinIcon /> {me.coins}
               </span>
+            </div>
+          )}
+          {me && (
+            <div className="my-bag" aria-label="Your items">
+              {Array.from({ length: season.shop.bagSize }, (_, i) => {
+                const id = me.items[i];
+                return (
+                  <span key={i} className={id ? "slot" : "slot empty"} title={id ? `${itemName(id)}: ${itemDef(ctx, id)?.description ?? ""}` : "Empty"}>
+                    {id && <ItemArt id={id} size={34} />}
+                  </span>
+                );
+              })}
             </div>
           )}
           {props.error && !dock && <p className="error-text">{props.error}</p>}

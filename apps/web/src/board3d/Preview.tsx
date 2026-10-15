@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState } from "react";
 import { loadLayouts, loadSeasonConfig } from "@everest/board-data";
-import { apply, createBoardState, currentPlayerId, describeEvent, starCandidates, type Action, type BoardState, type EngineEvent } from "@everest/engine";
+import { apply, createBoardState, currentPlayerId, describeEvent, itemDef, starCandidates, type Action, type BoardState, type EngineEvent } from "@everest/engine";
 import { Board3D, type CamMode } from "./Board3D";
 import { TokenAnimator } from "./Tokens";
 import { BoardHud } from "./BoardHud";
@@ -22,12 +22,13 @@ export function Preview() {
   const ctx = useMemo(() => ({ layout, rules }), [layout]);
   const [state, setState] = useState<BoardState>(() => {
     let s = createBoardState(ctx, {
-      boardId: "preview",
+      // a real board id, so its shops stock that board's tribe advantage
+      boardId: "mario-stadium",
       starSpace: "s62",
       players: [
         // a mid-game spread, so every event has something to work with: Peach can
         // afford a star or a star steal, and Toad and Yoshi have stars to take
-        { id: "p1", name: "Peach", coins: 60, stars: 1 },
+        { id: "p1", name: "Peach", coins: 60, stars: 1, items: ["mushroom", "star-compass", "boo-bell"] },
         { id: "p2", name: "Toad", coins: 35, stars: 2 },
         { id: "p3", name: "Yoshi", coins: 18, stars: 1 },
         { id: "p4", name: "Daisy", coins: 44 },
@@ -38,7 +39,18 @@ export function Preview() {
     // and ?fork puts her just before the s03 fork
     const hash = window.location.hash;
     // and ?event puts her just before the s21 event space (her first roll is a 1)
-    const p1Start = hash.includes("event") ? "s20" : hash.includes("star") ? "s61" : hash.includes("fork") ? "s02" : "s45";
+    // and ?shop just before the purple bottom-left shop (?pinkshop: the pink top one)
+    const p1Start = hash.includes("event")
+      ? "s20"
+      : hash.includes("star")
+        ? "s61"
+        : hash.includes("fork")
+          ? "s02"
+          : hash.includes("pinkshop")
+            ? "s13"
+            : hash.includes("shop")
+              ? "s42"
+              : "s45";
     for (const [id, space] of [["p1", p1Start], ["p2", "s45"], ["p3", "s88"], ["p4", "s12"]] as const) {
       s = apply(ctx, s, { type: "movePlayer", playerId: id, spaceId: space, now: 0 }).state;
     }
@@ -47,6 +59,7 @@ export function Preview() {
   const [feed, setFeed] = useState<{ seq: number; text: string }[]>([]);
   const seq = useRef(0);
   const firstRoll = useRef(true);
+  const [compass, setCompass] = useState<string | null>(null);
   const animator = useRef(new TokenAnimator()).current;
   const [mode, setMode] = useState<CamMode>({ kind: "overview" });
   const [followTurns, setFollowTurns] = useState(true);
@@ -66,10 +79,9 @@ export function Preview() {
     if (!first) return;
     let s = step(state, first);
     // the shop and the event draw answer themselves; everything else waits for a click
-    for (let i = 0; (s.move?.choice?.kind === "shop" || s.move?.choice?.kind === "eventDraw") && i < 50; i++) {
+    for (let i = 0; s.move?.choice?.kind === "eventDraw" && i < 50; i++) {
       const pid = s.move!.playerId;
-      if (s.move!.choice!.kind === "shop") s = step(s, { type: "shopSkip", playerId: pid, now });
-      else {
+      {
         const pick = <T,>(xs: readonly T[]) => xs[Math.floor(Math.random() * xs.length)];
         // ?event=coinSteal (or starSteal, swap) forces the draw
         const forced = window.location.hash.match(/event=(coinSteal|starSteal|swap)/)?.[1] as "coinSteal" | "starSteal" | "swap" | undefined;
@@ -104,6 +116,30 @@ export function Preview() {
       const pid = s.move?.playerId;
       return pid ? { type: "eventTarget", playerId: pid, targetId, now } : null;
     });
+  const shop = (itemId: string | null) =>
+    act((s, now) => {
+      const pid = s.move?.playerId;
+      if (!pid) return null;
+      return itemId ? { type: "shopBuy", playerId: pid, itemId, now } : { type: "shopSkip", playerId: pid, now };
+    });
+  const item = (itemId: string, targetId: string | null) =>
+    act((s, now) => {
+      const pid = currentPlayerId(s);
+      if (!pid) return null;
+      // a Star Compass: the preview picks the next star spot like the server would
+      const spots = starCandidates(ctx, s);
+      const nextStarSpace = s.nextStar ?? spots[Math.floor(Math.random() * spots.length)];
+      if (itemDef(ctx, itemId)?.effect.kind === "compass") {
+        setCompass(nextStarSpace);
+        setMode({ kind: "star", at: nextStarSpace });
+      }
+      return { type: "useItem", playerId: pid, itemId, targetId, nextStarSpace, now };
+    });
+  const pick = (value: number) =>
+    act((s, now) => {
+      const pid = s.move?.playerId;
+      return pid ? { type: "pickDie", playerId: pid, value, now } : null;
+    });
   const star = (buy: boolean) =>
     act((s, now) => {
       const pid = s.move?.playerId;
@@ -116,7 +152,7 @@ export function Preview() {
   return (
     <div className="board-page">
       <div className="board-canvas">
-        <Board3D layout={layout} state={state} meId={currentPlayerId(state) ?? "p1"} avatars={{}} animator={animator} starDirector={starDirector} flights={flights} ready={settled} onFork={fork} popups={popups} mode={mode} setMode={setMode} quality={window.location.hash.includes("lite") ? "lite" : "full"} />
+        <Board3D layout={layout} state={state} meId={currentPlayerId(state) ?? "p1"} avatars={{}} animator={animator} starDirector={starDirector} flights={flights} ghostStar={compass && compass !== state.star ? compass : null} ready={settled} onFork={fork} popups={popups} mode={mode} setMode={setMode} quality={window.location.hash.includes("lite") ? "lite" : "full"} />
       </div>
       <DiceOverlay roll={dice} onDone={clearDice} />
       <Banner banner={banner} onDone={clearBanner} />
@@ -139,7 +175,7 @@ export function Preview() {
         error={null}
         ready={settled}
         feed={hold("feed", feed)}
-        actions={{ roll, fork, star, shop: () => undefined, event }}
+        actions={{ roll, fork, star, shop, event, item, pick }}
       />
     </div>
   );

@@ -1556,3 +1556,153 @@ button.link {
     font-size: 20px;
   }
 }
+
+/* ---- shop and items ---- */
+.dock-card.shop.pink {
+  --tone: #e0569b;
+}
+.dock-card.items {
+  --tone: var(--paper-2);
+  --tone-text: var(--ink);
+}
+.dock-card.items .dock-head .item-art,
+.dock-card.items .dock-head .icon {
+  width: 28px;
+  height: 28px;
+}
+/* the tribe advantage sits in the middle of the shop */
+.shop-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+  width: 100%;
+}
+.item-tile {
+  display: grid;
+  justify-items: center;
+  align-content: start;
+  gap: 3px;
+  padding: 8px 6px 7px;
+  border: 2.5px solid var(--ink);
+  border-radius: 12px;
+  background: #fff;
+  color: var(--ink);
+  font: inherit;
+  text-align: center;
+  cursor: pointer;
+  box-shadow: 0 4px 0 var(--ink);
+  transition: transform 0.06s ease, box-shadow 0.06s ease;
+}
+.item-tile:hover:not(:disabled) {
+  background: #fffdf7;
+}
+.item-tile:active:not(:disabled) {
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 var(--ink);
+}
+.item-tile:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+.item-tile b {
+  font-size: 13px;
+  font-weight: 900;
+  line-height: 1.1;
+}
+/* three lines at most; the whole description is on hover (title) */
+.item-tile small {
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.25;
+  color: var(--ink-soft);
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.item-tile .price {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  margin-top: 2px;
+  font-weight: 900;
+  font-size: 14px;
+}
+/* centred above the items, wider */
+.item-tile.advantage {
+  grid-column: 1 / -1;
+  justify-self: center;
+  width: min(100%, 340px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  background: #fff4cf;
+}
+.item-tile.advantage .adv-text {
+  display: grid;
+  text-align: left;
+}
+.item-tile.advantage b {
+  font-size: 16px;
+}
+.item-tile.advantage img {
+  width: 56px;
+  height: 56px;
+  object-fit: contain;
+}
+.dock-card.items .dock-buttons,
+.dock-card.shop .dock-buttons {
+  align-items: stretch;
+}
+.dock-card.items .item-tile {
+  width: 150px;
+}
+.dock-button.items {
+  --b: var(--paper-2);
+}
+.dock-button.pick {
+  min-width: 96px;
+  font-size: 30px;
+}
+.dice-caption .poisoned {
+  color: #8e4ec6;
+}
+.dice-caption .poisoned b {
+  color: #8e4ec6;
+}
+/* your bag: one slot per item you can carry */
+.my-bag {
+  display: flex;
+  gap: 8px;
+}
+.my-bag .slot {
+  flex: 1;
+  height: 46px;
+  display: grid;
+  place-items: center;
+  border-radius: 10px;
+  background: var(--paper-2);
+}
+.my-bag .slot.empty {
+  background: transparent;
+  border: 2px dashed var(--paper-2);
+}
+.standings .items {
+  display: flex;
+  gap: 2px;
+}
+@media (max-width: 720px) {
+  .shop-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .item-tile.advantage {
+    width: 100%;
+  }
+  .item-tile small {
+    display: none;
+  }
+  .dock-card.items .item-tile {
+    width: 110px;
+  }
+}

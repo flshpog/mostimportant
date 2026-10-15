@@ -126,3 +126,23 @@ export function Star({ position, director, offered }: { position: Vector3; direc
     </group>
   );
 }
+
+// Where the star will appear next, shown only to whoever used a Star Compass: a
+// see-through star, turning slowly.
+export function GhostStar({ position }: { position: Vector3 }) {
+  const ref = useRef<Group>(null);
+  const geometry = useMemo(starGeometry, []);
+  useFrame(({ clock }) => {
+    if (!ref.current) return;
+    const t = clock.getElapsedTime();
+    ref.current.rotation.y = t * 0.8;
+    ref.current.position.set(position.x, position.y + BASE_Y + 0.3 + Math.sin(t * 2) * 0.15, position.z);
+  });
+  return (
+    <group ref={ref}>
+      <mesh geometry={geometry} scale={1.15}>
+        <meshStandardMaterial color="#ffd21f" emissive="#ffb300" emissiveIntensity={0.7} transparent opacity={0.45} depthWrite={false} />
+      </mesh>
+    </group>
+  );
+}

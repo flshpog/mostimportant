@@ -91,3 +91,13 @@ export const SwapIcon = ({ className }: P) =>
       {line("M20 16H7M10.5 12.5L7 16l3.5 3.5")}
     </>,
   );
+
+export const BagIcon = ({ className }: P) =>
+  svg(
+    className,
+    <>
+      {line("M6 9h12l-1 11H7z")}
+      {line("M9 9V7a3 3 0 016 0v2")}
+      {line("M9 13h6")}
+    </>,
+  );

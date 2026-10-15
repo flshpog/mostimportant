@@ -10,6 +10,13 @@ export interface DiceShow {
   name: string;
   total: number;
   mine: boolean;
+  // every die rolled (a Mushroom rolls two or three), in the item's colour if any
+  dice?: number[];
+  colour?: string;
+  // a Reroll Block: two numbers to pick from, no total yet
+  choose?: boolean;
+  // a poisoned roll, halved from this
+  halvedFrom?: number;
 }
 
 // The roll, in ms: the die drops in and tumbles to a stop facing you, the number
@@ -95,12 +102,13 @@ const FACES: [[number, number, number], [number, number, number]][] = [
   [[0, -OFF, 0], [Math.PI / 2, 0, 0]],
 ];
 
-function Die({ total, colour, revealed }: { total: number; colour: string; revealed: boolean }) {
+// One die. `x` places it in a row; `delay` staggers the drop a little.
+function Die({ total, colour, revealed, x = 0, delay = 0 }: { total: number; colour: string; revealed: boolean; x?: number; delay?: number }) {
   const group = useRef<Group>(null);
   const shadow = useRef<Mesh>(null);
   const number = useRef<Mesh>(null);
   const frontStar = useRef<MeshBasicMaterial>(null);
-  const start = useRef(performance.now());
+  const start = useRef(performance.now() + delay);
   const [fontReady, setFontReady] = useState(false);
   useEffect(() => {
     document.fonts.load("900 120px Nunito").finally(() => setFontReady(true));
@@ -130,7 +138,9 @@ function Die({ total, colour, revealed }: { total: number; colour: string; revea
   useFrame((_, dt) => {
     const g = group.current;
     if (!g) return;
-    const ms = performance.now() - start.current;
+    const ms = Math.max(0, performance.now() - start.current);
+    g.position.x = x;
+    if (shadow.current) shadow.current.position.x = x;
     const spin = tumble.turns * (1 - easeOutCubic(Math.min(1, ms / SETTLE_MS)));
     q.setFromAxisAngle(tumble.axis, spin).multiply(REST);
     g.quaternion.copy(q);
@@ -200,7 +210,24 @@ export function DiceOverlay({ roll, onDone }: { roll: DiceShow | null; onDone: (
   }, [roll?.key]);
 
   if (!roll) return null;
-  const colour = tokenColour(roll.playerId);
+  const colour = roll.colour ?? tokenColour(roll.playerId);
+  const dice = roll.dice?.length ? roll.dice : [roll.total];
+  // a row of dice, spaced to fit
+  const gap = dice.length > 2 ? 2.15 : 2.4;
+  const raw = roll.halvedFrom ?? roll.total;
+  const result = roll.choose ? (
+    <>
+      <b>{dice[0]}</b> or <b>{dice[1]}</b>. Pick one!
+    </>
+  ) : dice.length > 1 ? (
+    <>
+      {dice.join(" + ")} = <b>{raw}</b>!
+    </>
+  ) : (
+    <>
+      <b>{raw}</b>!
+    </>
+  );
   return (
     <div className={`dice-overlay ${stage}`} key={roll.key} aria-live="polite">
       <div className="dice-canvas">
@@ -208,20 +235,24 @@ export function DiceOverlay({ roll, onDone }: { roll: DiceShow | null; onDone: (
           <ambientLight intensity={0.9} />
           <hemisphereLight args={["#ffffff", "#7a6a90", 0.6]} />
           <directionalLight position={[3, 6, 5]} intensity={2.2} />
-          <Die key={roll.key} total={roll.total} colour={colour} revealed={stage !== "rolling"} />
+          {dice.map((d, i) => (
+            <Die key={`${roll.key}-${i}`} total={d} colour={colour} revealed={stage !== "rolling"} x={(i - (dice.length - 1) / 2) * gap} delay={i * 90} />
+          ))}
         </Canvas>
       </div>
       {stage !== "rolling" && <div className="dice-burst" style={{ ["--die" as string]: colour }} />}
       <div className="dice-caption">
         {stage === "rolling" ? (
           <>{roll.mine ? "Rolling…" : `${roll.name} is rolling…`}</>
-        ) : roll.mine ? (
-          <>
-            You rolled <b>{roll.total}</b>!
-          </>
         ) : (
           <>
-            {roll.name} rolled <b>{roll.total}</b>
+            {roll.mine ? "You rolled" : `${roll.name} rolled`} {result}
+            {roll.halvedFrom !== undefined && (
+              <span className="poisoned">
+                {" "}
+                Poisoned! Halved to <b>{roll.total}</b>
+              </span>
+            )}
           </>
         )}
       </div>
