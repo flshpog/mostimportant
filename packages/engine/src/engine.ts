@@ -1,4 +1,4 @@
-import type { Space } from "@everest/board-data";
+import type { ItemEffect, ShopItem, Space } from "@everest/board-data";
 import { EngineError } from "./errors";
 import type {
   Action,
@@ -82,6 +82,12 @@ export function apply(ctx: EngineContext, state: BoardState, action: Action): Ac
       break;
     case "shopSkip":
       r.shopSkip(action.playerId);
+      break;
+    case "useItem":
+      r.useItem(action.playerId, action.itemId, action.targetId ?? null, action.nextStarSpace);
+      break;
+    case "pickDie":
+      r.pickDie(action.playerId, action.value);
       break;
     case "drawEvent":
       r.drawEvent(action.playerId, action.event, action.percent);
@@ -174,6 +180,53 @@ export function affordableItems(ctx: EngineContext, coins: number): string[] {
   return ctx.rules.shop.items.filter((i) => i.price <= coins).map((i) => i.id);
 }
 
+// The id the tribe advantage is bought under (it isn't a bag item).
+export const ADVANTAGE_ID = "tribe-advantage";
+
+export function itemDef(ctx: EngineContext, itemId: string): ShopItem | undefined {
+  return ctx.rules.shop.items.find((i) => i.id === itemId);
+}
+
+// What a shop space sells: its variant's items (every item if it has none) and, if
+// it's still for sale, this board's tribe advantage.
+export function shopStock(ctx: EngineContext, state: BoardState, spaceId: string): { items: ShopItem[]; advantage: { price: number; name: string; image: string } | null } {
+  const shop = ctx.rules.shop;
+  const variant = ctx.layout.spaces.find((s) => s.id === spaceId)?.shop;
+  const ids = variant ? shop.variants[variant]?.items ?? [] : shop.items.map((i) => i.id);
+  const items = ids.map((id) => shop.items.find((i) => i.id === id)).filter((i): i is ShopItem => !!i);
+  const adv = shop.advantage?.perBoard[state.boardId];
+  const advantage = adv && shop.advantage && !state.advantageSold ? { price: shop.advantage.price, name: adv.name, image: adv.image } : null;
+  return { items, advantage };
+}
+
+// What this player could buy at a shop right now: coins, and room in the bag.
+export function shopOffer(ctx: EngineContext, state: BoardState, spaceId: string, playerId: string): { items: ShopItem[]; advantage: boolean; bagFull: boolean } {
+  const p = state.players[playerId];
+  const { items, advantage } = shopStock(ctx, state, spaceId);
+  const bagFull = !!p && p.items.length >= ctx.rules.shop.bagSize;
+  return {
+    items: p && !bagFull ? items.filter((i) => i.price <= p.coins) : [],
+    advantage: !!p && !!advantage && advantage.price <= p.coins,
+    bagFull,
+  };
+}
+
+// Items a player can use from the Item button (held ones like the Guard Charm work by
+// themselves and aren't listed).
+export function usableItems(ctx: EngineContext, state: BoardState, playerId: string): ShopItem[] {
+  const p = state.players[playerId];
+  if (!p) return [];
+  return p.items.map((id) => itemDef(ctx, id)).filter((i): i is ShopItem => !!i && i.effect.kind !== "guard" && i.effect.kind !== "starDiscount");
+}
+
+// The star price for this player right now, after any Magic Lamp.
+export function starPriceFor(ctx: EngineContext, p: PlayerState): { price: number; discount: number } {
+  const lamp = p.items.map((id) => itemDef(ctx, id)?.effect).find((e): e is Extract<ItemEffect, { kind: "starDiscount" }> => e?.kind === "starDiscount");
+  const base = ctx.rules.star.price;
+  const discount = lamp ? Math.min(base, lamp.amount) : 0;
+  return { price: base - discount, discount };
+}
+
 // ---- internals ----
 
 function toPlayerState(ctx: EngineContext, p: NewPlayer, space: string): PlayerState {
@@ -263,6 +316,9 @@ class Run {
     }
     t.windowOpensAt = opensAt;
     t.deadline = unlimited ? null : opensAt + this.ctx.rules.turns.windowHours * HOUR;
+    // a new turn: a fresh item use, and any unused dice item from a skipped turn is gone
+    this.s.itemUsed = false;
+    this.s.pendingRoll = null;
     this.emit({ type: "TurnStarted", playerId: t.order[t.index], windowOpensAt: t.windowOpensAt, deadline: t.deadline });
   }
 
@@ -283,6 +339,7 @@ class Run {
         if (c.kind === "fork") this.resolveFork(c.options[0], true);
         else if (c.kind === "star") this.resolveSkipStar(true);
         else if (c.kind === "shop") this.closeShop(true);
+        else if (c.kind === "dicePick") this.resolveDicePick(Math.max(...c.options), true);
         else if (c.kind === "coinSteal") {
           // Stealing only helps, so a timeout takes from the richest tribemate.
           const targets = c.targets.filter((id) => this.s.players[id]);
@@ -351,7 +408,8 @@ class Run {
 
   // ---- movement ----
 
-  roll(playerId: string, dice: number[]) {
+  // The current player, on their turn, before rolling: who may roll or use an item.
+  private requireTurnStart(playerId: string): PlayerState {
     this.catchUp();
     this.requireLive();
     const p = this.player(playerId);
@@ -361,15 +419,130 @@ class Run {
     if (t.windowOpensAt !== null && this.now < t.windowOpensAt) {
       throw new EngineError("cooldown", `Your turn opens in ${formatWait(t.windowOpensAt - this.now)}.`);
     }
-    const { min, max } = this.ctx.rules.dice;
-    if (!dice.length || dice.some((d) => !Number.isInteger(d) || d < min || d > max)) {
-      throw new EngineError("invalid_dice", `Dice must be whole numbers from ${min} to ${max}.`);
+    return p;
+  }
+
+  // The dice the current player rolls this turn: a dice item if they used one.
+  pendingDice(playerId: string): ItemEffect | null {
+    const pr = this.s.pendingRoll;
+    if (!pr || pr.playerId !== playerId) return null;
+    const e = itemDef(this.ctx, pr.itemId)?.effect;
+    return e && (e.kind === "dice" || e.kind === "reroll") ? e : null;
+  }
+
+  roll(playerId: string, dice: number[]) {
+    const p = this.requireTurnStart(playerId);
+    const item = this.pendingDice(playerId);
+    const ok = (d: number, min: number, max: number) => Number.isInteger(d) && d >= min && d <= max;
+    if (item?.kind === "dice") {
+      if (dice.length !== item.count || dice.some((d) => !ok(d, item.min, item.max))) {
+        throw new EngineError("invalid_dice", `That item rolls ${item.count} dice from ${item.min} to ${item.max}.`);
+      }
+    } else if (item?.kind === "reroll") {
+      if (dice.length !== 2 || dice[0] === dice[1] || dice.some((d) => !ok(d, item.min, item.max))) {
+        throw new EngineError("invalid_dice", "A Reroll Block rolls two different numbers.");
+      }
+    } else {
+      const { min, max } = this.ctx.rules.dice;
+      if (!dice.length || dice.some((d) => !ok(d, min, max))) {
+        throw new EngineError("invalid_dice", `Dice must be whole numbers from ${min} to ${max}.`);
+      }
     }
-    const total = dice.reduce((a, b) => a + b, 0);
-    this.emit({ type: "DiceRolled", playerId, dice: [...dice], total });
-    this.s.move = { playerId: p.id, remaining: total, rolledAt: this.now, arrival: null, choice: null };
-    if (total === 0) this.s.move.arrival = { spaceId: p.space, starDone: true, shopDone: true };
+    const itemId = this.s.pendingRoll?.itemId;
+    this.s.pendingRoll = null;
+    this.s.move = { playerId: p.id, remaining: 0, rolledAt: this.now, arrival: null, choice: null };
+    if (item?.kind === "reroll") {
+      // two numbers to choose from; the move starts once one is picked
+      this.emit({ type: "DiceRolled", playerId, dice: [...dice], total: 0, item: itemId, choose: true });
+      this.s.move.choice = { kind: "dicePick", spaceId: p.space, options: [...dice], expiresAt: this.choiceExpiry() };
+      return;
+    }
+    const raw = dice.reduce((a, b) => a + b, 0);
+    const total = this.poisonCheck(p, raw);
+    this.emit({ type: "DiceRolled", playerId, dice: [...dice], total, ...(itemId ? { item: itemId } : {}), ...(total !== raw ? { halvedFrom: raw } : {}) });
+    this.startMove(total);
+  }
+
+  // A Poison Mushroom halves the next roll (rounded down, at least 1), once.
+  private poisonCheck(p: PlayerState, total: number): number {
+    if (!p.poisoned) return total;
+    p.poisoned = false;
+    return Math.max(1, Math.floor(total / 2));
+  }
+
+  private startMove(total: number) {
+    const m = this.s.move!;
+    const p = this.player(m.playerId);
+    m.remaining = total;
+    if (total === 0) m.arrival = { spaceId: p.space, starDone: true, shopDone: true };
     this.continueMove();
+  }
+
+  pickDie(playerId: string, value: number) {
+    const { choice } = this.requireChoice(playerId, "dicePick");
+    if (!choice.options.includes(value)) throw new EngineError("wrong_choice", "That isn't one of your numbers.");
+    this.resolveDicePick(value, false);
+  }
+
+  private resolveDicePick(value: number, auto: boolean) {
+    const m = this.s.move!;
+    const p = this.player(m.playerId);
+    m.choice = null;
+    const total = this.poisonCheck(p, value);
+    this.emit({ type: "DiePicked", playerId: p.id, value, total, ...(total !== value ? { halvedFrom: value } : {}), auto });
+    this.startMove(total);
+  }
+
+  // ---- items ----
+
+  // Takes the first item with this effect out of a player's bag (a held item doing its
+  // job). Returns whether there was one.
+  private spend(p: PlayerState, kind: ItemEffect["kind"]): boolean {
+    const i = p.items.findIndex((id) => itemDef(this.ctx, id)?.effect.kind === kind);
+    if (i < 0) return false;
+    const [itemId] = p.items.splice(i, 1);
+    this.emit({ type: "ItemSpent", playerId: p.id, itemId });
+    return true;
+  }
+
+  useItem(playerId: string, itemId: string, targetId: string | null, nextStarSpace?: string) {
+    const p = this.requireTurnStart(playerId);
+    if (this.s.itemUsed) throw new EngineError("item_used", "You've already used an item this turn.");
+    const idx = p.items.indexOf(itemId);
+    const item = itemDef(this.ctx, itemId);
+    if (idx < 0 || !item) throw new EngineError("unknown_item", "You don't have that item.");
+    const e = item.effect;
+    if (e.kind === "guard" || e.kind === "starDiscount") {
+      throw new EngineError("wrong_choice", `${item.name} works by itself while you carry it.`);
+    }
+    let target: PlayerState | null = null;
+    if (e.kind === "poison" || e.kind === "steal") {
+      if (!targetId || targetId === playerId || !this.s.players[targetId]) throw new EngineError("wrong_choice", "Pick a tribemate to use that on.");
+      target = this.player(targetId);
+      if (e.kind === "poison" && target.poisoned) throw new EngineError("wrong_choice", `${target.name} is already poisoned.`);
+    }
+    if (e.kind === "compass" && !this.s.nextStar) {
+      // the server picks where the star goes next, so the compass can show it
+      if (!nextStarSpace) throw new EngineError("invalid_star_space", "The star has nowhere to go next.");
+      assertStarSpace(this.ctx, nextStarSpace, this.s.star);
+      this.s.nextStar = nextStarSpace;
+    }
+    p.items.splice(idx, 1);
+    this.s.itemUsed = true;
+    this.emit({ type: "ItemUsed", playerId, itemId, ...(target ? { targetId: target.id } : {}) });
+    if (e.kind === "dice" || e.kind === "reroll") this.s.pendingRoll = { playerId, itemId };
+    else if (e.kind === "poison") target!.poisoned = true;
+    else if (e.kind === "steal") {
+      const t = target!;
+      if (this.spend(t, "guard")) {
+        this.emit({ type: "StealBlocked", playerId, targetId: t.id, by: "item" });
+      } else {
+        const amount = Math.min(e.coins, t.coins);
+        this.emit({ type: "BooBellRang", playerId, targetId: t.id, amount });
+        this.changeCoins(t, -amount, "item");
+        this.changeCoins(p, amount, "item");
+      }
+    }
   }
 
   private requireChoice<K extends ChoiceKind>(playerId: string, kind: K) {
@@ -405,7 +578,7 @@ class Run {
           m.arrival.starDone = true;
           if (this.s.star === sp.id) {
             if (!final) this.emit({ type: "PassedSpace", playerId: p.id, spaceId: sp.id, spaceType: sp.type });
-            const price = this.ctx.rules.star.price;
+            const { price } = starPriceFor(this.ctx, p);
             if (p.coins >= price) {
               m.choice = { kind: "star", spaceId: sp.id, price, expiresAt: this.choiceExpiry() };
               this.emit({ type: "StarOffered", playerId: p.id, spaceId: sp.id, price });
@@ -418,13 +591,13 @@ class Run {
           m.arrival.shopDone = true;
           if (sp.type === "shop" && (final || sp.passEffect)) {
             if (!final) this.emit({ type: "PassedSpace", playerId: p.id, spaceId: sp.id, spaceType: sp.type });
-            const affordable = affordableItems(this.ctx, p.coins);
-            if (affordable.length) {
+            const offer = shopOffer(this.ctx, this.s, sp.id, p.id);
+            if (offer.items.length || offer.advantage) {
               m.choice = { kind: "shop", spaceId: sp.id, bought: 0, expiresAt: this.choiceExpiry() };
-              this.emit({ type: "ShopOpened", playerId: p.id, spaceId: sp.id, affordable });
+              this.emit({ type: "ShopOpened", playerId: p.id, spaceId: sp.id, affordable: [...offer.items.map((i) => i.id), ...(offer.advantage ? [ADVANTAGE_ID] : [])] });
               return;
             }
-            this.emit({ type: "ShopUnaffordable", playerId: p.id, spaceId: sp.id });
+            this.emit({ type: "ShopUnaffordable", playerId: p.id, spaceId: sp.id, ...(offer.bagFull ? { bagFull: true } : {}) });
           }
         }
         if (final) {
@@ -488,13 +661,17 @@ class Run {
   buyStar(playerId: string, newStarSpace: string) {
     const { m, choice } = this.requireChoice(playerId, "star");
     const p = this.player(playerId);
-    if (p.coins < choice.price) throw new EngineError("not_enough_coins", "You don't have enough coins for the star.");
+    const { price, discount } = starPriceFor(this.ctx, p);
+    if (p.coins < price) throw new EngineError("not_enough_coins", "You don't have enough coins for the star.");
     assertStarSpace(this.ctx, newStarSpace, this.s.star);
-    this.changeCoins(p, -choice.price, "star");
+    if (discount) this.spend(p, "starDiscount");
+    this.changeCoins(p, -price, "star");
     this.changeStars(p, 1, "star");
-    this.emit({ type: "StarPurchased", playerId, spaceId: choice.spaceId, price: choice.price });
+    this.emit({ type: "StarPurchased", playerId, spaceId: choice.spaceId, price, ...(discount ? { discount } : {}) });
     const from = this.s.star;
     this.s.star = newStarSpace;
+    // a Star Compass looks ahead again from here
+    this.s.nextStar = null;
     this.emit({ type: "StarMoved", from, to: newStarSpace, by: "purchase" });
     m.choice = null;
     this.continueMove();
@@ -515,14 +692,25 @@ class Run {
   shopBuy(playerId: string, itemId: string) {
     const { choice } = this.requireChoice(playerId, "shop");
     const p = this.player(playerId);
-    const item = this.ctx.rules.shop.items.find((i) => i.id === itemId);
-    if (!item) throw new EngineError("unknown_item", "That item isn't in the shop.");
-    if (p.coins < item.price) throw new EngineError("not_enough_coins", `You need ${item.price} coins for ${item.name}.`);
-    this.changeCoins(p, -item.price, "shop");
-    p.items.push(item.id);
-    this.emit({ type: "ShopPurchase", playerId, itemId: item.id, price: item.price });
+    const stock = shopStock(this.ctx, this.s, choice.spaceId);
+    if (itemId === ADVANTAGE_ID) {
+      if (!stock.advantage) throw new EngineError("unknown_item", "The tribe advantage isn't for sale here.");
+      if (p.coins < stock.advantage.price) throw new EngineError("not_enough_coins", `You need ${stock.advantage.price} coins for the Tribe Advantage.`);
+      this.changeCoins(p, -stock.advantage.price, "shop");
+      this.s.advantageSold = true;
+      this.emit({ type: "AdvantagePurchased", playerId, price: stock.advantage.price });
+    } else {
+      const item = stock.items.find((i) => i.id === itemId);
+      if (!item) throw new EngineError("unknown_item", "That item isn't sold in this shop.");
+      if (p.items.length >= this.ctx.rules.shop.bagSize) throw new EngineError("bag_full", `Your bag is full (${this.ctx.rules.shop.bagSize} items).`);
+      if (p.coins < item.price) throw new EngineError("not_enough_coins", `You need ${item.price} coins for ${item.name}.`);
+      this.changeCoins(p, -item.price, "shop");
+      p.items.push(item.id);
+      this.emit({ type: "ShopPurchase", playerId, itemId: item.id, price: item.price });
+    }
     choice.bought++;
-    if (choice.bought >= this.ctx.rules.shop.maxPerVisit || !affordableItems(this.ctx, p.coins).length) {
+    const offer = shopOffer(this.ctx, this.s, choice.spaceId, playerId);
+    if (choice.bought >= this.ctx.rules.shop.maxPerVisit || (!offer.items.length && !offer.advantage)) {
       this.closeShop(false);
     }
   }
@@ -586,7 +774,10 @@ class Run {
     const c = m.choice!;
     const p = this.player(m.playerId);
     const t = this.player(targetId);
-    if (c.kind === "coinSteal") {
+    if ((c.kind === "coinSteal" || c.kind === "starSteal") && this.spend(t, "guard")) {
+      // a Guard Charm stops it; a star steal isn't paid for
+      this.emit({ type: "StealBlocked", playerId: p.id, targetId, by: c.kind });
+    } else if (c.kind === "coinSteal") {
       const amount = Math.floor((t.coins * c.percent) / 100);
       this.emit({ type: "CoinsStolen", playerId: p.id, targetId, percent: c.percent, amount, auto });
       this.changeCoins(t, -amount, "event");

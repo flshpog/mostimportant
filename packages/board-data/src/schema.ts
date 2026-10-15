@@ -20,6 +20,8 @@ export const SpaceSchema = z
     // True if passing (not only landing) triggers the space, e.g. shops. Event
     // spaces trigger on landing only.
     passEffect: z.boolean().optional(),
+    // Shop spaces: which stock they sell (a key of season-config shop.variants).
+    shop: z.string().optional(),
     // Transcription flags for the owner to confirm. Cleared once confirmed.
     needsReview: z.boolean().optional(),
     reviewNote: z.string().optional(),
@@ -63,6 +65,26 @@ export const BoardInstanceSchema = z
   .strict();
 export type BoardInstance = z.infer<typeof BoardInstanceSchema>;
 
+// What an item does. Every number lives here so hosts can retune items in config.
+const Die = z.number().int().positive();
+export const ItemEffectSchema = z.discriminatedUnion("kind", [
+  // Roll `count` dice from min to max and add them (Mushrooms).
+  z.object({ kind: z.literal("dice"), count: z.number().int().positive(), min: Die, max: Die }).strict(),
+  // Roll two different numbers and pick one (Reroll Block).
+  z.object({ kind: z.literal("reroll"), min: Die, max: Die }).strict(),
+  // Held: takes `amount` off the next star you buy, then it's used up (Magic Lamp).
+  z.object({ kind: z.literal("starDiscount"), amount: z.number().int().positive() }).strict(),
+  // Shows you where the star goes next (Star Compass).
+  z.object({ kind: z.literal("compass") }).strict(),
+  // Held: blocks the next steal against you, then it's used up (Guard Charm).
+  z.object({ kind: z.literal("guard") }).strict(),
+  // Halves a tribemate's next roll (Poison Mushroom).
+  z.object({ kind: z.literal("poison") }).strict(),
+  // Takes `coins` from a tribemate (Boo Bell).
+  z.object({ kind: z.literal("steal"), coins: z.number().int().positive() }).strict(),
+]);
+export type ItemEffect = z.infer<typeof ItemEffectSchema>;
+
 export const ShopItemSchema = z
   .object({
     id: z.string().min(1),
@@ -70,6 +92,7 @@ export const ShopItemSchema = z
     price: z.number().int().nonnegative(),
     description: z.string().optional(),
     sprite: z.string().optional(),
+    effect: ItemEffectSchema,
   })
   .strict();
 export type ShopItem = z.infer<typeof ShopItemSchema>;
@@ -122,7 +145,21 @@ export const SeasonConfigSchema = z
     shop: z
       .object({
         maxPerVisit: z.number().int().positive(),
+        // Most items a player can carry.
+        bagSize: z.number().int().positive(),
         items: z.array(ShopItemSchema),
+        // Shop stock by variant; shop spaces name theirs (spaces[].shop). A shop
+        // space with no variant sells every item.
+        variants: z.record(z.object({ name: z.string(), colour: z.string(), items: z.array(z.string()) }).strict()).default({}),
+        // Each board's tribe advantage, sold in every shop on that board, once per
+        // board. Buying it doesn't go in the bag; the hosts get pinged instead.
+        advantage: z
+          .object({
+            price: z.number().int().nonnegative(),
+            perBoard: z.record(z.object({ name: z.string(), image: z.string(), description: z.string().optional() }).strict()),
+          })
+          .strict()
+          .optional(),
       })
       .strict(),
     events: EventsSchema,

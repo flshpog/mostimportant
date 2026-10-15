@@ -12,6 +12,8 @@ export type EngineErrorCode =
   | "invalid_star_space"
   | "not_enough_coins"
   | "unknown_item"
+  | "item_used"
+  | "bag_full"
   | "unknown_player"
   | "duplicate_player"
   | "invalid_order"

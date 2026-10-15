@@ -1,12 +1,16 @@
 import { describe, expect, it } from "vitest";
 import { loadLayouts, loadSeasonConfig } from "@everest/board-data";
 import {
+  ADVANTAGE_ID,
   apply,
   createBoardState,
   currentPlayerId,
   EngineError,
+  itemDef,
   replay,
+  shopOffer,
   starCandidates,
+  usableItems,
   type Action,
   type BoardState,
   type EngineContext,
@@ -34,14 +38,8 @@ const ctx: EngineContext = {
   layout,
   rules: {
     ...config,
-    shop: {
-      maxPerVisit: 2,
-      items: [
-        { id: "mushroom", name: "Mushroom", price: 5 },
-        { id: "double-dice", name: "Double Dice", price: 10 },
-        { id: "golden-pipe", name: "Golden Pipe", price: 25 },
-      ],
-    },
+    // the real items and shop variants, with two buys a visit to exercise more
+    shop: { ...config.shop, maxPerVisit: 2 },
     events: {
       coinSteal: { weight: 1, percents: [5, 10, 25, 50] },
       starSteal: { weight: 1, price: 40 },
@@ -81,7 +79,7 @@ function simulate(seed: number, players: number, turns: number) {
   let state = initial;
   let now = T0;
   const actions: Action[] = [];
-  const stats = { rolls: 0, skips: 0, stars: 0, shops: 0, forks: 0, events: 0 };
+  const stats = { rolls: 0, skips: 0, stars: 0, shops: 0, forks: 0, events: 0, items: 0 };
 
   const step = (action: Action) => {
     const r = apply(ctx, state, action);
@@ -111,7 +109,29 @@ function simulate(seed: number, players: number, turns: number) {
     // Roll somewhere inside the window, never after it closes.
     if (state.turn.deadline !== null) now += Math.floor(rnd() * Math.max(0, state.turn.deadline - now - 1));
     else now += Math.floor(rnd() * 11 * HOUR);
-    step({ type: "roll", playerId: pid, dice: [1 + Math.floor(rnd() * 10)], now });
+    // Sometimes use an item first, then roll whatever dice it calls for.
+    const usable = usableItems(ctx, state, pid);
+    if (usable.length && rnd() < 0.4) {
+      const item = pick(usable);
+      const others = state.turn.order.filter((id) => id !== pid);
+      const needsTarget = item.effect.kind === "poison" || item.effect.kind === "steal";
+      const target = needsTarget ? others.find((id) => !(item.effect.kind === "poison" && state.players[id].poisoned)) : undefined;
+      if (!needsTarget || target) {
+        step({ type: "useItem", playerId: pid, itemId: item.id, targetId: target ?? null, nextStarSpace: pick(starCandidates(ctx, state)), now });
+        stats.items++;
+      }
+    }
+    const pending = state.pendingRoll?.playerId === pid ? itemDef(ctx, state.pendingRoll.itemId)?.effect : undefined;
+    const die = (lo: number, hi: number) => lo + Math.floor(rnd() * (hi - lo + 1));
+    let dice: number[];
+    if (pending?.kind === "dice") dice = Array.from({ length: pending.count }, () => die(pending.min, pending.max));
+    else if (pending?.kind === "reroll") {
+      const a = die(pending.min, pending.max);
+      let b = die(pending.min, pending.max);
+      while (b === a) b = die(pending.min, pending.max);
+      dice = [a, b];
+    } else dice = [die(1, 10)];
+    step({ type: "roll", playerId: pid, dice, now });
     stats.rolls++;
 
     // Answer prompts until the move finishes. Sometimes let one time out instead.
@@ -129,10 +149,11 @@ function simulate(seed: number, players: number, turns: number) {
       else if (c.kind === "star")
         step(rnd() < 0.7 ? { type: "buyStar", playerId: pid, newStarSpace: pick(starCandidates(ctx, state)), now } : { type: "skipStar", playerId: pid, now });
       else if (c.kind === "shop") {
-        const coins = state.players[pid].coins;
-        const affordable = ctx.rules.shop.items.filter((i) => i.price <= coins);
-        step(rnd() < 0.6 && affordable.length ? { type: "shopBuy", playerId: pid, itemId: pick(affordable).id, now } : { type: "shopSkip", playerId: pid, now });
-      } else {
+        const offer = shopOffer(ctx, state, c.spaceId, pid);
+        const ids = [...offer.items.map((i) => i.id), ...(offer.advantage ? [ADVANTAGE_ID] : [])];
+        step(rnd() < 0.6 && ids.length ? { type: "shopBuy", playerId: pid, itemId: pick(ids), now } : { type: "shopSkip", playerId: pid, now });
+      } else if (c.kind === "dicePick") step({ type: "pickDie", playerId: pid, value: pick(c.options), now });
+      else {
         const options: (string | null)[] = c.kind === "coinSteal" ? [...c.targets] : [...c.targets, null];
         step({ type: "eventTarget", playerId: pid, targetId: pick(options), now });
       }

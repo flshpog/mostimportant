@@ -6,7 +6,7 @@ import { apply, createBoardState, type Action, type BoardState, type EngineConte
 const config = loadSeasonConfig();
 const ctx: EngineContext = {
   layout: loadLayouts().main,
-  rules: { ...config, shop: { maxPerVisit: 1, items: [{ id: "mushroom", name: "Mushroom", price: 5 }] } },
+  rules: config,
 };
 const t0 = Date.parse("2026-11-01T12:00:00-05:00");
 

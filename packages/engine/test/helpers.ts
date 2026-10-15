@@ -12,9 +12,11 @@ export const rules: Rules = {
   shop: {
     maxPerVisit: 1,
     items: [
-      { id: "mushroom", name: "Mushroom", price: 5 },
-      { id: "golden-pipe", name: "Golden Pipe", price: 30 },
+      { id: "mushroom", name: "Mushroom", price: 5, effect: { kind: "dice", count: 2, min: 1, max: 10 } },
+      { id: "golden-pipe", name: "Golden Pipe", price: 30, effect: { kind: "dice", count: 3, min: 1, max: 10 } },
     ],
+    bagSize: 3,
+    variants: {},
   },
   events: {
     coinSteal: { weight: 1, percents: [5, 10, 25, 50] },

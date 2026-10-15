@@ -23,7 +23,32 @@
   },
   "shop": {
     "maxPerVisit": 1,
-    "items": []
+    "bagSize": 3,
+    "items": [
+      { "id": "mushroom", "name": "Mushroom", "price": 10, "description": "Roll two dice and add them together.", "effect": { "kind": "dice", "count": 2, "min": 1, "max": 10 } },
+      { "id": "golden-mushroom", "name": "Golden Mushroom", "price": 20, "description": "Roll three dice and add them together.", "effect": { "kind": "dice", "count": 3, "min": 1, "max": 10 } },
+      { "id": "slow-mushroom", "name": "Slow Mushroom", "price": 8, "description": "Roll a 1-5 die for a precise landing.", "effect": { "kind": "dice", "count": 1, "min": 1, "max": 5 } },
+      { "id": "fast-mushroom", "name": "Fast Mushroom", "price": 8, "description": "Roll a 6-10 die. No low rolls.", "effect": { "kind": "dice", "count": 1, "min": 6, "max": 10 } },
+      { "id": "reroll-block", "name": "Reroll Block", "price": 6, "description": "Roll two dice that can't match, then pick the one you want.", "effect": { "kind": "reroll", "min": 1, "max": 10 } },
+      { "id": "magic-lamp", "name": "Magic Lamp", "price": 6, "description": "Takes 10 coins off your next star. Works by itself while you carry it.", "effect": { "kind": "starDiscount", "amount": 10 } },
+      { "id": "star-compass", "name": "Star Compass", "price": 6, "description": "Shows you where the star will appear next. Only you see it.", "effect": { "kind": "compass" } },
+      { "id": "guard-charm", "name": "Guard Charm", "price": 10, "description": "Blocks the next steal against you: Coin Steal, Star Steal or a Boo Bell. Works by itself while you carry it.", "effect": { "kind": "guard" } },
+      { "id": "poison-mushroom", "name": "Poison Mushroom", "price": 10, "description": "Halves a tribemate's next roll.", "effect": { "kind": "poison" } },
+      { "id": "boo-bell", "name": "Boo Bell", "price": 9, "description": "Steals 7 coins from a tribemate.", "effect": { "kind": "steal", "coins": 7 } }
+    ],
+    "variants": {
+      "purple": { "name": "Purple shop", "colour": "#8e4ec6", "items": ["mushroom", "slow-mushroom", "reroll-block", "magic-lamp", "guard-charm"] },
+      "pink": { "name": "Pink shop", "colour": "#e0569b", "items": ["golden-mushroom", "fast-mushroom", "star-compass", "poison-mushroom", "boo-bell"] }
+    },
+    "advantage": {
+      "price": 40,
+      "perBoard": {
+        "mario-stadium": { "name": "Launch Star", "image": "launchstar.webp", "description": "Safety Without Power that must be played on another player and used within the first 12 hours of Tribal. The last time this can be used is at the F7 Tribal." },
+        "luigis-mansion": { "name": "Poltergust 5000", "image": "poltergust5000.webp", "description": "Must be pre-played or used within the first 4 hours of Tribal. Notifies you WHEN each player votes and, after Tribal, who has voted for whom. This advantage does not expire." },
+        "warioware-inc": { "name": "Garlic", "image": "garlic.webp", "description": "Lets you MUTINY to another tribe with Individual Immunity for your first episode there. Must be pre-played before an episode or within the first six hours of an episode." },
+        "waluigi-pinball": { "name": "Bob-omb", "image": "bobomb.webp", "description": "Played on another player to deflect their own vote onto themselves. If they have any form of Immunity, the self-vote is negated. The last time this can be used is at the F6 Tribal." }
+      }
+    }
   },
   "events": {
     "coinSteal": { "weight": 1, "percents": [5, 10, 25, 50] },

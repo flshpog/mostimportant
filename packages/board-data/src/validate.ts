@@ -77,6 +77,10 @@ export function validateBoard(input: unknown): BoardReport {
     }
   }
 
+  for (const s of board.spaces) {
+    if (s.shop && s.type !== "shop") report.errors.push(`${s.id} has a shop variant but isn't a shop`);
+  }
+
   const list = board.spaces;
   for (let i = 0; i < list.length; i++) {
     for (let j = i + 1; j < list.length; j++) {

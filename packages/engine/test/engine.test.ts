@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { loadLayouts } from "@everest/board-data";
-import { EngineError, possibleEvents, replay, undo, undoTurn, type EngineEvent } from "../src";
+import { loadLayouts, loadSeasonConfig } from "@everest/board-data";
+import { ADVANTAGE_ID, EngineError, possibleEvents, replay, shopStock, starPriceFor, undo, undoTurn, type EngineEvent } from "../src";
 import { ctxFor, Game, HOUR, lineLayout, T0, types } from "./helpers";
 
 const main = loadLayouts().main;
@@ -631,5 +631,167 @@ describe("describeEvent", () => {
       "ALICE lost 3 coins. Now 2.",
       "It's BOB's turn.",
     ]);
+  });
+});
+
+describe("the shop and items", () => {
+  const season = loadSeasonConfig();
+  const shopCtx = () => ctxFor(lineLayout, { shop: season.shop });
+  // alice on s04, one step before the s05 shop (which sells everything)
+  function atShop(coins = 100) {
+    const g = started(shopCtx());
+    g.setup("alice", "s04", coins);
+    return g;
+  }
+  const buy = (g: Game, itemId: string) => g.do({ type: "shopBuy", playerId: "alice", itemId, now: g.now });
+  const use = (g: Game, itemId: string, targetId: string | null = null, playerId = "alice", nextStarSpace?: string) =>
+    g.do({ type: "useItem", playerId, itemId, targetId, nextStarSpace, now: g.now });
+  // makes it alice's turn again, open now, with nothing in progress
+  const herTurn = (g: Game) => g.setup("alice", g.p("alice").space);
+  // rolls past the shop (skipping it) onto the s07 blue space, ending the move
+  const walkPast = (g: Game) => {
+    g.roll("alice", 3);
+    if (g.state.move?.choice?.kind === "shop") g.do({ type: "shopSkip", playerId: "alice", now: g.now });
+    expect(g.state.move).toBeNull();
+  };
+
+  it("each shop sells its own variant's stock", () => {
+    const g = new Game(ctxFor(loadLayouts().main, { shop: season.shop }));
+    const ids = (space: string) => shopStock(g.ctx, g.state, space).items.map((i) => i.id);
+    expect(ids("s43")).toEqual(season.shop.variants.purple.items);
+    expect(ids("s14")).toEqual(season.shop.variants.pink.items);
+  });
+
+  it("the bag holds three items; a full bag can't buy", () => {
+    const g = atShop();
+    g.p("alice").items = ["mushroom", "mushroom", "mushroom"];
+    const ev = g.roll("alice", 1);
+    expect(ev).toContainEqual({ type: "ShopUnaffordable", playerId: "alice", spaceId: "s05", bagFull: true });
+  });
+
+  it("the tribe advantage costs coins, skips the bag, and sells once per board", () => {
+    const g = atShop(50);
+    g.state.boardId = "mario-stadium";
+    g.roll("alice", 1);
+    expect(shopStock(g.ctx, g.state, "s05").advantage?.name).toBe("Launch Star");
+    const ev = buy(g, ADVANTAGE_ID);
+    expect(ev).toContainEqual({ type: "AdvantagePurchased", playerId: "alice", price: 40 });
+    expect(g.p("alice")).toMatchObject({ coins: 10, items: [] });
+    expect(g.state.advantageSold).toBe(true);
+    expect(shopStock(g.ctx, g.state, "s05").advantage).toBeNull();
+  });
+
+  it("a Mushroom means two dice, and only one item a turn", () => {
+    const g = atShop();
+    g.p("alice").items = ["mushroom", "slow-mushroom"];
+    use(g, "mushroom");
+    expectError(() => use(g, "slow-mushroom"), "item_used");
+    expectError(() => g.roll("alice", 4), "invalid_dice");
+    const ev = g.roll("alice", 2, 3);
+    expect(ev[0]).toMatchObject({ type: "DiceRolled", dice: [2, 3], total: 5, item: "mushroom" });
+    expect(g.p("alice").items).toEqual(["slow-mushroom"]);
+  });
+
+  it("a Slow Mushroom only rolls 1-5", () => {
+    const g = atShop();
+    g.p("alice").items = ["slow-mushroom"];
+    use(g, "slow-mushroom");
+    expectError(() => g.roll("alice", 6), "invalid_dice");
+    g.roll("alice", 5);
+  });
+
+  it("a Reroll Block offers two numbers to pick from; a timeout takes the higher", () => {
+    let g = atShop();
+    g.p("alice").items = ["reroll-block"];
+    use(g, "reroll-block");
+    expectError(() => g.roll("alice", 3, 3), "invalid_dice");
+    const ev = g.roll("alice", 3, 1);
+    expect(ev[0]).toMatchObject({ type: "DiceRolled", dice: [3, 1], choose: true });
+    expect(g.state.move?.choice).toMatchObject({ kind: "dicePick", options: [3, 1] });
+    g.do({ type: "pickDie", playerId: "alice", value: 1, now: g.now });
+    expect(g.p("alice").space).toBe("s05");
+
+    g = atShop();
+    g.p("alice").items = ["reroll-block"];
+    use(g, "reroll-block");
+    g.roll("alice", 1, 2);
+    g.advance(1);
+    expect(g.tick()).toContainEqual({ type: "DiePicked", playerId: "alice", value: 2, total: 2, auto: true });
+  });
+
+  it("a Poison Mushroom halves the target's next roll, once", () => {
+    const g = atShop();
+    g.p("alice").items = ["poison-mushroom"];
+    expectError(() => use(g, "poison-mushroom"), "wrong_choice"); // needs a target
+    use(g, "poison-mushroom", "bob");
+    expect(g.p("bob").poisoned).toBe(true);
+    walkPast(g);
+    g.advance(5);
+    g.setup("bob", "s01");
+    const ev = g.roll("bob", 7);
+    expect(ev[0]).toMatchObject({ type: "DiceRolled", total: 3, halvedFrom: 7 });
+    expect(g.p("bob").poisoned).toBe(false);
+  });
+
+  it("a Boo Bell takes up to 7 coins; a Guard Charm blocks it and is used up", () => {
+    const g = atShop(10);
+    g.p("alice").items = ["boo-bell", "boo-bell"];
+    g.p("bob").coins = 5;
+    use(g, "boo-bell", "bob");
+    expect(g.p("bob").coins).toBe(0);
+    expect(g.p("alice").coins).toBe(15);
+    walkPast(g);
+    herTurn(g);
+    g.p("cara").items = ["guard-charm"];
+    const ev = use(g, "boo-bell", "cara");
+    expect(types(ev)).toEqual(["ItemUsed", "ItemSpent", "StealBlocked"]);
+    expect(g.p("cara")).toMatchObject({ coins: 10, items: [] });
+  });
+
+  it("a Guard Charm also blocks event steals, and a blocked star steal isn't paid for", () => {
+    const g = started(ctxFor(lineLayout, { shop: season.shop }));
+    g.setup("alice", "s05", 50);
+    g.p("bob").stars = 1;
+    g.p("bob").items = ["guard-charm"];
+    g.roll("alice", 1);
+    g.do({ type: "drawEvent", playerId: "alice", event: "starSteal", percent: 25, now: g.now });
+    const ev = g.do({ type: "eventTarget", playerId: "alice", targetId: "bob", now: g.now });
+    expect(ev).toContainEqual({ type: "StealBlocked", playerId: "alice", targetId: "bob", by: "starSteal" });
+    expect(g.p("alice")).toMatchObject({ coins: 50, stars: 0 });
+    expect(g.p("bob")).toMatchObject({ stars: 1, items: [] });
+  });
+
+  it("a Magic Lamp takes 10 off the next star and is used up", () => {
+    const g = started(ctxFor(lineLayout, { shop: season.shop }), ["alice", "bob"], "s02");
+    g.setup("alice", "s01", 12);
+    g.p("alice").items = ["magic-lamp"];
+    expect(starPriceFor(g.ctx, g.p("alice")).price).toBe(10);
+    const ev = g.roll("alice", 1);
+    expect(ev).toContainEqual({ type: "StarOffered", playerId: "alice", spaceId: "s02", price: 10 });
+    const ev2 = g.do({ type: "buyStar", playerId: "alice", newStarSpace: "s08", now: g.now });
+    expect(ev2).toContainEqual({ type: "StarPurchased", playerId: "alice", spaceId: "s02", price: 10, discount: 10 });
+    expect(g.p("alice").items).toEqual([]);
+  });
+
+  it("a Star Compass fixes where the star goes next, until it's bought", () => {
+    const g = started(ctxFor(lineLayout, { shop: season.shop }), ["alice", "bob"], "s02");
+    g.setup("alice", "s01", 40);
+    g.p("alice").items = ["star-compass", "star-compass"];
+    expectError(() => use(g, "star-compass"), "invalid_star_space"); // the server must pick
+    use(g, "star-compass", null, "alice", "s08");
+    expect(g.state.nextStar).toBe("s08");
+    g.roll("alice", 1);
+    g.do({ type: "buyStar", playerId: "alice", newStarSpace: "s08", now: g.now });
+    expect(g.state.star).toBe("s08");
+    expect(g.state.nextStar).toBeNull();
+  });
+
+  it("held items can't be used, and only on your own turn", () => {
+    const g = atShop();
+    g.p("alice").items = ["guard-charm"];
+    expectError(() => use(g, "guard-charm"), "wrong_choice");
+    g.p("bob").items = ["mushroom"];
+    expectError(() => use(g, "mushroom", null, "bob"), "not_your_turn");
+    expectError(() => use(g, "boo-bell"), "unknown_item");
   });
 });
