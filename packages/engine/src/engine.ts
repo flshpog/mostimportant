@@ -201,6 +201,30 @@ export function publicState(state: BoardState): BoardState {
   return rest;
 }
 
+// What one viewer may see. Bags are private: everyone sees their own, hosts see all.
+// `viewer` null (a public channel) sees nobody's.
+export function stateFor(state: BoardState, viewer: string | null, host: boolean): BoardState {
+  const pub = publicState(state);
+  if (host) return pub;
+  const players: BoardState["players"] = {};
+  for (const [id, p] of Object.entries(pub.players)) players[id] = id === viewer ? p : { ...p, items: [] };
+  return { ...pub, players };
+}
+
+// An event as one viewer may see it: what someone else bought (the tribe advantage
+// included, and what they paid), or was given or had taken by the hosts, is hidden
+// (itemId "", price 0). Using an item stays public.
+export function eventFor<E extends { type: string }>(event: E, viewer: string | null, host: boolean): E {
+  if (host) return event;
+  const e = event as unknown as { type: string; playerId?: string };
+  if (e.playerId === viewer) return event;
+  if (e.type === "ShopPurchase" || e.type === "AdvantagePurchased") {
+    return { type: "ShopPurchase", playerId: e.playerId, itemId: "", price: 0 } as unknown as E;
+  }
+  if (e.type === "ItemGranted" || e.type === "ItemRemoved") return { ...event, itemId: "" };
+  return event;
+}
+
 // The id the tribe advantage is bought under (it isn't a bag item).
 export const ADVANTAGE_ID = "tribe-advantage";
 

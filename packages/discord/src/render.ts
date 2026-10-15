@@ -359,10 +359,8 @@ function drawPanel(ctx: SKRSContext2D, input: RenderInput, avatars: Map<string, 
     ctx.textAlign = "left";
     ctx.font = "19px NunitoXB";
     ctx.fillStyle = "#2b2140";
-    ctx.fillText(fitText(ctx, p.name, w - 220), pad + 72, y + 22);
-    ctx.font = "14px NunitoB";
-    ctx.fillStyle = "#7a6e8f";
-    ctx.fillText(`${p.items.length} item${p.items.length === 1 ? "" : "s"}`, pad + 72, y + 41);
+    // bags are private, so no item count here
+    ctx.fillText(fitText(ctx, p.name, w - 220), pad + 72, y + 31);
     // stars and coins, right-aligned
     const right = x + w - 22;
     ctx.font = "19px NunitoXB";

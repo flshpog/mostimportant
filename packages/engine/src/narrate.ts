@@ -81,7 +81,8 @@ export function describeEvent(
     case "BooBellRang":
       return `${name(event.playerId)} took ${coins(event.amount)} from ${name(event.targetId)}!`;
     case "ShopPurchase":
-      return `${name(event.playerId)} bought ${item(event.itemId)} for ${coins(event.price)}.`;
+      // itemId "" is a purchase this viewer isn't allowed to see (bags are private)
+      return event.itemId ? `${name(event.playerId)} bought ${item(event.itemId)} for ${coins(event.price)}.` : `${name(event.playerId)} bought something from the shop.`;
     case "ShopClosed":
       return null;
     case "EventDrawn":
@@ -106,9 +107,9 @@ export function describeEvent(
     case "PlayerTeleported":
       return `The hosts moved ${name(event.playerId)}.`;
     case "ItemGranted":
-      return `${name(event.playerId)} received ${item(event.itemId)}.`;
+      return `${name(event.playerId)} received ${event.itemId ? item(event.itemId) : "an item"}.`;
     case "ItemRemoved":
-      return `${name(event.playerId)} lost ${item(event.itemId)}.`;
+      return `${name(event.playerId)} lost ${event.itemId ? item(event.itemId) : "an item"}.`;
     case "TurnOrderSet":
       return "The hosts changed the turn order.";
     case "Undone":

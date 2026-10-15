@@ -359,15 +359,6 @@ export function BoardHud(props: {
               {p.coins} <CoinIcon />
             </span>
           </button>
-          {p.items.length > 0 && (
-            <div className="items">
-              {p.items.map((id, i) => (
-                <span key={i} title={itemName(id)}>
-                  <ItemArt id={id} size={22} />
-                </span>
-              ))}
-            </div>
-          )}
         </li>
       ))}
     </ol>

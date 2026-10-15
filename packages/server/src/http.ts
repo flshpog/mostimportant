@@ -1,5 +1,5 @@
 import type { IncomingMessage, ServerResponse } from "node:http";
-import { EngineError } from "@everest/engine";
+import { EngineError, eventFor, stateFor } from "@everest/engine";
 import { authorizeUrl, avatarUrl, checkState, exchangeCode, signToken, verifyToken, type OAuthSettings, type SessionUser } from "./auth";
 import type { ServerConfig } from "./config";
 import { ServiceError, type BoardService, type HostActionInput } from "./service";
@@ -100,6 +100,11 @@ export function createHttpHandler(deps: HttpDeps) {
     if (!(await deps.isHost(user.sub))) throw new HttpError(403, "not_host", "Only hosts can do that.");
     return user;
   };
+  // Who is looking, for redacting what they may not see (other players' bags).
+  const viewer = async (req: IncomingMessage): Promise<{ id: string; host: boolean }> => {
+    const user = requireUser(req);
+    return { id: user.sub, host: await deps.isHost(user.sub) };
+  };
   // Players see only their own board; hosts see every board.
   const requireView = async (req: IncomingMessage, boardId: string): Promise<SessionUser> => {
     const user = requireUser(req);
@@ -189,7 +194,9 @@ export function createHttpHandler(deps: HttpDeps) {
       /^\/api\/boards\/([\w-]+)$/,
       async (req, res, [id]) => {
         await requireView(req, id);
-        send(res, 200, { board: service.summary(id), ...service.state(id) });
+        const v = await viewer(req);
+        const { state, seq } = service.state(id);
+        send(res, 200, { board: service.summary(id), state: stateFor(state, v.id, v.host), seq });
       },
     ],
     [
@@ -207,7 +214,9 @@ export function createHttpHandler(deps: HttpDeps) {
         await requireView(req, id);
         const since = Math.max(0, Number(url.searchParams.get("since") ?? 0) || 0);
         const limit = Math.min(1000, Math.max(1, Number(url.searchParams.get("limit") ?? 500) || 500));
-        send(res, 200, { events: service.eventsSince(id, since, limit), seq: service.summary(id).seq });
+        const v = await viewer(req);
+        const events = service.eventsSince(id, since, limit).map((e) => ({ ...e, event: eventFor(e.event, v.id, v.host) }));
+        send(res, 200, { events, seq: service.summary(id).seq });
       },
     ],
     [

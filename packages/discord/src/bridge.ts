@@ -15,7 +15,7 @@ import {
 } from "discord.js";
 import { loadImage, type Image } from "@napi-rs/canvas";
 import type { SeasonConfig } from "@everest/board-data";
-import { currentPlayerId, describeEvent, EngineError, EVENT_NAMES, itemDef, shopStock, usableItems, type BoardState, type EngineEvent } from "@everest/engine";
+import { currentPlayerId, describeEvent, EngineError, EVENT_NAMES, eventFor, itemDef, shopStock, usableItems, type BoardState, type EngineEvent } from "@everest/engine";
 import { ServiceError, type ActionMeta, type BoardService, type HostActionInput, type StoredEvent, type WireEvent } from "@everest/server";
 import { bold, buttonId, direction, narrate, parseButtonId, promptKey, promptMessage, rollButton, ts, turnMessage } from "./messages";
 import { prepareBackdrops, renderBoard, renderForkCloseup, renderSpotCloseup } from "./render";
@@ -233,7 +233,8 @@ export class BoardDiscord {
     // prompts still update).
     let spoke = false;
     if (!meta.host) {
-      const lines = narrate(events, this.names(state), this.itemName);
+      // the channel is public: nobody's purchases or bag changes are named there
+      const lines = narrate(events.map((e) => eventFor(e, null, false)), this.names(state), this.itemName);
       const roll = events.find((e): e is Extract<EngineEvent, { type: "DiceRolled" }> => e.type === "DiceRolled");
       const scene = events.find((e) => EVENT_SCENES.has(e.type)) as EngineEvent | undefined;
       if (roll) {
@@ -582,7 +583,20 @@ export class BoardDiscord {
       else if (action.kind === "star") await (action.buy ? service.buyStar(uid, "discord") : service.skipStar(uid, "discord"));
       else if (action.kind === "event") await service.eventTarget(uid, action.targetId, "discord");
       else if (action.kind === "pick") await service.pickDie(uid, action.value, "discord");
-      else if (action.kind === "shop") await (action.itemId ? service.shopBuy(uid, action.itemId, "discord") : service.shopSkip(uid, "discord"));
+      else if (action.kind === "shop") {
+        if (!action.itemId) await service.shopSkip(uid, "discord");
+        else {
+          // the channel only hears "bought something"; the buyer hears what
+          const out = await service.shopBuy(uid, action.itemId, "discord");
+          const bought = out.find((s) => s.event.type === "ShopPurchase" || s.event.type === "AdvantagePurchased")?.event;
+          if (bought) {
+            const what = bought.type === "AdvantagePurchased" ? "the Tribe Advantage" : bold(this.itemName((bought as { itemId: string }).itemId));
+            const after = service.state(action.boardId).state.players[uid];
+            const bag = bought.type === "ShopPurchase" && after ? ` It's in your bag (${after.items.length}/${this.opts.loadConfig().shop.bagSize}).` : " The hosts have been told and will hand it to you.";
+            await interaction.followUp({ content: `🛍️ Only you can see this: you bought ${what}!${bag}`, ephemeral: true });
+          }
+        }
+      }
     } catch (e) {
       await interaction.followUp({ content: this.friendly(e), ephemeral: true });
     }

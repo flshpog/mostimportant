@@ -1,7 +1,7 @@
 import type { IncomingMessage, Server } from "node:http";
 import type { Duplex } from "node:stream";
 import { WebSocketServer, WebSocket } from "ws";
-import { publicState, type BoardState } from "@everest/engine";
+import { eventFor, stateFor, type BoardState } from "@everest/engine";
 import type { SessionUser } from "./auth";
 import { originAllowed, sessionFrom, type HttpDeps } from "./http";
 import type { StoredEvent } from "./store";
@@ -80,10 +80,11 @@ export function attachWebSocket(server: Server, deps: HttpDeps) {
           if (!canView(c, board)) return send(c, { op: "error", code: "not_your_board", message: "You can only view your own board." });
           // Catch-up and registration happen in the same tick, so no live event can
           // slip between them.
-          const { state, seq } = service.state(board);
+          const { state: full, seq } = service.state(board);
+          const state = stateFor(full, c.user.sub, c.isHost);
           const since = typeof msg.since === "number" ? msg.since : null;
           if (since !== null && since >= 0 && since <= seq && seq - since <= MAX_CATCH_UP) {
-            send(c, { op: "events", board, events: service.eventsSince(board, since, MAX_CATCH_UP), seq, state });
+            send(c, { op: "events", board, events: redact(c, service.eventsSince(board, since, MAX_CATCH_UP)), seq, state });
           } else {
             send(c, { op: "snapshot", board, seq, state });
           }
@@ -102,6 +103,9 @@ export function attachWebSocket(server: Server, deps: HttpDeps) {
     });
   });
 
+  // Other players' bags are private: hide what they bought or were given.
+  const redact = (c: Client, events: StoredEvent[]) => events.map((e) => ({ ...e, event: eventFor(e.event, c.user?.sub ?? null, c.isHost) }));
+
   const dropIfNotAllowed = (c: Client, board: string) => {
     if (canView(c, board)) return false;
     // A player moved off this board (eliminated, swapped) loses the feed immediately.
@@ -114,13 +118,13 @@ export function attachWebSocket(server: Server, deps: HttpDeps) {
     const seq = events[events.length - 1].seq;
     for (const c of clients) {
       if (!c.boards.has(board) || dropIfNotAllowed(c, board)) continue;
-      send(c, { op: "events", board, events, seq, state: publicState(state) });
+      send(c, { op: "events", board, events: redact(c, events), seq, state: stateFor(state, c.user?.sub ?? null, c.isHost) });
     }
   };
   const onReset = (board: string, state: BoardState, seq: number) => {
     for (const c of clients) {
       if (!c.boards.has(board) || dropIfNotAllowed(c, board)) continue;
-      send(c, { op: "reset", board, seq, state: publicState(state) });
+      send(c, { op: "reset", board, seq, state: stateFor(state, c.user?.sub ?? null, c.isHost) });
     }
   };
   service.on("events", onEvents);

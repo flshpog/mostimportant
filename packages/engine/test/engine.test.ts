@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { loadLayouts, loadSeasonConfig } from "@everest/board-data";
-import { ADVANTAGE_ID, EngineError, possibleEvents, replay, shopStock, starPriceFor, undo, undoTurn, type EngineEvent } from "../src";
+import { ADVANTAGE_ID, EngineError, eventFor, possibleEvents, stateFor, replay, shopStock, starPriceFor, undo, undoTurn, type EngineEvent } from "../src";
 import { ctxFor, Game, HOUR, lineLayout, T0, types } from "./helpers";
 
 const main = loadLayouts().main;
@@ -654,6 +654,20 @@ describe("the shop and items", () => {
     if (g.state.move?.choice?.kind === "shop") g.do({ type: "shopSkip", playerId: "alice", now: g.now });
     expect(g.state.move).toBeNull();
   };
+
+  it("bags and purchases are private to their owner (and the hosts)", () => {
+    const g = atShop();
+    g.stock = ["boo-bell", "magic-lamp"];
+    g.roll("alice", 1);
+    const bought = buy(g, "boo-bell").find((e) => e.type === "ShopPurchase")!;
+    expect(stateFor(g.state, "alice", false).players.alice.items).toEqual(["boo-bell"]);
+    expect(stateFor(g.state, "bob", false).players.alice.items).toEqual([]);
+    expect(stateFor(g.state, null, false).players.alice.items).toEqual([]);
+    expect(stateFor(g.state, "bob", true).players.alice.items).toEqual(["boo-bell"]);
+    expect(eventFor(bought, "alice", false)).toEqual(bought);
+    expect(eventFor(bought, "bob", false)).toEqual({ type: "ShopPurchase", playerId: "alice", itemId: "", price: 0 });
+    expect(eventFor({ type: "AdvantagePurchased", playerId: "alice", price: 40 }, null, false)).toEqual({ type: "ShopPurchase", playerId: "alice", itemId: "", price: 0 });
+  });
 
   it("a shop offers the items drawn for this visit, and only those", () => {
     const g = atShop();
