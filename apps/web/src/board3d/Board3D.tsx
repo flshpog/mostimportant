@@ -170,6 +170,8 @@ export function Board3D(props: {
   starDirector: StarDirector;
   // Picking a path by clicking its arrow on the board.
   onFork?: (next: string) => void;
+  // False while the show is still catching up (dice, hops): fork arrows wait for it.
+  ready?: boolean;
   popups: Popup[];
   mode: CamMode;
   setMode: (m: CamMode) => void;
@@ -221,6 +223,7 @@ export function Board3D(props: {
         state={state}
         animator={animator}
         meId={meId}
+        ready={props.ready ?? true}
         onPick={(next) => {
           // clicking the board starts a camera drag; keep following the move instead
           const mover = state.move?.playerId;

@@ -14,8 +14,8 @@ const rules = { ...season, turns: { ...season.turns, cooldownHours: 0 } };
 
 // #/preview: the 3D board with a few made-up players and no server, for checking the
 // scene and the animations on any device without logging in. Roll plays locally; every
-// player rolls in turn, forks and the star wait for their buttons and other prompts
-// take their default answer.
+// player rolls in turn; forks, the star and events wait for their buttons, the shop
+// is skipped.
 export function Preview() {
   const layout = loadLayouts().main;
   const ctx = useMemo(() => ({ layout, rules }), [layout]);
@@ -34,7 +34,8 @@ export function Preview() {
     // #/preview?star puts Peach right before the star, to try the star cutscene
     // and ?fork puts her just before the s03 fork
     const hash = window.location.hash;
-    const p1Start = hash.includes("star") ? "s61" : hash.includes("fork") ? "s02" : "s45";
+    // and ?event puts her just before the s21 event space (her first roll is a 1)
+    const p1Start = hash.includes("star") ? "s61" : hash.includes("fork") ? "s02" : hash.includes("event") ? "s20" : "s45";
     for (const [id, space] of [["p1", p1Start], ["p2", "s45"], ["p3", "s88"], ["p4", "s12"]] as const) {
       s = apply(ctx, s, { type: "movePlayer", playerId: id, spaceId: space, now: 0 }).state;
     }
@@ -42,10 +43,11 @@ export function Preview() {
   });
   const [feed, setFeed] = useState<{ seq: number; text: string }[]>([]);
   const seq = useRef(0);
+  const firstRoll = useRef(true);
   const animator = useRef(new TokenAnimator()).current;
   const [mode, setMode] = useState<CamMode>({ kind: "overview" });
   const [followTurns, setFollowTurns] = useState(true);
-  const { play, popups, dice, clearDice, banner, clearBanner, starDirector } = useBoardAnimations({ animator, season, followTurns, setMode });
+  const { play, popups, dice, clearDice, banner, clearBanner, starDirector, settled } = useBoardAnimations({ animator, season, followTurns, setMode });
 
   // Applies a player's action, then answers every prompt except the star (which waits
   // for the HUD buttons) with a default, and plays the result.
@@ -60,13 +62,14 @@ export function Preview() {
     const first = make(state, now);
     if (!first) return;
     let s = step(state, first);
-    for (let i = 0; s.move?.choice && s.move.choice.kind !== "star" && s.move.choice.kind !== "fork" && i < 50; i++) {
-      const c = s.move.choice;
-      const pid = s.move.playerId;
-      if (c.kind === "shop") s = step(s, { type: "shopSkip", playerId: pid, now });
-      else if (c.kind === "eventDraw") s = step(s, { type: "drawEvent", playerId: pid, event: "swap", percent: 25, now });
-      else if (c.kind === "coinSteal") s = step(s, { type: "eventTarget", playerId: pid, targetId: c.targets[0], now });
-      else if (c.kind === "starSteal" || c.kind === "swap") s = step(s, { type: "eventTarget", playerId: pid, targetId: c.targets[0] ?? null, now });
+    // the shop and the event draw answer themselves; everything else waits for a click
+    for (let i = 0; (s.move?.choice?.kind === "shop" || s.move?.choice?.kind === "eventDraw") && i < 50; i++) {
+      const pid = s.move!.playerId;
+      if (s.move!.choice!.kind === "shop") s = step(s, { type: "shopSkip", playerId: pid, now });
+      else {
+        const pick = <T,>(xs: readonly T[]) => xs[Math.floor(Math.random() * xs.length)];
+        s = step(s, { type: "drawEvent", playerId: pid, event: pick(["coinSteal", "starSteal", "swap"] as const), percent: pick(season.events.coinSteal.percents), now });
+      }
     }
     // the next player's window opens at once
     if (s.started && !s.move) s = { ...s, turn: { ...s.turn, windowOpensAt: now } };
@@ -81,13 +84,20 @@ export function Preview() {
     act((s, now) => {
       const pid = currentPlayerId(s);
       if (s.move || dice || !pid) return null;
-      const d = season.dice.min + Math.floor(Math.random() * (season.dice.max - season.dice.min + 1));
+      const first = firstRoll.current;
+      firstRoll.current = false;
+      const d = first && window.location.hash.includes("event") ? 1 : season.dice.min + Math.floor(Math.random() * (season.dice.max - season.dice.min + 1));
       return { type: "roll", playerId: pid, dice: [d], now };
     });
   const fork = (next: string) =>
     act((s, now) => {
       const pid = s.move?.playerId;
       return pid ? { type: "chooseFork", playerId: pid, next, now } : null;
+    });
+  const event = (targetId: string | null) =>
+    act((s, now) => {
+      const pid = s.move?.playerId;
+      return pid ? { type: "eventTarget", playerId: pid, targetId, now } : null;
     });
   const star = (buy: boolean) =>
     act((s, now) => {
@@ -101,7 +111,7 @@ export function Preview() {
   return (
     <div className="board-page">
       <div className="board-canvas">
-        <Board3D layout={layout} state={state} meId={currentPlayerId(state) ?? "p1"} avatars={{}} animator={animator} starDirector={starDirector} onFork={fork} popups={popups} mode={mode} setMode={setMode} quality={window.location.hash.includes("lite") ? "lite" : "full"} />
+        <Board3D layout={layout} state={state} meId={currentPlayerId(state) ?? "p1"} avatars={{}} animator={animator} starDirector={starDirector} ready={settled} onFork={fork} popups={popups} mode={mode} setMode={setMode} quality={window.location.hash.includes("lite") ? "lite" : "full"} />
       </div>
       <DiceOverlay roll={dice} onDone={clearDice} />
       <Banner banner={banner} onDone={clearBanner} />
@@ -120,8 +130,9 @@ export function Preview() {
         followTurns={followTurns}
         setFollowTurns={setFollowTurns}
         error={null}
+        ready={settled}
         feed={feed}
-        actions={{ roll, fork, star, shop: () => undefined, event: () => undefined }}
+        actions={{ roll, fork, star, shop: () => undefined, event }}
       />
     </div>
   );

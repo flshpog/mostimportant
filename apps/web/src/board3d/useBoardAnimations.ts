@@ -32,6 +32,13 @@ export function useBoardAnimations(opts: {
   const starDirector = useRef(new StarDirector()).current;
   const nextId = useRef(0);
   const timers = useRef<number[]>([]);
+  // When everything already scheduled will have played (performance.now()). The server
+  // sends one action's events at a time (a roll, then the event draw that follows it),
+  // so each batch starts where the last one ends instead of jumping ahead of the token.
+  const endAt = useRef(0);
+  // False while the token is still on its way: prompts wait for it to arrive.
+  const [settled, setSettled] = useState(true);
+  const settleToken = useRef(0);
   useEffect(() => () => timers.current.forEach(clearTimeout), []);
 
   const later = useCallback((ms: number, fn: () => void) => {
@@ -42,7 +49,8 @@ export function useBoardAnimations(opts: {
     (events: AnyEvent[], state: BoardState, layout: Board, meId: string | null) => {
       const name = (id: string) => state.players[id]?.name ?? "Someone";
       const who = (id: string, you: string, them: string) => (id === meId ? you : `${name(id)} ${them}`);
-      let cursor = 0;
+      const start = performance.now();
+      let cursor = Math.max(0, endAt.current - start);
       let mover: string | null = null;
       const popup = (playerId: string, delta: number, icon: "coin" | "star") => {
         const p: Popup = {
@@ -62,9 +70,14 @@ export function useBoardAnimations(opts: {
         switch (e.type) {
           case "DiceRolled":
             mover = pid;
-            setDice({ key: ++nextId.current, playerId: pid, name: name(pid), total: e.total as number, mine: pid === meId });
+            {
+              const roll: DiceShow = { key: ++nextId.current, playerId: pid, name: name(pid), total: e.total as number, mine: pid === meId };
+              later(cursor, () => {
+                setDice(roll);
+                if (followTurns) setMode({ kind: "follow", playerId: pid });
+              });
+            }
             animator.wait(pid, DICE_TOTAL_MS);
-            if (followTurns) setMode({ kind: "follow", playerId: pid });
             cursor += DICE_TOTAL_MS;
             break;
           case "PlayerMoved":
@@ -136,11 +149,17 @@ export function useBoardAnimations(opts: {
             break;
         }
       }
+      endAt.current = start + cursor;
+      const token = ++settleToken.current;
+      if (cursor > 0) {
+        setSettled(false);
+        later(cursor, () => token === settleToken.current && setSettled(true));
+      }
     },
     [animator, followTurns, setMode, starDirector, later],
   );
 
   const clearDice = useCallback(() => setDice(null), []);
   const clearBanner = useCallback(() => setBanner(null), []);
-  return { play, popups, dice, clearDice, banner, clearBanner, starDirector };
+  return { play, popups, dice, clearDice, banner, clearBanner, starDirector, settled };
 }

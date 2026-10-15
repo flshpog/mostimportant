@@ -73,7 +73,7 @@ export function BoardPage() {
   const animator = useRef(new TokenAnimator()).current;
   const stateRef = useRef<ReturnType<typeof useLiveBoard>["state"]>(null);
   const meRef = useRef<string | null>(null);
-  const { play, popups, dice, clearDice, banner, clearBanner, starDirector } = useBoardAnimations({ animator, season, followTurns, setMode });
+  const { play, popups, dice, clearDice, banner, clearBanner, starDirector, settled } = useBoardAnimations({ animator, season, followTurns, setMode });
 
   useEffect(() => {
     if (!token) return;
@@ -152,7 +152,7 @@ export function BoardPage() {
   return (
     <div className="board-page">
       <div className="board-canvas">
-        <Board3D layout={lay} state={state} meId={me.user.id} avatars={{ ...avatars, [me.user.id]: me.user.avatar }} animator={animator} starDirector={starDirector} onFork={(next) => run(() => api("/api/play/fork", { body: { next } }))} popups={popups} mode={mode} setMode={setMode} />
+        <Board3D layout={lay} state={state} meId={me.user.id} avatars={{ ...avatars, [me.user.id]: me.user.avatar }} animator={animator} starDirector={starDirector} ready={settled} onFork={(next) => run(() => api("/api/play/fork", { body: { next } }))} popups={popups} mode={mode} setMode={setMode} />
       </div>
       <DiceOverlay roll={dice} onDone={clearDice} />
       <Banner banner={banner} onDone={clearBanner} />
@@ -171,6 +171,7 @@ export function BoardPage() {
         followTurns={followTurns}
         setFollowTurns={setFollowTurns}
         error={error}
+        ready={settled}
         feed={lines}
         actions={{
           roll: () => run(() => api("/api/play/roll", { body: {} })),

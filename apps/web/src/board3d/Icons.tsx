@@ -64,3 +64,21 @@ export const ArrowIcon = ({ className, deg }: P & { deg: number }) => (
     <path d="M4 12h14M12.5 5.5L19 12l-6.5 6.5" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
   </svg>
 );
+
+export const ShopIcon = ({ className }: P) =>
+  svg(
+    className,
+    <>
+      {line("M5 8h14l-1.2 11.2a2 2 0 01-2 1.8H8.2a2 2 0 01-2-1.8z")}
+      {line("M9 8V6.5a3 3 0 016 0V8")}
+    </>,
+  );
+
+export const BangIcon = ({ className }: P) =>
+  svg(
+    className,
+    <>
+      <path d="M12 4v10" fill="none" stroke="currentColor" strokeWidth="3.4" strokeLinecap="round" />
+      <circle cx="12" cy="19.5" r="2" fill="currentColor" />
+    </>,
+  );

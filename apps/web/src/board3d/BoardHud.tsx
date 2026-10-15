@@ -1,10 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { Board, SeasonConfig } from "@everest/board-data";
 import { currentPlayerId, type BoardState } from "@everest/engine";
 import type { LiveStatus } from "../lib/useLiveBoard";
 import type { CamMode } from "./Board3D";
 import { directionOf, FORK_COLOURS } from "./coords";
-import { ArrowIcon, CoinIcon, DiceIcon, FollowIcon, MapIcon, OutlineStarIcon, PinIcon, StarIcon } from "./Icons";
+import { ArrowIcon, BangIcon, CoinIcon, DiceIcon, ShopIcon, FollowIcon, MapIcon, OutlineStarIcon, PinIcon, StarIcon } from "./Icons";
 import { tokenColour } from "./Tokens";
 
 const NY = new Intl.DateTimeFormat("en-US", { timeZone: "America/New_York", weekday: "short", hour: "numeric", minute: "2-digit", timeZoneName: "short" });
@@ -38,6 +38,8 @@ export function BoardHud(props: {
   error: string | null;
   feed: { seq: number; text: string }[];
   actions: HudActions;
+  // False while tokens are still moving: prompts wait until the player has arrived.
+  ready: boolean;
 }) {
   const { state, layout, season, meId, mode, setMode, actions } = props;
   const [sheetOpen, setSheetOpen] = useState(false);
@@ -73,95 +75,122 @@ export function BoardHud(props: {
     </>
   ) : null;
 
-  const prompt = (title: React.ReactNode, body: React.ReactNode, kind = "") => (
-    <div className={`choice-card ${kind}`}>
-      <p className="choice-title">{title}</p>
-      <div className="choice-buttons">{body}</div>
+  // The action dock: one big, loud card at the bottom centre for whatever you have to
+  // do right now. It waits until your token has actually arrived (`ready`).
+  const card = (kind: string, icon: React.ReactNode, title: React.ReactNode, sub: React.ReactNode, body: React.ReactNode) => (
+    <div className={`dock-card ${kind}`} key={`${kind}-${state.move?.rolledAt ?? opens}-${state.move?.remaining ?? ""}`}>
+      <div className="dock-badge">{icon}</div>
+      <div className="dock-title">{title}</div>
+      {sub && <div className="dock-sub">{sub}</div>}
+      {props.error && <p className="dock-error">{props.error}</p>}
+      <div className="dock-buttons">{body}</div>
     </div>
   );
 
-  const buttons = (
-    <>
-      {myTurn && !state.move && (
-        <button className="button primary big roll" onClick={actions.roll} disabled={waiting}>
-          <DiceIcon /> Roll
+  let dock: React.ReactNode = null;
+  if (props.ready && myTurn && !state.move && !waiting && !state.paused) {
+    dock = card(
+      "roll",
+      <DiceIcon />,
+      "Your turn!",
+      null,
+      <button className="dock-button go big" onClick={actions.roll}>
+        <DiceIcon /> Roll
+      </button>,
+    );
+  } else if (props.ready && choice?.kind === "fork") {
+    dock = card(
+      "fork",
+      <ArrowIcon deg={90} />,
+      "Fork in the road!",
+      <>Pick a path · tap an arrow on the board or here · {state.move!.remaining} to go</>,
+      choice.options.map((o, i) => {
+        const d = directionOf(layout, choice.spaceId, o);
+        return (
+          <button key={o} className="dock-button path" style={{ ["--path" as string]: FORK_COLOURS[i % FORK_COLOURS.length] }} onClick={() => actions.fork(o)}>
+            <ArrowIcon deg={d.deg} /> {d.word}
+          </button>
+        );
+      }),
+    );
+  } else if (props.ready && choice?.kind === "star") {
+    dock = card(
+      "star",
+      <StarIcon />,
+      "You reached the Star!",
+      <>You have {me?.coins ?? 0} coins</>,
+      <>
+        <button className="dock-button gold big" onClick={() => actions.star(true)}>
+          Buy for {choice.price} <CoinIcon />
         </button>
-      )}
-      {choice?.kind === "fork" &&
-        prompt(
-          <>
-            Fork in the road! <span className="sub">Pick a path on the board or here · {state.move!.remaining} to go</span>
-          </>,
-          choice.options.map((o, i) => {
-            const d = directionOf(layout, choice.spaceId, o);
-            return (
-              <button key={o} className="button path" style={{ ["--path" as string]: FORK_COLOURS[i % FORK_COLOURS.length] }} onClick={() => actions.fork(o)}>
-                <ArrowIcon deg={d.deg} /> {d.word}
-              </button>
-            );
-          }),
-          "fork",
-        )}
-      {choice?.kind === "star" &&
-        prompt(
-          <>You reached the star!</>,
-          <>
-            <button className="button primary" onClick={() => actions.star(true)}>
-              Buy for {choice.price} <CoinIcon />
+        <button className="dock-button quiet" onClick={() => actions.star(false)}>
+          No thanks
+        </button>
+      </>,
+    );
+  } else if (props.ready && choice?.kind === "shop") {
+    dock = card(
+      "shop",
+      <ShopIcon />,
+      "Welcome to the Shop!",
+      <>You have {me?.coins ?? 0} coins</>,
+      <>
+        {season.shop.items
+          .filter((i) => i.price <= (me?.coins ?? 0))
+          .map((i) => (
+            <button key={i.id} className="dock-button shopitem" onClick={() => actions.shop(i.id)}>
+              {i.name} <span className="price">{i.price} <CoinIcon /></span>
             </button>
-            <button className="button ghost" onClick={() => actions.star(false)}>
-              No thanks
+          ))}
+        <button className="dock-button quiet" onClick={() => actions.shop(null)}>
+          Leave
+        </button>
+      </>,
+    );
+  } else if (props.ready && (choice?.kind === "coinSteal" || choice?.kind === "starSteal" || choice?.kind === "swap")) {
+    const targets = choice.targets.filter((id) => state.players[id]);
+    dock = card(
+      "event",
+      <BangIcon />,
+      choice.kind === "coinSteal" ? "Coin Steal!" : choice.kind === "starSteal" ? "Star Steal!" : "Swap Places!",
+      choice.kind === "coinSteal" ? (
+        <>Pick a tribemate. You'll take a random 5-50% of their coins!</>
+      ) : choice.kind === "starSteal" ? (
+        <>Pay {choice.price} coins to take a star from someone?</>
+      ) : (
+        <>Pick someone to trade spots with</>
+      ),
+      <>
+        {targets.map((id) => {
+          const t = state.players[id];
+          return (
+            <button key={id} className="dock-button target" onClick={() => actions.event(id)}>
+              <span className="dot" style={{ background: tokenColour(id) }} />
+              {t.name}
+              {choice.kind === "coinSteal" && <span className="price">{t.coins} <CoinIcon /></span>}
+              {choice.kind === "starSteal" && <span className="price">{t.stars} <StarIcon /></span>}
             </button>
-          </>,
+          );
+        })}
+        {choice.kind !== "coinSteal" && (
+          <button className="dock-button quiet" onClick={() => actions.event(null)}>
+            No thanks
+          </button>
         )}
-      {choice?.kind === "shop" &&
-        prompt(
-          <>Welcome to the shop</>,
-          <>
-            {season.shop.items
-              .filter((i) => i.price <= (me?.coins ?? 0))
-              .map((i) => (
-                <button key={i.id} className="button" onClick={() => actions.shop(i.id)}>
-                  {i.name} <span className="price">{i.price} <CoinIcon /></span>
-                </button>
-              ))}
-            <button className="button ghost" onClick={() => actions.shop(null)}>
-              Leave
-            </button>
-          </>,
-        )}
-      {(choice?.kind === "coinSteal" || choice?.kind === "starSteal" || choice?.kind === "swap") &&
-        prompt(
-          choice.kind === "coinSteal" ? (
-            <>Coin Steal! <span className="sub">Pick a tribemate</span></>
-          ) : choice.kind === "starSteal" ? (
-            <>Star Steal! <span className="sub">Pay {choice.price} coins to take a star?</span></>
-          ) : (
-            <>Swap Places! <span className="sub">Pick someone to trade spots with</span></>
-          ),
-          <>
-            {choice.targets
-              .filter((id) => state.players[id])
-              .map((id) => {
-                const t = state.players[id];
-                return (
-                  <button key={id} className="button" onClick={() => actions.event(id)}>
-                    <span className="dot" style={{ background: tokenColour(id) }} />
-                    {t.name}
-                    {choice.kind === "coinSteal" && <span className="price">{t.coins} <CoinIcon /></span>}
-                    {choice.kind === "starSteal" && <span className="price">{t.stars} <StarIcon /></span>}
-                  </button>
-                );
-              })}
-            {choice.kind !== "coinSteal" && (
-              <button className="button ghost" onClick={() => actions.event(null)}>
-                No thanks
-              </button>
-            )}
-          </>,
-        )}
-    </>
-  );
+      </>,
+    );
+  }
+
+  // On phones the dock sits just above the bottom sheet, whatever its height.
+  const sheet = useRef<HTMLElement>(null);
+  const [sheetH, setSheetH] = useState(0);
+  useEffect(() => {
+    const el = sheet.current;
+    if (!el || typeof ResizeObserver === "undefined") return;
+    const ro = new ResizeObserver(() => setSheetH(el.offsetHeight));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
 
   const standings = (
     <ol className="standings">
@@ -243,7 +272,13 @@ export function BoardHud(props: {
         </button>
       </nav>
 
-      <aside className={`hud-panel glass ${sheetOpen ? "open" : ""}`}>
+      {dock && (
+        <div className="action-dock" style={{ ["--sheet-h" as string]: `${sheetH}px` }}>
+          {dock}
+        </div>
+      )}
+
+      <aside ref={sheet} className={`hud-panel glass ${sheetOpen ? "open" : ""}`}>
         <button className="sheet-handle" onClick={() => setSheetOpen(!sheetOpen)} aria-expanded={sheetOpen}>
           <span className="grip" />
           <span>{sheetOpen ? "Hide standings" : "Standings"}</span>
@@ -260,8 +295,7 @@ export function BoardHud(props: {
               </span>
             </div>
           )}
-          {props.error && <p className="error-text">{props.error}</p>}
-          {buttons}
+          {props.error && !dock && <p className="error-text">{props.error}</p>}
         </section>
         <section className="standings-section">
           <h2>Standings</h2>

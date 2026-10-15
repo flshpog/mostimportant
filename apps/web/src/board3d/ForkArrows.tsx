@@ -1,104 +1,143 @@
 import { useMemo, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
-import { ExtrudeGeometry, Shape, type Group, type MeshStandardMaterial } from "three";
+import { BufferGeometry, CatmullRomCurve3, DoubleSide, Float32BufferAttribute, Vector3, type Group, type Mesh, type MeshStandardMaterial } from "three";
 import type { Board } from "@everest/board-data";
 import type { BoardState } from "@everest/engine";
 import { FORK_COLOURS, spaceToWorld } from "./coords";
 import type { TokenAnimator } from "./Tokens";
 
-// A chunky arrow lying flat, pointing along +X.
-function arrowGeometry() {
-  const s = new Shape();
-  s.moveTo(-0.35, -0.15);
-  s.lineTo(0.15, -0.15);
-  s.lineTo(0.15, -0.36);
-  s.lineTo(0.62, 0);
-  s.lineTo(0.15, 0.36);
-  s.lineTo(0.15, 0.15);
-  s.lineTo(-0.35, 0.15);
-  s.closePath();
-  const g = new ExtrudeGeometry(s, { depth: 0.12, bevelEnabled: true, bevelThickness: 0.04, bevelSize: 0.04, bevelSegments: 2 });
-  g.rotateX(-Math.PI / 2); // lie flat: shape +Y becomes world -Z
+const LIFT = 0.42; // above the path, clear of the tile tops
+const START = 0.7; // starts this far from the fork, clear of the token standing on it
+const REACH = 3.4; // how far along the path it runs
+const HEAD = 0.62; // arrowhead length
+const UP = new Vector3(0, 1, 0);
+
+// A flat ribbon along the curve from `s0` to `s1` (distances), ending in an arrowhead.
+// Triangles run start to end, so a draw range can "grow" it along the path.
+function ribbon(curve: CatmullRomCurve3, s0: number, s1: number, half: number, headHalf: number): BufferGeometry {
+  const L = curve.getLength();
+  const pos: number[] = [];
+  const idx: number[] = [];
+  const N = 40;
+  const bodyEnd = s1 - HEAD;
+  for (let i = 0; i <= N; i++) {
+    const u = (s0 + ((bodyEnd - s0) * i) / N) / L;
+    const p = curve.getPointAt(u);
+    const side = curve.getTangentAt(u).cross(UP).normalize().multiplyScalar(half);
+    pos.push(p.x + side.x, p.y, p.z + side.z, p.x - side.x, p.y, p.z - side.z);
+    if (i > 0) {
+      const a = (i - 1) * 2;
+      idx.push(a, a + 1, a + 2, a + 1, a + 3, a + 2);
+    }
+  }
+  const uEnd = bodyEnd / L;
+  const base = curve.getPointAt(uEnd);
+  const side = curve.getTangentAt(uEnd).cross(UP).normalize().multiplyScalar(headHalf);
+  const tip = curve.getPointAt(Math.min(1, s1 / L));
+  const h = pos.length / 3;
+  pos.push(base.x + side.x, base.y, base.z + side.z, base.x - side.x, base.y, base.z - side.z, tip.x, tip.y, tip.z);
+  idx.push(h, h + 1, h + 2);
+  const g = new BufferGeometry();
+  g.setAttribute("position", new Float32BufferAttribute(pos, 3));
+  g.setIndex(idx);
+  g.computeVertexNormals();
   return g;
 }
 
-function PathArrow(props: {
-  from: { x: number; y: number; z: number };
-  to: { x: number; y: number; z: number };
-  colour: string;
-  ready: () => boolean;
-  onPick: (() => void) | null;
-}) {
-  const { from, to, colour, ready, onPick } = props;
-  const ref = useRef<Group>(null);
+// The spaces a path runs through after the fork: the chosen exit, then straight on.
+function pathPoints(layout: Board, fork: string, first: string): Vector3[] {
+  const pts = [spaceToWorld(layout, fork), spaceToWorld(layout, first)];
+  let cur = layout.spaces.find((s) => s.id === first);
+  for (let i = 0; i < 2 && cur; i++) {
+    const next = cur.next[0];
+    if (!next) break;
+    pts.push(spaceToWorld(layout, next));
+    cur = layout.spaces.find((s) => s.id === next);
+  }
+  return pts.map((p) => p.add(new Vector3(0, LIFT, 0)));
+}
+
+function PathArrow(props: { points: Vector3[]; colour: string; ready: () => boolean; onPick: (() => void) | null }) {
+  const { points, colour, ready, onPick } = props;
+  const group = useRef<Group>(null);
+  const top = useRef<Mesh>(null);
+  const outline = useRef<Mesh>(null);
   const mat = useRef<MeshStandardMaterial>(null);
-  const geometry = useMemo(arrowGeometry, []);
-  const dx = to.x - from.x;
-  const dz = to.z - from.z;
-  const len = Math.hypot(dx, dz) || 1;
-  const ux = dx / len;
-  const uz = dz / len;
-  const yaw = Math.atan2(-dz, dx);
   const hover = useRef(false);
+  const grow = useRef(0);
+  const { body, edge } = useMemo(() => {
+    const curve = new CatmullRomCurve3(points, false, "centripetal");
+    const L = curve.getLength();
+    const s1 = Math.min(L - 0.05, START + REACH);
+    return { body: ribbon(curve, START, s1, 0.16, 0.42), edge: ribbon(curve, START - 0.07, Math.min(L, s1 + 0.12), 0.24, 0.55) };
+  }, [points]);
+
   useFrame(({ clock }, dt) => {
-    const g = ref.current;
-    if (!g) return;
     const t = clock.getElapsedTime();
-    // halfway down the path (clear of the token on the fork), nudging forward like
-    // it's saying "this way"
-    const push = Math.max(1.1, len * 0.55) + (Math.sin(t * 4) * 0.5 + 0.5) * 0.25;
-    g.position.set(from.x + ux * push, from.y + 0.5 + Math.sin(t * 4) * 0.05, from.z + uz * push);
-    const target = ready() ? (hover.current ? 1.6 : 1.35) : 0;
-    const s = g.scale.x + (target - g.scale.x) * (1 - Math.exp(-10 * dt));
-    g.scale.setScalar(s);
-    if (mat.current) mat.current.emissiveIntensity = 0.45 + (Math.sin(t * 4) * 0.5 + 0.5) * 0.5 + (hover.current ? 0.4 : 0);
+    const show = ready();
+    grow.current = show ? Math.min(1, grow.current + dt / 0.45) : 0;
+    const e = 1 - (1 - grow.current) ** 3;
+    for (const m of [top.current, outline.current]) {
+      if (!m) continue;
+      const count = m.geometry.index!.count;
+      // grow along the path; the head (last triangle) pops on at the end
+      m.geometry.setDrawRange(0, e >= 1 ? count : Math.floor(((count - 3) * e) / 3) * 3);
+      m.visible = grow.current > 0;
+    }
+    if (group.current) group.current.position.y = Math.sin(t * 3) * 0.05 + (hover.current ? 0.12 : 0);
+    if (mat.current) mat.current.emissiveIntensity = 0.5 + (Math.sin(t * 4) * 0.5 + 0.5) * 0.45 + (hover.current ? 0.5 : 0);
   });
-  return (
-    <group ref={ref} rotation={[0, yaw, 0]} scale={0}>
-      <mesh
-        geometry={geometry}
-        castShadow
-        onClick={
-          onPick
-            ? (e) => {
-                e.stopPropagation();
-                onPick();
-              }
-            : undefined
-        }
-        onPointerOver={() => {
+
+  const handlers = onPick
+    ? {
+        onClick: (e: { stopPropagation: () => void }) => {
+          e.stopPropagation();
+          onPick();
+        },
+        onPointerOver: () => {
           hover.current = true;
-          if (onPick) document.body.style.cursor = "pointer";
-        }}
-        onPointerOut={() => {
+          document.body.style.cursor = "pointer";
+        },
+        onPointerOut: () => {
           hover.current = false;
           document.body.style.cursor = "";
-        }}
-      >
-        <meshStandardMaterial ref={mat} color={colour} emissive={colour} emissiveIntensity={0.6} roughness={0.35} />
+        },
+      }
+    : {};
+  return (
+    <group ref={group}>
+      <mesh ref={outline} geometry={edge} position={[0, -0.015, 0]} {...handlers}>
+        <meshBasicMaterial color="#ffffff" side={DoubleSide} />
+      </mesh>
+      <mesh ref={top} geometry={body} {...handlers}>
+        <meshStandardMaterial ref={mat} color={colour} emissive={colour} emissiveIntensity={0.6} roughness={0.4} side={DoubleSide} />
       </mesh>
     </group>
   );
 }
 
-// At a fork, a glowing arrow down each path in the same colours as the buttons. They
-// appear once the token has finished hopping there; the player at the fork can click one.
-export function ForkArrows(props: { layout: Board; state: BoardState; animator: TokenAnimator; meId: string | null; onPick: (next: string) => void }) {
-  const { layout, state, animator, meId, onPick } = props;
+// At a fork, a glowing arrow runs along each path (curving with the track) in the same
+// colours as the buttons. They draw themselves in once the token has arrived; the
+// player at the fork can click one to go that way.
+export function ForkArrows(props: { layout: Board; state: BoardState; animator: TokenAnimator; meId: string | null; ready: boolean; onPick: (next: string) => void }) {
+  const { layout, state, animator, meId, ready, onPick } = props;
   const m = state.move;
   const c = m?.choice;
-  if (!m || !c || c.kind !== "fork") return null;
-  const from = spaceToWorld(layout, c.spaceId);
+  const options = c?.kind === "fork" ? c.options : null;
+  const forkSpace = c?.kind === "fork" ? c.spaceId : null;
+  const key = options?.join(",") ?? "";
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const paths = useMemo(() => (options && forkSpace ? options.map((o) => pathPoints(layout, forkSpace, o)) : []), [layout, forkSpace, key]);
+  if (!m || !options || !forkSpace) return null;
   const mine = m.playerId === meId;
   return (
     <group>
-      {c.options.map((o, i) => (
+      {options.map((o, i) => (
         <PathArrow
-          key={`${c.spaceId}-${o}-${m.rolledAt}`}
-          from={from}
-          to={spaceToWorld(layout, o)}
+          key={`${forkSpace}-${o}-${m.rolledAt}`}
+          points={paths[i]}
           colour={FORK_COLOURS[i % FORK_COLOURS.length]}
-          ready={() => !animator.busy(m.playerId)}
+          ready={() => ready && !animator.busy(m.playerId)}
           onPick={mine ? () => onPick(o) : null}
         />
       ))}

@@ -969,7 +969,7 @@ button.link {
 .hud-feed {
   left: 14px;
   bottom: 14px;
-  max-width: min(400px, calc(100vw - 24px));
+  max-width: min(340px, calc(100vw - 24px));
   list-style: none;
   margin: 0;
   padding: 0;
@@ -1295,9 +1295,11 @@ button.link {
   color: #5a3d00;
   text-shadow: 0 1px 0 rgba(255, 255, 255, 0.5);
 }
+/* events match their yellow tiles */
 .banner.event {
-  background: linear-gradient(180deg, #8b5cf6, #6d3fe0);
-  text-shadow: 0 2px 0 rgba(0, 0, 0, 0.2);
+  background: linear-gradient(180deg, #ffd84d, #f2b700);
+  color: #4a3300;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.5);
 }
 .banner .icon {
   width: 1.1em;
@@ -1372,4 +1374,244 @@ button.link {
 .banner.info {
   background: linear-gradient(180deg, #4b95f0, #2f6fd0);
   text-shadow: 0 2px 0 rgba(0, 0, 0, 0.2);
+}
+
+/* ---- action dock: the big prompt for whatever you have to do right now ---- */
+.action-dock {
+  position: absolute;
+  z-index: 20;
+  left: 50%;
+  bottom: 82px;
+  transform: translateX(-50%);
+  width: min(580px, calc(100vw - 24px));
+  display: flex;
+  justify-content: center;
+  pointer-events: none;
+}
+.dock-card {
+  --tone: #2fb35a;
+  --tone-dark: #1f8a43;
+  --tone-text: #fff;
+  position: relative;
+  pointer-events: auto;
+  width: 100%;
+  padding: 34px 20px 18px;
+  border-radius: 26px;
+  border: 4px solid #fff;
+  background: radial-gradient(120% 90% at 50% 0%, rgba(255, 255, 255, 0.28), rgba(255, 255, 255, 0) 60%), linear-gradient(180deg, var(--tone), var(--tone-dark));
+  color: var(--tone-text);
+  text-align: center;
+  box-shadow: 0 8px 0 color-mix(in srgb, var(--tone-dark) 75%, #000), 0 18px 40px rgba(20, 30, 60, 0.4);
+  animation: dock-in 0.45s cubic-bezier(0.3, 1.6, 0.5, 1) both;
+}
+@keyframes dock-in {
+  0% {
+    transform: translateY(60px) scale(0.6);
+    opacity: 0;
+  }
+  100% {
+    transform: none;
+    opacity: 1;
+  }
+}
+.dock-card.fork {
+  --tone: #4b95f0;
+  --tone-dark: #2563c9;
+}
+.dock-card.star {
+  --tone: #ffd23f;
+  --tone-dark: #f2a500;
+  --tone-text: #4f3200;
+}
+.dock-card.shop {
+  --tone: #a66ae0;
+  --tone-dark: #7a3dbb;
+}
+.dock-card.event {
+  --tone: #ffd84d;
+  --tone-dark: #ecb000;
+  --tone-text: #4a3300;
+}
+.dock-badge {
+  position: absolute;
+  top: -34px;
+  left: 50%;
+  margin-left: -32px;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(180deg, var(--tone), var(--tone-dark));
+  border: 4px solid #fff;
+  color: var(--tone-text);
+  box-shadow: 0 5px 0 color-mix(in srgb, var(--tone-dark) 75%, #000), 0 8px 16px rgba(20, 30, 60, 0.3);
+  animation: badge-wiggle 2.4s ease-in-out 0.5s infinite;
+}
+.dock-badge .icon {
+  width: 34px;
+  height: 34px;
+  vertical-align: 0;
+}
+.dock-card.fork .dock-badge .icon,
+.dock-card.roll .dock-badge .icon,
+.dock-card.shop .dock-badge .icon {
+  color: #fff;
+}
+@keyframes badge-wiggle {
+  0%,
+  70%,
+  100% {
+    transform: rotate(0) scale(1);
+  }
+  76% {
+    transform: rotate(-12deg) scale(1.08);
+  }
+  84% {
+    transform: rotate(10deg) scale(1.08);
+  }
+  92% {
+    transform: rotate(-5deg) scale(1.02);
+  }
+}
+.dock-title {
+  font: 900 32px/1.05 "Nunito", system-ui, sans-serif;
+  letter-spacing: -0.01em;
+  text-shadow: 0 3px 0 rgba(0, 0, 0, 0.18);
+}
+.dock-card.star .dock-title,
+.dock-card.event .dock-title {
+  text-shadow: 0 2px 0 rgba(255, 255, 255, 0.55);
+}
+.dock-sub {
+  margin-top: 4px;
+  font-size: 15px;
+  font-weight: 800;
+  opacity: 0.9;
+}
+.dock-error {
+  margin: 10px auto 0;
+  padding: 6px 12px;
+  width: fit-content;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.92);
+  color: #a11d1d;
+  font-weight: 800;
+  font-size: 14px;
+}
+.dock-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 16px;
+}
+.dock-button {
+  --b: #fff;
+  --b-dark: #d9cfbd;
+  --b-text: #2a2238;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-width: 120px;
+  padding: 12px 20px;
+  border: 0;
+  border-radius: 16px;
+  background: var(--b);
+  color: var(--b-text);
+  font: 900 18px "Nunito", system-ui, sans-serif;
+  cursor: pointer;
+  box-shadow: 0 5px 0 var(--b-dark), 0 8px 16px rgba(20, 30, 60, 0.25);
+  transition: transform 0.08s ease, box-shadow 0.08s ease, filter 0.15s ease;
+}
+.dock-button:hover {
+  transform: translateY(-2px) scale(1.03);
+  filter: brightness(1.05);
+  box-shadow: 0 7px 0 var(--b-dark), 0 12px 20px rgba(20, 30, 60, 0.28);
+}
+.dock-button:active {
+  transform: translateY(4px);
+  box-shadow: 0 1px 0 var(--b-dark), 0 3px 8px rgba(20, 30, 60, 0.2);
+}
+.dock-button.big {
+  font-size: 24px;
+  padding: 14px 34px;
+}
+.dock-button.go {
+  --b: #fff;
+  --b-dark: #b9e8c8;
+  --b-text: #1f8a43;
+  width: 100%;
+  max-width: 340px;
+  font-size: 28px;
+  animation: go-pulse 1.4s ease-in-out infinite;
+}
+@keyframes go-pulse {
+  50% {
+    transform: scale(1.04);
+  }
+}
+.dock-button.gold {
+  --b: #fff;
+  --b-dark: #f0cf7a;
+  --b-text: #8a5a00;
+}
+.dock-button.quiet {
+  --b: rgba(255, 255, 255, 0.25);
+  --b-dark: rgba(0, 0, 0, 0.18);
+  --b-text: inherit;
+  min-width: 0;
+  font-size: 16px;
+  box-shadow: 0 4px 0 var(--b-dark);
+}
+.dock-button.path {
+  --b: var(--path);
+  --b-dark: color-mix(in srgb, var(--path) 65%, #000);
+  --b-text: #fff;
+  border: 3px solid #fff;
+}
+.dock-button.path .icon {
+  width: 1.3em;
+  height: 1.3em;
+}
+.dock-button .price {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  opacity: 0.85;
+  font-variant-numeric: tabular-nums;
+}
+.dock-button .dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  box-shadow: 0 0 0 2px #fff, 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+@media (max-width: 720px) {
+  .action-dock {
+    left: 8px;
+    right: 8px;
+    width: auto;
+    transform: none;
+    bottom: calc(var(--sheet-h, 120px) + 14px);
+  }
+  .dock-card {
+    padding: 30px 14px 14px;
+    border-radius: 22px;
+  }
+  .dock-title {
+    font-size: 24px;
+  }
+  .dock-sub {
+    font-size: 13px;
+  }
+  .dock-button {
+    min-width: 0;
+    font-size: 16px;
+    padding: 10px 14px;
+  }
+  .dock-button.go {
+    font-size: 22px;
+  }
 }
