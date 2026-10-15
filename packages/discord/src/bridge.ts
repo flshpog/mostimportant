@@ -309,6 +309,8 @@ export class BoardDiscord {
       await msg.edit({ content: `${prefix} ${result}` });
     };
     if (e.type === "EventDrawn") {
+      // a beat after the move that got them here, so it doesn't run together
+      await sleep(gap);
       const prefix = `${name(e.playerId)} landed on an event space.`;
       const msg = await ch.send({ content: `${prefix} ...`, allowedMentions: NO_MENTIONS });
       const faces = Object.values(EVENT_NAMES).map((n) => `${n}...`);

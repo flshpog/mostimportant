@@ -51,6 +51,8 @@ export function describeEvent(
     case "ForkChosen":
       return event.auto ? `${name(event.playerId)} ran out of time and took the default path.` : null;
     case "LandedOnSpace":
+      // an event space gets its own line once the event is drawn
+      if (event.spaceType === "event") return null;
       return `${name(event.playerId)} landed on ${event.spaceType === "start" ? "the start" : `a ${event.spaceType} space`}.`;
     case "CoinsChanged":
       if (event.reason === "star" || event.reason === "shop" || event.reason === "event" || event.reason === "item") return null;

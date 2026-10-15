@@ -89,6 +89,23 @@ describe("the bridge", () => {
     expect(steal).toContain("**Peach** takes **5 coins** from **Toad**.");
   });
 
+  it("an event reached by a follow-up plays once, after the move that got there", async () => {
+    r.season.events = { coinSteal: { weight: 0, percents: [5, 50] }, starSteal: { weight: 0, price: 40 }, swap: { weight: 1 } };
+    await r.service.hostAction("mario-stadium", { type: "startBoard" }, HOST);
+    await r.service.hostAction("mario-stadium", { type: "movePlayer", playerId: PEACH, spaceId: "s15" }, HOST);
+    await r.service.hostAction("mario-stadium", { type: "grantItem", playerId: PEACH, itemId: "reroll-block" } as never, HOST);
+    await settle(r);
+    await r.service.useItem(PEACH, "reroll-block", null, "discord");
+    await r.service.roll(PEACH, "discord");
+    await settle(r);
+    const before = r.channel.texts().length;
+    await r.service.pickDie(PEACH, 6, "discord"); // onto the s21 event space
+    await settle(r);
+    const after = r.channel.texts().slice(before);
+    expect(after[0]).toBe("**Peach** chose 6.");
+    expect(after.filter((t) => t.includes("landed on an event space"))).toEqual(["**Peach** landed on an event space. It's **Swap Places**."]);
+  });
+
   it("keeps one board image and edits it in place", async () => {
     const images = r.channel.live().filter((m) => m.files.length);
     expect(images).toHaveLength(1);

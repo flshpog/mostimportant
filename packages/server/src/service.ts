@@ -222,7 +222,7 @@ export class BoardService extends EventEmitter {
     rt.entry = n;
     rt.state = state;
     rt.store.writeSnapshot({ state, entry: n, seq: rt.seq });
-    if (stored.length) this.emit("events", rt.id, stored, state, meta);
+    if (stored.length) this.emit("events", rt.id, [...stored], state, meta);
     return stored;
   }
 
@@ -239,7 +239,8 @@ export class BoardService extends EventEmitter {
     const before = rt.state;
     const result = apply(this.ctx(rt), before, action);
     if (action.type === "tick" && !result.events.length) return [];
-    const out = this.commit(rt, { kind: "action", by: meta.by, action, before }, result.state, result.events, meta);
+    // a copy: listeners hold on to each commit's own list, so it mustn't grow
+    const out = [...this.commit(rt, { kind: "action", by: meta.by, action, before }, result.state, result.events, meta)];
     // Shops and event spaces wait on the server, not the player: a shop for its stock
     // (a few distinct items at random), an event space for its draw. One can lead
     // straight on to the other, so keep going until neither is waiting.

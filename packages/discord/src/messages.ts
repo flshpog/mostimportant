@@ -183,7 +183,7 @@ export function promptMessage(boardId: string, state: BoardState, layout: Board,
         ? `${who}, ${bold("Coin Steal")}. Pick a tribemate and take 5 to 50% of their coins.\n-# ${until}you'll steal from whoever has the most.`
         : c.kind === "starSteal"
           ? `${who}, ${bold("Star Steal")}. Pay ${bold(`${c.price} coins`)} to take a star from someone? You have ${p.coins}.\n-# ${until}you'll pass on it.`
-          : `${who}, ${bold("Swap Places")}. Pick someone to trade spots with.\n-# ${until}you'll stay where you are.`;
+          : `${who}, ${bold("Swap Places")}. Pick someone to trade places with.\n-# ${until}you'll stay where you are.`;
     return { content: text, components: rows(buttons), allowedMentions: mention };
   }
   if (c.kind === "dicePick") {
