@@ -248,7 +248,7 @@ export function BoardHud(props: {
       </>,
     );
   } else if (props.ready && choice?.kind === "shop") {
-    // the tribe advantage in the middle, this shop's items around it
+    // this visit's two items either side of the tribe advantage
     const stock = shopStock(ctx, state, choice.stock);
     const offer = shopOffer(ctx, state, choice.stock, meId);
     const canBuy = new Set(offer.items.map((i) => i.id));
@@ -272,20 +272,21 @@ export function BoardHud(props: {
         {offer.bagFull ? " (full)" : ""}
       </>,
       <>
-        <div className="shop-grid">
+        <div className={`shop-grid ${stock.advantage ? "with-advantage" : ""}`}>
+          {stock.items.slice(0, 1).map(tile)}
           {stock.advantage && (
             <button className="item-tile advantage" disabled={!offer.advantage} onClick={() => actions.shop(ADVANTAGE_ID)}>
+              <span className="adv-label">Tribe Advantage</span>
               <img src={`${import.meta.env.BASE_URL}advantages/${stock.advantage.image}`} alt="" />
-              <span className="adv-text">
-                <b>Tribe Advantage</b>
-                <small>One per tribe. The hosts hand it over.</small>
-              </span>
+              <b>{stock.advantage.name}</b>
+              {stock.advantage.description && <small>{stock.advantage.description}</small>}
+              <em>One per tribe · doesn't take a bag slot · the hosts hand it over</em>
               <span className="price">
                 {stock.advantage.price} <CoinIcon />
               </span>
             </button>
           )}
-          {stock.items.map(tile)}
+          {stock.items.slice(1).map(tile)}
         </div>
         <button className="dock-button quiet" onClick={() => actions.shop(null)}>
           Leave

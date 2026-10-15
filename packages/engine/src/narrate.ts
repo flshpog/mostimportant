@@ -67,9 +67,7 @@ export function describeEvent(
     case "ShopOpened":
       return `${name(event.playerId)} stopped at the shop.`;
     case "ShopUnaffordable":
-      return event.bagFull
-        ? `${name(event.playerId)} passed the shop, but their bag is full.`
-        : `${name(event.playerId)} passed the shop but can't afford anything.`;
+      return `${name(event.playerId)} passed the shop without stopping.`;
     case "AdvantagePurchased":
       return `${name(event.playerId)} bought the Tribe Advantage for ${coins(event.price)}!`;
     case "ItemUsed":

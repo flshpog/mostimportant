@@ -200,21 +200,28 @@ export function promptMessage(boardId: string, state: BoardState, layout: Board,
   const ctx = { layout, rules: config };
   const stock = shopStock(ctx, state, c.stock);
   const offer = shopOffer(ctx, state, c.stock, p.id);
-  const canBuy = new Set(offer.items.map((i) => i.id));
+  // This post is public, so it says nothing about the bag: every item the player has
+  // the coins for gets a button, and a full bag is turned away privately.
+  const affordable = stock.items.filter((i) => i.price <= p.coins);
+  const canBuy = new Set(affordable.map((i) => i.id));
   const lines = stock.items.map((i) => `${canBuy.has(i.id) ? "•" : "◦"} ${bold(i.name)} · ${i.price} coins${i.description ? ` — ${i.description}` : ""}`);
-  if (stock.advantage) lines.push(`✦ ${bold("Tribe Advantage")} · ${stock.advantage.price} coins (one per tribe)`);
-  const buttons = offer.items
+  if (stock.advantage) {
+    lines.push(
+      `✦ ${bold(`Tribe Advantage: ${stock.advantage.name}`)} · ${stock.advantage.price} coins · one per tribe, doesn't take a bag slot`,
+      ...(stock.advantage.description ? [`> ${stock.advantage.description}`] : []),
+    );
+  }
+  const buttons = affordable
     .slice(0, 23)
     .map((i) => new ButtonBuilder().setCustomId(buttonId({ kind: "shop", boardId, itemId: i.id })).setLabel(`${i.name} (${i.price})`.slice(0, 80)).setStyle(ButtonStyle.Primary));
   if (offer.advantage && stock.advantage) {
-    buttons.push(new ButtonBuilder().setCustomId(buttonId({ kind: "shop", boardId, itemId: ADVANTAGE_ID })).setLabel(`Tribe Advantage (${stock.advantage.price})`).setStyle(ButtonStyle.Success));
+    buttons.push(new ButtonBuilder().setCustomId(buttonId({ kind: "shop", boardId, itemId: ADVANTAGE_ID })).setLabel(`${stock.advantage.name} (${stock.advantage.price})`.slice(0, 80)).setStyle(ButtonStyle.Success));
   }
   buttons.push(new ButtonBuilder().setCustomId(buttonId({ kind: "shop", boardId, itemId: null })).setLabel("Leave the shop").setStyle(ButtonStyle.Secondary));
   const variant = layout.spaces.find((s) => s.id === c.spaceId)?.shop;
   const shopName = variant ? config.shop.variants[variant]?.name ?? "shop" : "shop";
-  const bag = `${p.items.length}/${config.shop.bagSize}`;
   return {
-    content: `🛍️ ${who}, welcome to the ${shopName.toLowerCase()}! You have ${bold(`${p.coins} coins`)} · bag ${bag}${offer.bagFull ? " (full)" : ""}.\n${lines.join("\n")}\n-# ${until}you'll leave without buying.`,
+    content: `🛍️ ${who}, welcome to the ${shopName.toLowerCase()}! You have ${bold(`${p.coins} coins`)}.\n${lines.join("\n")}\n-# ${until}you'll leave without buying.`,
     components: rows(buttons),
     allowedMentions: mention,
   };

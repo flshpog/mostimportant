@@ -222,6 +222,7 @@ export function eventFor<E extends { type: string }>(event: E, viewer: string | 
     return { type: "ShopPurchase", playerId: e.playerId, itemId: "", price: 0 } as unknown as E;
   }
   if (e.type === "ItemGranted" || e.type === "ItemRemoved") return { ...event, itemId: "" };
+  if (e.type === "ShopUnaffordable") return { ...event, bagFull: undefined };
   return event;
 }
 

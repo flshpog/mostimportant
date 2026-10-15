@@ -92,10 +92,16 @@ export function Preview() {
     if (!first) return;
     let s = step(state, first);
     // the shop and the event draw answer themselves; everything else waits for a click
-    for (let i = 0; s.move?.choice?.kind === "eventDraw" && i < 50; i++) {
+    for (let i = 0; (s.move?.choice?.kind === "eventDraw" || s.move?.choice?.kind === "shopDraw") && i < 50; i++) {
       const pid = s.move!.playerId;
-      {
-        const pick = <T,>(xs: readonly T[]) => xs[Math.floor(Math.random() * xs.length)];
+      const pick = <T,>(xs: readonly T[]) => xs[Math.floor(Math.random() * xs.length)];
+      if (s.move!.choice!.kind === "shopDraw") {
+        // like the server: a couple of distinct items at random
+        const pool = season.shop.items.map((x) => x.id);
+        const items: string[] = [];
+        while (items.length < Math.min(season.shop.stockSize, pool.length)) items.push(pick(pool.filter((x) => !items.includes(x))));
+        s = step(s, { type: "stockShop", playerId: pid, items, now });
+      } else {
         // ?event=coinSteal (or starSteal, swap) forces the draw
         const forced = window.location.hash.match(/event=(coinSteal|starSteal|swap)/)?.[1] as "coinSteal" | "starSteal" | "swap" | undefined;
         s = step(s, { type: "drawEvent", playerId: pid, event: forced ?? pick(["coinSteal", "starSteal", "swap"] as const), percent: pick(season.events.coinSteal.percents), now });

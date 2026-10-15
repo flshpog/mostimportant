@@ -1573,9 +1573,13 @@ button.link {
 /* the tribe advantage sits in the middle of the shop */
 .shop-grid {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 8px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
   width: 100%;
+  align-items: stretch;
+}
+.shop-grid.with-advantage {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.5fr) minmax(0, 1fr);
 }
 .item-tile {
   display: grid;
@@ -1628,27 +1632,38 @@ button.link {
   font-weight: 900;
   font-size: 14px;
 }
-/* centred above the items, wider */
+/* the tribe advantage: the middle tile, gold, with its whole description */
 .item-tile.advantage {
-  grid-column: 1 / -1;
-  justify-self: center;
-  width: min(100%, 340px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
   background: #fff4cf;
+  gap: 4px;
 }
-.item-tile.advantage .adv-text {
-  display: grid;
-  text-align: left;
+.item-tile.advantage .adv-label {
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 1px 8px;
+  border: 2px solid var(--ink);
+  border-radius: 999px;
+  background: #ffd43b;
 }
 .item-tile.advantage b {
   font-size: 16px;
 }
+.item-tile.advantage small {
+  -webkit-line-clamp: unset;
+  display: block;
+  color: var(--ink);
+}
+.item-tile.advantage em {
+  font-size: 10px;
+  font-style: normal;
+  font-weight: 700;
+  color: var(--ink-soft);
+}
 .item-tile.advantage img {
-  width: 56px;
-  height: 56px;
+  width: 64px;
+  height: 64px;
   object-fit: contain;
 }
 .dock-card.items .dock-buttons,
@@ -1688,18 +1703,16 @@ button.link {
   background: transparent;
   border: 2px dashed var(--paper-2);
 }
-.standings .items {
-  display: flex;
-  gap: 2px;
-}
 @media (max-width: 720px) {
-  .shop-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+  /* the advantage across the top, the two items under it */
+  .shop-grid.with-advantage {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
   .item-tile.advantage {
-    width: 100%;
+    grid-column: 1 / -1;
+    order: -1;
   }
-  .item-tile small {
+  .item-tile:not(.advantage) small {
     display: none;
   }
   .dock-card.items .item-tile {
