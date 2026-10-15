@@ -49,9 +49,18 @@ describe("http basics", () => {
 describe("boards and visibility", () => {
   beforeEach(() => seedBoard(h));
 
-  it("creates the four configured boards; hosts see all of them", async () => {
+  it("creates the four tribe boards and Redemption Island; hosts see all of them", async () => {
     const r = await h.api("/api/boards", { as: HOST });
-    expect(r.body.boards.map((b: { id: string }) => b.id)).toEqual(["mario-stadium", "luigis-mansion", "warioware-inc", "waluigi-pinball"]);
+    expect(r.body.boards.map((b: { id: string }) => b.id)).toEqual(["mario-stadium", "luigis-mansion", "warioware-inc", "waluigi-pinball", "redemption-island"]);
+  });
+
+  it("the merge board only exists once it has a channel", async () => {
+    await h.close();
+    h = await startHarness({ merge: { id: "merge", name: "Yoshi's Island", layout: "merge", channelId: "1560049999999999999", starStart: "s38" } });
+    const r = await h.api("/api/boards", { as: HOST });
+    expect(r.body.boards.map((b: { id: string }) => b.id)).toContain("merge");
+    const merge = await h.api("/api/boards/merge", { as: HOST });
+    expect(merge.body.state.star).toBe("s38");
   });
 
   it("a player sees only their own board", async () => {

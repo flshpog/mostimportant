@@ -1706,3 +1706,8 @@ button.link {
     width: 110px;
   }
 }
+
+/* night boards (the underworld): a dark purple sky behind the scene */
+.board-page.night {
+  background: #160d29;
+}

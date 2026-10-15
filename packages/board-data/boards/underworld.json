@@ -1,0 +1,51 @@
+{
+  "id": "underworld",
+  "name": "The Underworld",
+  "reference": {
+    "image": "",
+    "width": 1000,
+    "height": 800
+  },
+  "world": {
+    "scale": 0.042,
+    "cx": 500,
+    "cy": 400,
+    "tileY": 0.05,
+    "model": "models/board-underworld.glb",
+    "theme": "night"
+  },
+  "startSpace": "s01",
+  "bridges": [],
+  "spaces": [
+    {"id": "s01", "type": "start", "pos": {"x": 0.5, "y": 0.8125}, "next": ["s02"]},
+    {"id": "s02", "type": "blue", "pos": {"x": 0.5737, "y": 0.81}, "next": ["s03"]},
+    {"id": "s03", "type": "red", "pos": {"x": 0.6467, "y": 0.7973}, "next": ["s04"]},
+    {"id": "s04", "type": "blue", "pos": {"x": 0.7163, "y": 0.7674}, "next": ["s05"]},
+    {"id": "s05", "type": "green", "pos": {"x": 0.7759, "y": 0.7137}, "next": ["s06"]},
+    {"id": "s06", "type": "blue", "pos": {"x": 0.8148, "y": 0.6362}, "next": ["s07"]},
+    {"id": "s07", "type": "blue", "pos": {"x": 0.8291, "y": 0.5461}, "next": ["s08", "s27"]},
+    {"id": "s08", "type": "blue", "pos": {"x": 0.8291, "y": 0.4539}, "next": ["s09"]},
+    {"id": "s09", "type": "blue", "pos": {"x": 0.8148, "y": 0.3638}, "next": ["s10"]},
+    {"id": "s10", "type": "red", "pos": {"x": 0.7759, "y": 0.2863}, "next": ["s11"]},
+    {"id": "s11", "type": "event", "pos": {"x": 0.7163, "y": 0.2326}, "next": ["s12"]},
+    {"id": "s12", "type": "green", "pos": {"x": 0.6467, "y": 0.2027}, "next": ["s13"]},
+    {"id": "s13", "type": "blue", "pos": {"x": 0.5737, "y": 0.19}, "next": ["s14"]},
+    {"id": "s14", "type": "blue", "pos": {"x": 0.5, "y": 0.1875}, "next": ["s15"]},
+    {"id": "s15", "type": "red", "pos": {"x": 0.4263, "y": 0.19}, "next": ["s16"]},
+    {"id": "s16", "type": "blue", "pos": {"x": 0.3533, "y": 0.2027}, "next": ["s17"]},
+    {"id": "s17", "type": "green", "pos": {"x": 0.2837, "y": 0.2326}, "next": ["s18"]},
+    {"id": "s18", "type": "blue", "pos": {"x": 0.2241, "y": 0.2863}, "next": ["s19"]},
+    {"id": "s19", "type": "red", "pos": {"x": 0.1852, "y": 0.3638}, "next": ["s20"]},
+    {"id": "s20", "type": "shop", "pos": {"x": 0.1709, "y": 0.4539}, "next": ["s21"], "passEffect": true},
+    {"id": "s21", "type": "blue", "pos": {"x": 0.1709, "y": 0.5461}, "next": ["s22"]},
+    {"id": "s22", "type": "red", "pos": {"x": 0.1852, "y": 0.6362}, "next": ["s23"]},
+    {"id": "s23", "type": "event", "pos": {"x": 0.2241, "y": 0.7137}, "next": ["s24"]},
+    {"id": "s24", "type": "green", "pos": {"x": 0.2837, "y": 0.7674}, "next": ["s25"]},
+    {"id": "s25", "type": "blue", "pos": {"x": 0.3533, "y": 0.7973}, "next": ["s26"]},
+    {"id": "s26", "type": "blue", "pos": {"x": 0.4263, "y": 0.81}, "next": ["s01"]},
+    {"id": "s27", "type": "blue", "pos": {"x": 0.7308, "y": 0.4854}, "next": ["s28"]},
+    {"id": "s28", "type": "green", "pos": {"x": 0.634, "y": 0.4207}, "next": ["s29"]},
+    {"id": "s29", "type": "red", "pos": {"x": 0.5388, "y": 0.352}, "next": ["s30"]},
+    {"id": "s30", "type": "red", "pos": {"x": 0.4453, "y": 0.2794}, "next": ["s16"]}
+  ]
+}

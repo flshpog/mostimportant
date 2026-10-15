@@ -17,14 +17,25 @@ const rules = { ...season, turns: { ...season.turns, cooldownHours: 0 } };
 // scene and the animations on any device without logging in. Roll plays locally; every
 // player rolls in turn; forks, the star and events wait for their buttons, the shop
 // is skipped.
+// ?board=merge (Yoshi's Island) or ?board=underworld (Redemption Island) previews
+// those boards instead of the tribe board.
+const PREVIEW_BOARDS: Record<string, { boardId: string; name: string; star: string | null; starts: [string, string, string, string] }> = {
+  main: { boardId: "mario-stadium", name: "Preview", star: "s62", starts: ["s45", "s45", "s88", "s12"] },
+  merge: { boardId: "merge", name: "Yoshi's Island", star: "s38", starts: ["s05", "s05", "s24", "s50"] },
+  underworld: { boardId: "redemption-island", name: "The Underworld", star: null, starts: ["s03", "s03", "s12", "s22"] },
+};
+const previewBoard = () => window.location.hash.match(/board=(merge|underworld)/)?.[1] ?? "main";
+
 export function Preview() {
-  const layout = loadLayouts().main;
+  const which = previewBoard();
+  const board = PREVIEW_BOARDS[which];
+  const layout = loadLayouts()[which];
   const ctx = useMemo(() => ({ layout, rules }), [layout]);
   const [state, setState] = useState<BoardState>(() => {
     let s = createBoardState(ctx, {
       // a real board id, so its shops stock that board's tribe advantage
-      boardId: "mario-stadium",
-      starSpace: "s62",
+      boardId: board.boardId,
+      starSpace: board.star,
       players: [
         // a mid-game spread, so every event has something to work with: Peach can
         // afford a star or a star steal, and Toad and Yoshi have stars to take
@@ -40,7 +51,9 @@ export function Preview() {
     const hash = window.location.hash;
     // and ?event puts her just before the s21 event space (her first roll is a 1)
     // and ?shop just before the purple bottom-left shop (?pinkshop: the pink top one)
-    const p1Start = hash.includes("event")
+    const p1Start = which !== "main"
+      ? board.starts[0]
+      : hash.includes("event")
       ? "s20"
       : hash.includes("star")
         ? "s61"
@@ -51,7 +64,7 @@ export function Preview() {
             : hash.includes("shop")
               ? "s42"
               : "s45";
-    for (const [id, space] of [["p1", p1Start], ["p2", "s45"], ["p3", "s88"], ["p4", "s12"]] as const) {
+    for (const [id, space] of [["p1", p1Start], ["p2", board.starts[1]], ["p3", board.starts[2]], ["p4", board.starts[3]]] as const) {
       s = apply(ctx, s, { type: "movePlayer", playerId: id, spaceId: space, now: 0 }).state;
     }
     return s;
@@ -150,7 +163,7 @@ export function Preview() {
     });
 
   return (
-    <div className="board-page">
+    <div className={`board-page ${layout.world?.theme === "night" ? "night" : ""}`}>
       <div className="board-canvas">
         <Board3D layout={layout} state={state} meId={currentPlayerId(state) ?? "p1"} avatars={{}} animator={animator} starDirector={starDirector} flights={flights} ghostStar={compass && compass !== state.star ? compass : null} ready={settled} onFork={fork} popups={popups} mode={mode} setMode={setMode} quality={window.location.hash.includes("lite") ? "lite" : "full"} />
       </div>
@@ -159,7 +172,7 @@ export function Preview() {
       <EventReveal show={reveal} onDone={clearReveal} />
       <StealWheel show={wheel} onDone={clearWheel} />
       <BoardHud
-        boardName="Preview"
+        boardName={board.name}
         boards={[{ id: "preview", name: "Preview" }]}
         boardId="preview"
         onBoard={() => undefined}

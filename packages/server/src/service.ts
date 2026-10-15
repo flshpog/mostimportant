@@ -132,6 +132,10 @@ export class BoardService extends EventEmitter {
   init() {
     const config = this.opts.loadConfig();
     const defs = config.boards.map((b) => ({ ...b }));
+    // the merge board, once the hosts give it a channel
+    if (config.merge?.channelId) {
+      defs.push({ id: config.merge.id, name: config.merge.name, layout: config.merge.layout, channelId: config.merge.channelId, starStart: config.merge.starStart });
+    }
     if (config.redemptionIsland.layout) {
       defs.push({
         id: REDEMPTION_ISLAND_ID,

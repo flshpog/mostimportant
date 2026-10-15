@@ -447,10 +447,11 @@ function backdropFor(layoutId: string): Backdrop | null {
   return backdrops.get(layoutId) ?? null;
 }
 
-function drawSky(ctx: SKRSContext2D) {
+function drawSky(ctx: SKRSContext2D, night = false) {
   const g = ctx.createLinearGradient(0, 0, 0, H);
-  g.addColorStop(0, "#3d8fe8");
-  g.addColorStop(1, "#a9dcff");
+  // night boards (the underworld) get a dark purple sky
+  g.addColorStop(0, night ? "#0f0820" : "#3d8fe8");
+  g.addColorStop(1, night ? "#2a1846" : "#a9dcff");
   ctx.fillStyle = g;
   ctx.fillRect(0, 0, W, H);
 }
@@ -470,7 +471,7 @@ export function renderBoard(input: RenderInput): Buffer {
     const scale = Math.min((PANEL_X - 20) / backdrop.width, (H - 20) / backdrop.height);
     const ox = 10 + (PANEL_X - 20 - backdrop.width * scale) / 2;
     const oy = 10 + (H - 20 - backdrop.height * scale) / 2;
-    drawSky(ctx);
+    drawSky(ctx, input.layout.world?.theme === "night");
     ctx.drawImage(backdrop.image, ox, oy, backdrop.width * scale, backdrop.height * scale);
     at = (id) => {
       const [x, y] = backdrop.spaces[id] ?? [0, 0];
@@ -512,7 +513,7 @@ function drawScene(input: RenderInput, opts: { tokens?: boolean } = {}): { canva
     canvas = createCanvas(backdrop.width, backdrop.height);
     const ctx = canvas.getContext("2d");
     ctx.scale(ratio, ratio);
-    drawSky(ctx);
+    drawSky(ctx, input.layout.world?.theme === "night");
     ctx.drawImage(backdrop.image, 0, 0, backdrop.width / ratio, backdrop.height / ratio);
     at = (id) => {
       const [x, y] = backdrop.spaces[id] ?? [0, 0];

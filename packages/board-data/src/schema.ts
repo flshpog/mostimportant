@@ -39,7 +39,15 @@ export const BoardSchema = z
     // How the 3D scene maps to this layout: world = (pixel - c) * scale, in metres, with
     // the image's y axis pointing away from the viewer. Shared by Blender and the website.
     world: z
-      .object({ scale: z.number().positive(), cx: z.number(), cy: z.number(), tileY: z.number(), model: z.string() })
+      .object({
+        scale: z.number().positive(),
+        cx: z.number(),
+        cy: z.number(),
+        tileY: z.number(),
+        model: z.string(),
+        // Lighting and mood on the website: a sunny day, or night (the underworld).
+        theme: z.enum(["day", "night"]).optional(),
+      })
       .strict()
       .optional(),
     startSpace: SpaceIdSchema,
@@ -164,6 +172,18 @@ export const SeasonConfigSchema = z
       .strict(),
     events: EventsSchema,
     boards: z.array(BoardInstanceSchema).min(1),
+    // The merge board: one board for everyone left once the tribes merge. It's only
+    // created once it has a channel.
+    merge: z
+      .object({
+        id: z.string().min(1),
+        name: z.string().min(1),
+        layout: z.string().min(1),
+        channelId: SnowflakeSchema.nullable(),
+        starStart: SpaceIdSchema.optional(),
+      })
+      .strict()
+      .optional(),
     redemptionIsland: z
       .object({
         channelId: SnowflakeSchema,

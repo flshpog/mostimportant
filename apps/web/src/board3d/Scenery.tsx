@@ -6,7 +6,7 @@ import { Box3, Group, InstancedMesh, Matrix4, Mesh, Vector3, type BufferGeometry
 // the camera to steer around. Filled in once the model loads.
 export const occluders: { boxes: Box3[] } = { boxes: [] };
 // three.js turns spaces in node names into underscores
-const OCCLUDER = /^(tree_|Mushroom[ _]|Shop[ _]|Signpost[ _]|Start[ _]|rock|bush)/;
+const OCCLUDER = /^(tree_|Mushroom[ _]|Shop[ _]|Signpost[ _]|Start[ _]|rock|bush|Egg[ _]|Grave[ _]|House|Lantern[ _])/;
 
 function findOccluders(root: Object3D): Box3[] {
   root.updateMatrixWorld(true);

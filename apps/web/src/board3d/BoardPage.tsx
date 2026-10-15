@@ -154,7 +154,7 @@ export function BoardPage() {
     .slice(0, 6);
 
   return (
-    <div className="board-page">
+    <div className={`board-page ${lay.world?.theme === "night" ? "night" : ""}`}>
       <div className="board-canvas">
         <Board3D layout={lay} state={state} meId={me.user.id} avatars={{ ...avatars, [me.user.id]: me.user.avatar }} animator={animator} starDirector={starDirector} flights={flights} ghostStar={compass && compass !== state.star ? compass : null} ready={settled} onFork={(next) => run(() => api("/api/play/fork", { body: { next } }))} popups={popups} mode={mode} setMode={setMode} />
       </div>

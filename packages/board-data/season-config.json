@@ -61,9 +61,16 @@
     { "id": "warioware-inc", "name": "WarioWare, Inc.", "layout": "main", "channelId": "1560048807012470784", "starStart": "s62" },
     { "id": "waluigi-pinball", "name": "Waluigi Pinball", "layout": "main", "channelId": "1560048870036078754", "starStart": "s62" }
   ],
+  "merge": {
+    "id": "merge",
+    "name": "Yoshi's Island",
+    "layout": "merge",
+    "channelId": null,
+    "starStart": "s38"
+  },
   "redemptionIsland": {
     "channelId": "1560049266498469989",
-    "layout": null,
+    "layout": "underworld",
     "resetCoins": 0
   }
 }

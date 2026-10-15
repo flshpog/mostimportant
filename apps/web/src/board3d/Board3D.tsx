@@ -8,6 +8,7 @@ import { allSpacePositions } from "./coords";
 import { occluders, Scenery, SceneryBoundary } from "./Scenery";
 import { ForkArrows } from "./ForkArrows";
 import { Flights, type FlightDirector } from "./Flights";
+import { Mist } from "./Mist";
 import { GhostStar, Star, type StarDirector } from "./Star";
 import { Tiles } from "./Tiles";
 import { Tokens, type Popup, type TokenAnimator } from "./Tokens";
@@ -70,7 +71,7 @@ function CameraRig(props: { mode: CamMode; setMode: (m: CamMode) => void; animat
   useEffect(() => {
     const c = ref.current;
     if (!c) return;
-    c.setBoundary(new Box3(new Vector3(-24, -2, -17), new Vector3(24, 8, 17)));
+    c.setBoundary(new Box3(new Vector3(-28, -2, -22), new Vector3(28, 8, 22)));
     c.boundaryFriction = 0.2;
     const onUser = () => setMode({ kind: "free" });
     c.addEventListener("controlstart", onUser);
@@ -185,6 +186,7 @@ export function Board3D(props: {
 }) {
   const { layout, state, meId, avatars, animator, popups, mode, setMode } = props;
   const lite = props.quality === "lite";
+  const night = layout.world?.theme === "night";
   const spacePos = useMemo(() => allSpacePositions(layout), [layout]);
   const starPos = state.star ? spacePos.get(state.star) ?? null : null;
   const model = `${import.meta.env.BASE_URL}${layout.world?.model ?? ""}`;
@@ -199,12 +201,24 @@ export function Board3D(props: {
       gl={{ antialias: true, alpha: true }}
       camera={{ fov: 40, near: 0.5, far: 300, position: OVERVIEW.pos.toArray() }}
     >
-      <hemisphereLight args={["#d6eeff", "#4f9a3e", 1.05]} />
-      <ambientLight intensity={0.25} />
+      {night ? (
+        <>
+          {/* the underworld: moonlight, purple fog and drifting mist */}
+          <hemisphereLight args={["#8f7bd6", "#1c1030", 0.75]} />
+          <ambientLight intensity={0.35} color="#b9a6ff" />
+          <fog attach="fog" args={["#1a1030", 34, 95]} />
+          <Mist radius={15} />
+        </>
+      ) : (
+        <>
+          <hemisphereLight args={["#d6eeff", "#4f9a3e", 1.05]} />
+          <ambientLight intensity={0.25} />
+        </>
+      )}
       <directionalLight
         position={[18, 30, 14]}
-        intensity={2.4}
-        color="#fff1d8"
+        intensity={night ? 1.3 : 2.4}
+        color={night ? "#c8b8ff" : "#fff1d8"}
         castShadow={!lite}
         shadow-mapSize={[2048, 2048]}
         shadow-camera-left={-26}
