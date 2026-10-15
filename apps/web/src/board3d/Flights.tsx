@@ -1,6 +1,7 @@
 import { useMemo, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import { Vector3, type Group, type Mesh } from "three";
+import { ItemDropDirector } from "./ItemDrops";
 import { starGeometry } from "./Star";
 import type { TokenAnimator } from "./Tokens";
 
@@ -19,6 +20,8 @@ export const STAR_FLIGHT_MS = 2400;
 
 export class FlightDirector {
   flights: Flight[] = [];
+  // items coming down to (or popping out of) a pawn
+  items = new ItemDropDirector();
   add(f: Omit<Flight, "start">) {
     this.flights.push({ ...f, start: performance.now() });
   }

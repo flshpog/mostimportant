@@ -8,6 +8,7 @@ import { allSpacePositions } from "./coords";
 import { occluders, Scenery, SceneryBoundary } from "./Scenery";
 import { ForkArrows } from "./ForkArrows";
 import { Flights, type FlightDirector } from "./Flights";
+import { ItemDrops } from "./ItemDrops";
 import { Mist } from "./Mist";
 import { Moon, Wisps } from "./Spooky";
 import { GhostStar, Star, type StarDirector } from "./Star";
@@ -242,6 +243,7 @@ export function Board3D(props: {
       {props.ghostStar && spacePos.get(props.ghostStar) && <GhostStar position={spacePos.get(props.ghostStar)!} />}
       {starPos && <Star position={starPos} director={props.starDirector} offered={state.move?.choice?.kind === "star"} />}
       <Flights director={props.flights} animator={animator} />
+      <ItemDrops director={props.flights.items} animator={animator} />
       <ForkArrows
         layout={layout}
         state={state}

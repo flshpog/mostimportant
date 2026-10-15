@@ -7,6 +7,7 @@ import { spaceToWorld } from "./coords";
 import { DICE_TOTAL_MS, type DiceShow } from "./DiceRoll";
 import { REVEAL_MS, WHEEL_MS, type RevealShow, type WheelShow } from "./EventOverlays";
 import { COIN_FLIGHT_MS, FlightDirector, STAR_FLIGHT_MS } from "./Flights";
+import { DROP, USE_MS } from "./ItemDrops";
 import { ITEM_DICE_COLOURS } from "./ItemArt";
 import { STAR_CAMERA_AT, STAR_LANDED_AT, StarDirector } from "./Star";
 import type { Popup, TokenAnimator } from "./Tokens";
@@ -130,8 +131,10 @@ export function useBoardAnimations(opts: {
             break;
           }
           case "CoinsChanged":
-            // event and item coins get their own timing in the steal cutscenes
-            if (e.reason !== "host" && e.reason !== "event" && e.reason !== "item" && e.delta !== 0) popup(pid, e.delta as number, "coin");
+            // event and item coins get their own timing in the steal cutscenes, and
+            // shop coins in the purchase one
+            if (e.reason === "shop" && e.delta !== 0) popup(pid, e.delta as number, "coin", cursor + DROP.end - 500);
+            else if (e.reason !== "host" && e.reason !== "event" && e.reason !== "item" && e.delta !== 0) popup(pid, e.delta as number, "coin");
             break;
           case "DiePicked":
             showBanner(cursor, {
@@ -144,13 +147,36 @@ export function useBoardAnimations(opts: {
             cursor += 900;
             break;
           case "ItemUsed": {
+            // it pops out of the pawn and bursts
             const item = itemName(e.itemId as string);
             const target = e.targetId as string | undefined;
-            showBanner(cursor, {
+            camera(cursor, { kind: "follow", playerId: pid });
+            later(cursor, () => flights.items.add({ kind: "use", playerId: pid, model: e.itemId as string }));
+            animator.wait(pid, USE_MS);
+            showBanner(cursor + 500, {
               tone: "info",
               text: target ? who(pid, `You used ${item} on ${name(target)}!`, `used ${item} on ${name(target)}!`) : who(pid, `You used ${item}!`, `used ${item}!`),
             });
-            cursor += 1100;
+            cursor += USE_MS;
+            break;
+          }
+          case "ShopPurchase":
+          case "AdvantagePurchased": {
+            // a beam from the sky, and the item drifts down it onto the buyer. Someone
+            // else's purchase arrives as a wrapped present: bags are private.
+            const advantage = e.type === "AdvantagePurchased";
+            const adv = advantage ? season.shop.advantage?.perBoard[state.boardId] : undefined;
+            const advantageName = adv?.name;
+            const model = advantage ? `advantage:${adv?.image ?? ""}` : (e.itemId as string);
+            camera(cursor, { kind: "follow", playerId: pid });
+            later(cursor, () => flights.items.add({ kind: "buy", playerId: pid, model }));
+            animator.wait(pid, DROP.end);
+            const what = advantage ? `the Tribe Advantage${advantageName ? `: ${advantageName}` : ""}` : e.itemId ? itemName(e.itemId as string) : "";
+            showBanner(cursor + DROP.landed, {
+              tone: advantage ? "star" : "info",
+              text: pid === meId ? `You bought ${what}!` : `${name(pid)} bought something!`,
+            });
+            cursor += DROP.end;
             break;
           }
           case "BooBellRang": {
@@ -177,10 +203,6 @@ export function useBoardAnimations(opts: {
             break;
           case "ItemSpent":
             if (itemEffect(e.itemId as string) === "starDiscount") showBanner(cursor, { tone: "star", text: who(pid, "Your Magic Lamp took 10 off the star!", "used a Magic Lamp on the star!") });
-            break;
-          case "AdvantagePurchased":
-            showBanner(cursor, { tone: "star", text: who(pid, "You bought the Tribe Advantage!", "bought the Tribe Advantage!") });
-            cursor += 1200;
             break;
           case "StarsChanged":
             if (e.reason !== "host" && e.reason !== "event" && e.delta !== 0) popup(pid, e.delta as number, "star");

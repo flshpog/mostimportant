@@ -39,7 +39,7 @@ export function Preview() {
       players: [
         // a mid-game spread, so every event has something to work with: Peach can
         // afford a star or a star steal, and Toad and Yoshi have stars to take
-        { id: "p1", name: "Peach", coins: 60, stars: 1, items: ["mushroom", "star-compass", "boo-bell"] },
+        { id: "p1", name: "Peach", coins: 60, stars: 1, items: ["star-compass", "boo-bell"] },
         { id: "p2", name: "Toad", coins: 35, stars: 2 },
         { id: "p3", name: "Yoshi", coins: 18, stars: 1 },
         { id: "p4", name: "Daisy", coins: 44 },
