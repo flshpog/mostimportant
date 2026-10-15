@@ -152,7 +152,7 @@ export function BoardPage() {
   return (
     <div className="board-page">
       <div className="board-canvas">
-        <Board3D layout={lay} state={state} meId={me.user.id} avatars={{ ...avatars, [me.user.id]: me.user.avatar }} animator={animator} starDirector={starDirector} popups={popups} mode={mode} setMode={setMode} />
+        <Board3D layout={lay} state={state} meId={me.user.id} avatars={{ ...avatars, [me.user.id]: me.user.avatar }} animator={animator} starDirector={starDirector} onFork={(next) => run(() => api("/api/play/fork", { body: { next } }))} popups={popups} mode={mode} setMode={setMode} />
       </div>
       <DiceOverlay roll={dice} onDone={clearDice} />
       <Banner banner={banner} onDone={clearBanner} />

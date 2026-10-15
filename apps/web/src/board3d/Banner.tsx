@@ -4,7 +4,7 @@ import { StarIcon } from "./Icons";
 export interface BannerShow {
   key: number;
   text: string;
-  tone: "star" | "event";
+  tone: "star" | "event" | "info";
 }
 
 const BANNER_MS = 2600;

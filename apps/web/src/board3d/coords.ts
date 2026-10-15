@@ -18,21 +18,25 @@ export function allSpacePositions(layout: Board): Map<string, Vector3> {
   return new Map(layout.spaces.map((s) => [s.id, spaceToWorld(layout, s.id)]));
 }
 
-// "Up", "Left"... as seen from the default camera (looking north), for fork buttons.
-export function directionLabel(layout: Board, from: string, to: string): string {
+// Which way a path leaves a fork, as seen from the default camera (looking north):
+// an angle (0 = right, 90 = up) for drawing an arrow, and a word for the button.
+export function directionOf(layout: Board, from: string, to: string): { deg: number; word: string } {
   const a = spaceToWorld(layout, from);
   const b = spaceToWorld(layout, to);
   const deg = (Math.atan2(-(b.z - a.z), b.x - a.x) * 180) / Math.PI;
-  const dirs: [number, string][] = [
-    [0, "➡️ Right"],
-    [45, "↗️ Up-right"],
-    [90, "⬆️ Up"],
-    [135, "↖️ Up-left"],
-    [180, "⬅️ Left"],
-    [-180, "⬅️ Left"],
-    [-135, "↙️ Down-left"],
-    [-90, "⬇️ Down"],
-    [-45, "↘️ Down-right"],
+  const words: [number, string][] = [
+    [0, "Right"],
+    [45, "Up-right"],
+    [90, "Up"],
+    [135, "Up-left"],
+    [180, "Left"],
+    [-180, "Left"],
+    [-135, "Down-left"],
+    [-90, "Down"],
+    [-45, "Down-right"],
   ];
-  return dirs.reduce((best, d) => (Math.abs(d[0] - deg) < Math.abs(best[0] - deg) ? d : best))[1];
+  return { deg, word: words.reduce((best, d) => (Math.abs(d[0] - deg) < Math.abs(best[0] - deg) ? d : best))[1] };
 }
+
+// One colour per path at a fork, shared by the arrows on the board and the buttons.
+export const FORK_COLOURS = ["#2f7de1", "#f97316", "#a855f7", "#10b981"];

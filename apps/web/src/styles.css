@@ -1339,3 +1339,37 @@ button.link {
   height: 0.95em;
   filter: drop-shadow(0 0 2px #fff) drop-shadow(0 0 2px #fff);
 }
+
+/* ---- fork prompt ---- */
+.choice-card.fork {
+  background: linear-gradient(180deg, #e8f1ff, #d6e6ff);
+  box-shadow: inset 0 0 0 2px rgba(47, 125, 225, 0.45);
+  animation: choice-in 0.25s ease-out, fork-glow 1.6s ease-in-out 0.25s infinite;
+}
+.choice-card.fork .choice-title .sub {
+  color: #3d5f92;
+}
+@keyframes fork-glow {
+  50% {
+    box-shadow: inset 0 0 0 2px rgba(47, 125, 225, 0.45), 0 0 0 6px rgba(47, 125, 225, 0.18);
+  }
+}
+.board-page .button.path {
+  background: var(--path);
+  color: #fff;
+  box-shadow: 0 3px 0 color-mix(in srgb, var(--path) 70%, #000), 0 4px 12px color-mix(in srgb, var(--path) 40%, transparent);
+}
+.board-page .button.path:hover:not(:disabled) {
+  box-shadow: 0 4px 0 color-mix(in srgb, var(--path) 70%, #000), 0 6px 14px color-mix(in srgb, var(--path) 45%, transparent);
+}
+.board-page .button.path:active:not(:disabled) {
+  box-shadow: 0 1px 0 color-mix(in srgb, var(--path) 70%, #000);
+}
+.board-page .button.path .icon {
+  width: 1.25em;
+  height: 1.25em;
+}
+.banner.info {
+  background: linear-gradient(180deg, #4b95f0, #2f6fd0);
+  text-shadow: 0 2px 0 rgba(0, 0, 0, 0.2);
+}

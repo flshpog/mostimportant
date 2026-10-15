@@ -57,3 +57,10 @@ export const DiceIcon = ({ className }: P) =>
       <circle cx="12" cy="12" r="1.6" fill="currentColor" />
     </>,
   );
+
+// An arrow pointing at `deg` (0 = right, 90 = up).
+export const ArrowIcon = ({ className, deg }: P & { deg: number }) => (
+  <svg className={`icon ${className ?? ""}`} viewBox="0 0 24 24" aria-hidden="true" style={{ transform: `rotate(${-deg}deg)` }}>
+    <path d="M4 12h14M12.5 5.5L19 12l-6.5 6.5" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);

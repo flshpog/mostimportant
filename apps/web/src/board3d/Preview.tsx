@@ -14,8 +14,8 @@ const rules = { ...season, turns: { ...season.turns, cooldownHours: 0 } };
 
 // #/preview: the 3D board with a few made-up players and no server, for checking the
 // scene and the animations on any device without logging in. Roll plays locally; every
-// player rolls in turn, the star prompt waits for its buttons and other prompts take
-// their default answer.
+// player rolls in turn, forks and the star wait for their buttons and other prompts
+// take their default answer.
 export function Preview() {
   const layout = loadLayouts().main;
   const ctx = useMemo(() => ({ layout, rules }), [layout]);
@@ -32,8 +32,10 @@ export function Preview() {
     });
     s = apply(ctx, s, { type: "startBoard", now: 0 }).state;
     // #/preview?star puts Peach right before the star, to try the star cutscene
-    const nearStar = window.location.hash.includes("star");
-    for (const [id, space] of [["p1", nearStar ? "s61" : "s45"], ["p2", "s45"], ["p3", "s88"], ["p4", "s12"]] as const) {
+    // and ?fork puts her just before the s03 fork
+    const hash = window.location.hash;
+    const p1Start = hash.includes("star") ? "s61" : hash.includes("fork") ? "s02" : "s45";
+    for (const [id, space] of [["p1", p1Start], ["p2", "s45"], ["p3", "s88"], ["p4", "s12"]] as const) {
       s = apply(ctx, s, { type: "movePlayer", playerId: id, spaceId: space, now: 0 }).state;
     }
     return s;
@@ -58,11 +60,10 @@ export function Preview() {
     const first = make(state, now);
     if (!first) return;
     let s = step(state, first);
-    for (let i = 0; s.move?.choice && s.move.choice.kind !== "star" && i < 50; i++) {
+    for (let i = 0; s.move?.choice && s.move.choice.kind !== "star" && s.move.choice.kind !== "fork" && i < 50; i++) {
       const c = s.move.choice;
       const pid = s.move.playerId;
-      if (c.kind === "fork") s = step(s, { type: "chooseFork", playerId: pid, next: c.options[Math.floor(Math.random() * c.options.length)], now });
-      else if (c.kind === "shop") s = step(s, { type: "shopSkip", playerId: pid, now });
+      if (c.kind === "shop") s = step(s, { type: "shopSkip", playerId: pid, now });
       else if (c.kind === "eventDraw") s = step(s, { type: "drawEvent", playerId: pid, event: "swap", percent: 25, now });
       else if (c.kind === "coinSteal") s = step(s, { type: "eventTarget", playerId: pid, targetId: c.targets[0], now });
       else if (c.kind === "starSteal" || c.kind === "swap") s = step(s, { type: "eventTarget", playerId: pid, targetId: c.targets[0] ?? null, now });
@@ -83,6 +84,11 @@ export function Preview() {
       const d = season.dice.min + Math.floor(Math.random() * (season.dice.max - season.dice.min + 1));
       return { type: "roll", playerId: pid, dice: [d], now };
     });
+  const fork = (next: string) =>
+    act((s, now) => {
+      const pid = s.move?.playerId;
+      return pid ? { type: "chooseFork", playerId: pid, next, now } : null;
+    });
   const star = (buy: boolean) =>
     act((s, now) => {
       const pid = s.move?.playerId;
@@ -95,7 +101,7 @@ export function Preview() {
   return (
     <div className="board-page">
       <div className="board-canvas">
-        <Board3D layout={layout} state={state} meId="p1" avatars={{}} animator={animator} starDirector={starDirector} popups={popups} mode={mode} setMode={setMode} quality={window.location.hash.includes("lite") ? "lite" : "full"} />
+        <Board3D layout={layout} state={state} meId={currentPlayerId(state) ?? "p1"} avatars={{}} animator={animator} starDirector={starDirector} onFork={fork} popups={popups} mode={mode} setMode={setMode} quality={window.location.hash.includes("lite") ? "lite" : "full"} />
       </div>
       <DiceOverlay roll={dice} onDone={clearDice} />
       <Banner banner={banner} onDone={clearBanner} />
@@ -115,7 +121,7 @@ export function Preview() {
         setFollowTurns={setFollowTurns}
         error={null}
         feed={feed}
-        actions={{ roll, fork: () => undefined, star, shop: () => undefined, event: () => undefined }}
+        actions={{ roll, fork, star, shop: () => undefined, event: () => undefined }}
       />
     </div>
   );

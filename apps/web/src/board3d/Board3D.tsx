@@ -6,6 +6,7 @@ import type { Board } from "@everest/board-data";
 import type { BoardState } from "@everest/engine";
 import { allSpacePositions } from "./coords";
 import { occluders, Scenery, SceneryBoundary } from "./Scenery";
+import { ForkArrows } from "./ForkArrows";
 import { Star, type StarDirector } from "./Star";
 import { Tiles } from "./Tiles";
 import { Tokens, type Popup, type TokenAnimator } from "./Tokens";
@@ -167,6 +168,8 @@ export function Board3D(props: {
   avatars: Record<string, string | null>;
   animator: TokenAnimator;
   starDirector: StarDirector;
+  // Picking a path by clicking its arrow on the board.
+  onFork?: (next: string) => void;
   popups: Popup[];
   mode: CamMode;
   setMode: (m: CamMode) => void;
@@ -213,6 +216,18 @@ export function Board3D(props: {
       </SceneryBoundary>
       <Tiles layout={layout} />
       {starPos && <Star position={starPos} director={props.starDirector} offered={state.move?.choice?.kind === "star"} />}
+      <ForkArrows
+        layout={layout}
+        state={state}
+        animator={animator}
+        meId={meId}
+        onPick={(next) => {
+          // clicking the board starts a camera drag; keep following the move instead
+          const mover = state.move?.playerId;
+          props.onFork?.(next);
+          if (mover) setMode({ kind: "follow", playerId: mover });
+        }}
+      />
       <Tokens state={state} spacePos={spacePos} animator={animator} meId={meId} avatars={avatars} popups={popups} />
       <CameraRig mode={mode} setMode={setMode} animator={animator} starPos={starPos} />
     </Canvas>

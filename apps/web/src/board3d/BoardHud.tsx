@@ -3,8 +3,8 @@ import type { Board, SeasonConfig } from "@everest/board-data";
 import { currentPlayerId, type BoardState } from "@everest/engine";
 import type { LiveStatus } from "../lib/useLiveBoard";
 import type { CamMode } from "./Board3D";
-import { directionLabel } from "./coords";
-import { CoinIcon, DiceIcon, FollowIcon, MapIcon, OutlineStarIcon, PinIcon, StarIcon } from "./Icons";
+import { directionOf, FORK_COLOURS } from "./coords";
+import { ArrowIcon, CoinIcon, DiceIcon, FollowIcon, MapIcon, OutlineStarIcon, PinIcon, StarIcon } from "./Icons";
 import { tokenColour } from "./Tokens";
 
 const NY = new Intl.DateTimeFormat("en-US", { timeZone: "America/New_York", weekday: "short", hour: "numeric", minute: "2-digit", timeZoneName: "short" });
@@ -73,8 +73,8 @@ export function BoardHud(props: {
     </>
   ) : null;
 
-  const prompt = (title: React.ReactNode, body: React.ReactNode) => (
-    <div className="choice-card">
+  const prompt = (title: React.ReactNode, body: React.ReactNode, kind = "") => (
+    <div className={`choice-card ${kind}`}>
       <p className="choice-title">{title}</p>
       <div className="choice-buttons">{body}</div>
     </div>
@@ -89,12 +89,18 @@ export function BoardHud(props: {
       )}
       {choice?.kind === "fork" &&
         prompt(
-          <>Which way? <span className="sub">{state.move!.remaining} to go</span></>,
-          choice.options.map((o) => (
-            <button key={o} className="button" onClick={() => actions.fork(o)}>
-              {directionLabel(layout, choice.spaceId, o)}
-            </button>
-          )),
+          <>
+            Fork in the road! <span className="sub">Pick a path on the board or here · {state.move!.remaining} to go</span>
+          </>,
+          choice.options.map((o, i) => {
+            const d = directionOf(layout, choice.spaceId, o);
+            return (
+              <button key={o} className="button path" style={{ ["--path" as string]: FORK_COLOURS[i % FORK_COLOURS.length] }} onClick={() => actions.fork(o)}>
+                <ArrowIcon deg={d.deg} /> {d.word}
+              </button>
+            );
+          }),
+          "fork",
         )}
       {choice?.kind === "star" &&
         prompt(

@@ -119,6 +119,9 @@ export function useBoardAnimations(opts: {
               cursor += STAR_HOLD_MS;
             }
             break;
+          case "ForkChoiceRequired":
+            if (pid === meId) showBanner(cursor, { tone: "info", text: "Fork in the road! Pick a path." });
+            break;
           case "EventDrawn":
             showBanner(cursor, { tone: "event", text: `${EVENT_NAMES[e.event as EventChoiceKind]}!` });
             break;
