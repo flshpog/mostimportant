@@ -113,6 +113,12 @@ describe("playing", () => {
     expect(tail.body.seq).toBe(all.body.seq);
   });
 
+  it("profiles are empty when the bot doesn't supply avatars", async () => {
+    const r = await h.api("/api/boards/mario-stadium/profiles", { as: ALICE });
+    expect(r.body).toEqual({ profiles: {} });
+    expect((await h.api("/api/boards/luigis-mansion/profiles", { as: ALICE })).status).toBe(403);
+  });
+
   it("leaderboard sorts by stars, then coins, with shared ranks for ties", async () => {
     await h.api("/api/host/boards/mario-stadium/actions", { method: "POST", as: HOST, body: { action: { type: "setStars", playerId: CARA, stars: 1 } } });
     await h.api("/api/host/boards/mario-stadium/actions", { method: "POST", as: HOST, body: { action: { type: "setCoins", playerId: BOB, coins: 30 } } });

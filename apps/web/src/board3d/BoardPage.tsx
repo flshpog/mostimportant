@@ -126,6 +126,16 @@ export function BoardPage() {
   const { state, feed, status } = useLiveBoard(token, boardId, onLive);
   stateRef.current = state;
 
+  // Everyone's Discord avatar for the pawn tags, refreshed when the player list changes.
+  const [avatars, setAvatars] = useState<Record<string, string | null>>({});
+  const playerKey = state ? state.turn.order.join(",") : "";
+  useEffect(() => {
+    if (!boardId || !playerKey) return;
+    api<{ profiles: Record<string, { avatar: string | null }> }>(`/api/boards/${boardId}/profiles`)
+      .then((r) => setAvatars(Object.fromEntries(Object.entries(r.profiles).map(([id, p]) => [id, p.avatar]))))
+      .catch(() => undefined);
+  }, [boardId, playerKey]);
+
   // A fresh board view snaps tokens into place instead of animating history.
   useEffect(() => {
     animator.shown.clear();
@@ -162,7 +172,7 @@ export function BoardPage() {
   return (
     <div className="board-page">
       <div className="board-canvas">
-        <Board3D layout={lay} state={state} meId={me.user.id} avatars={{ [me.user.id]: me.user.avatar }} animator={animator} popups={popups} mode={mode} setMode={setMode} />
+        <Board3D layout={lay} state={state} meId={me.user.id} avatars={{ ...avatars, [me.user.id]: me.user.avatar }} animator={animator} popups={popups} mode={mode} setMode={setMode} />
       </div>
 
       <header className="hud-top">

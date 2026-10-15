@@ -71,6 +71,19 @@ function hostChecker(client, config) {
     };
 }
 
+// Discord avatars for the website's player tags. Uses the client's user cache, fetching
+// anyone it hasn't seen yet.
+function avatarLookup(client) {
+    return async (ids) => {
+        const out = {};
+        await Promise.all(ids.map(async (id) => {
+            const user = client.users.cache.get(id) ?? await client.users.fetch(id).catch(() => null);
+            out[id] = { avatar: user ? user.displayAvatarURL({ extension: 'png', size: 64 }) : null };
+        }));
+        return out;
+    };
+}
+
 async function start(client) {
     if (running) return running;
     const { loadServerConfig, startBoardServer } = board.server();
@@ -102,6 +115,7 @@ async function start(client) {
             ? { clientId: client.user.id, clientSecret, redirectUri: `${config.public_url}/auth/callback` }
             : null,
         isHost,
+        profiles: avatarLookup(client),
     });
     client.boardServer = running;
 

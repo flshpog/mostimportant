@@ -23,6 +23,7 @@ export interface StartOptions {
   devLogins?: { id: string; name: string }[]; // local testing only, see scripts/dev.ts
   // Host check, normally "has the host role in the guild" via the bot.
   isHost: (userId: string) => Promise<boolean>;
+  profiles?: (userIds: string[]) => Promise<Record<string, { avatar: string | null }>>;
   random?: RandomSource;
   clock?: () => number;
   fetch?: typeof fetch;
@@ -56,6 +57,7 @@ export async function startBoardServer(opts: StartOptions): Promise<RunningBoard
     oauth: opts.oauth,
     devLogins: opts.devLogins,
     isHost: async (id) => opts.config.host_user_ids.includes(id) || (await opts.isHost(id)),
+    profiles: opts.profiles,
     fetch: opts.fetch ?? fetch,
     clock,
     log,

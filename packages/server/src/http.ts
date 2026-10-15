@@ -13,6 +13,8 @@ export interface HttpDeps {
   // Never set by the bot, so production has no such route.
   devLogins?: { id: string; name: string }[];
   isHost: (userId: string) => Promise<boolean>;
+  // Avatar URLs for Discord users, supplied by the bot. Missing = no avatars.
+  profiles?: (userIds: string[]) => Promise<Record<string, { avatar: string | null }>>;
   fetch: typeof fetch;
   clock: () => number;
   log: (message: string, error?: unknown) => void;
@@ -206,6 +208,16 @@ export function createHttpHandler(deps: HttpDeps) {
         const since = Math.max(0, Number(url.searchParams.get("since") ?? 0) || 0);
         const limit = Math.min(1000, Math.max(1, Number(url.searchParams.get("limit") ?? 500) || 500));
         send(res, 200, { events: service.eventsSince(id, since, limit), seq: service.summary(id).seq });
+      },
+    ],
+    [
+      "GET",
+      /^\/api\/boards\/([\w-]+)\/profiles$/,
+      async (req, res, [id]) => {
+        await requireView(req, id);
+        const ids = service.state(id).state.turn.order;
+        const profiles = deps.profiles ? await deps.profiles(ids).catch(() => ({})) : {};
+        send(res, 200, { profiles });
       },
     ],
     [
