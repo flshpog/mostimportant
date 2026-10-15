@@ -594,9 +594,9 @@ def scatter_night(L, terrain, rng):
     for i, p in enumerate(free_spots(L, terrain, 9, 1.4, 3.0, boo_room, rng)):
         ob = bpy.data.objects.new(f"Boo {i}", boo)
         ob.location = (p.x, p.y, p.z + rng.uniform(1.4, 2.8))
-        # faces towards the front of the board, tipped back so the face looks up at
-        # the camera (which looks down on the board) instead of showing the tail
-        ob.rotation_euler = (rng.uniform(-0.8, -0.55), rng.uniform(-0.2, 0.2), rng.uniform(-0.65, 0.65))
+        # upright, facing the front of the board (where the camera usually is), with
+        # a slight random wobble
+        ob.rotation_euler = (rng.uniform(-0.18, 0.08), rng.uniform(-0.15, 0.15), rng.uniform(-0.65, 0.65))
         s = rng.uniform(0.75, 1.3)
         ob.scale = (s, s, s)
         link(ob, "Boos")
