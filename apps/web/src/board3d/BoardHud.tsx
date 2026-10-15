@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { Board, SeasonConfig } from "@everest/board-data";
 import { currentPlayerId, type BoardState } from "@everest/engine";
 import type { LiveStatus } from "../lib/useLiveBoard";
@@ -50,6 +50,14 @@ export function BoardHud(props: {
   const opens = state.turn.windowOpensAt;
   const me = state.players[meId];
   const waiting = !state.move && opens !== null && opens > Date.now();
+  // Nothing else re-renders the HUD when a cooldown runs out, so wake up when it does
+  // (otherwise Roll stays greyed out until some unrelated update).
+  const [, setTick] = useState(0);
+  useEffect(() => {
+    if (!waiting || opens === null) return;
+    const t = setTimeout(() => setTick((n) => n + 1), Math.min(opens - Date.now() + 50, 2 ** 31 - 1));
+    return () => clearTimeout(t);
+  }, [waiting, opens]);
 
   const turnLine = !state.started ? (
     <span className="turn-text">The board hasn't started yet.</span>

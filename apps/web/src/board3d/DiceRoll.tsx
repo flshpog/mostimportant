@@ -96,6 +96,10 @@ export function DiceOverlay({ roll, onDone }: { roll: DiceShow | null; onDone: (
       <div className="dice-stage">
         <div className="dice-shadow" ref={shadowRef} />
         <div className="dice" ref={dieRef} style={{ ["--die" as string]: colour }}>
+          {/* a solid core just inside the faces fills the gaps the rounded corners leave */}
+          {FACES.map((f) => (
+            <div key={`core-${f}`} className={`dice-core ${f}`} />
+          ))}
           {FACES.map((f) => (
             <div key={f} className={`dice-face ${f}`}>
               <OutlineStarIcon className="dice-mark" />
