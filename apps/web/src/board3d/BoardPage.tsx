@@ -145,7 +145,8 @@ export function BoardPage() {
 
   const nameOf = (id: string) => state.players[id]?.name ?? "someone";
   const lines = feed
-    .map((e) => ({ seq: e.seq, text: describeEvent(e.event as never, nameOf, itemName) }))
+    // the narration's emoji suit Discord; the site's feed stays plain text
+    .map((e) => ({ seq: e.seq, text: describeEvent(e.event as never, nameOf, itemName)?.replace(/\p{Extended_Pictographic}️?\s*/gu, "") ?? null }))
     .filter((l): l is { seq: number; text: string } => !!l.text)
     .slice(0, 6);
 

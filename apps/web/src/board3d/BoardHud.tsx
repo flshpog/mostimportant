@@ -79,11 +79,15 @@ export function BoardHud(props: {
   // do right now. It waits until your token has actually arrived (`ready`).
   const card = (kind: string, icon: React.ReactNode, title: React.ReactNode, sub: React.ReactNode, body: React.ReactNode) => (
     <div className={`dock-card ${kind}`} key={`${kind}-${state.move?.rolledAt ?? opens}-${state.move?.remaining ?? ""}`}>
-      <div className="dock-badge">{icon}</div>
-      <div className="dock-title">{title}</div>
-      {sub && <div className="dock-sub">{sub}</div>}
-      {props.error && <p className="dock-error">{props.error}</p>}
-      <div className="dock-buttons">{body}</div>
+      <div className="dock-head">
+        {icon}
+        <span className="dock-title">{title}</span>
+      </div>
+      <div className="dock-body">
+        {sub && <div className="dock-sub">{sub}</div>}
+        {props.error && <p className="dock-error">{props.error}</p>}
+        <div className="dock-buttons">{body}</div>
+      </div>
     </div>
   );
 
