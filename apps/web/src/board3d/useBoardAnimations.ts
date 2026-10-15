@@ -182,10 +182,12 @@ export function useBoardAnimations(opts: {
             // it pops out of the pawn and bursts
             const item = an(e.itemId as string);
             const target = e.targetId as string | undefined;
+            // the camera gets there first, then it pops out
             camera(cursor, { kind: "follow", playerId: pid });
+            cursor += 600;
             later(cursor, () => flights.items.add({ kind: "use", playerId: pid, model: e.itemId as string }));
-            animator.wait(pid, USE_MS);
-            showBanner(cursor + 500, {
+            animator.wait(pid, 600 + USE_MS);
+            showBanner(cursor + 300, {
               tone: "info",
               text: target ? who(pid, `You used ${item} on ${name(target)}`, `used ${item} on ${name(target)}`) : who(pid, `You used ${item}`, `used ${item}`),
             });

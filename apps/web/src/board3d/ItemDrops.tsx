@@ -23,7 +23,9 @@ export const DROP = {
   tuckAt: 3500,
   end: 4100,
 };
-export const USE_MS = 1500;
+// The use cutscene: pops out, hangs there spinning, then bursts.
+export const USE = { popped: 450, burstAt: 1900, end: 2400 };
+export const USE_MS = USE.end;
 
 export class ItemDropDirector {
   drops: ItemDrop[] = [];
@@ -125,12 +127,12 @@ function One({ drop, animator, onDone }: { drop: ItemDrop; animator: TokenAnimat
         scale = 1 - u;
       }
     } else {
-      const pop = clamp01(t / 450);
-      y = 1.1 + 1.9 * easeOut(pop);
-      spin = t * 0.009;
-      scale = t < 1000 ? 0.9 * easeBack(pop) : 0.9 * (1 - easeInOut(clamp01((t - 1000) / 450)));
-      if (t > 900) {
-        ringU = clamp01((t - 900) / 500);
+      const pop = clamp01(t / USE.popped);
+      y = 1.1 + 1.5 * easeOut(pop) + Math.sin(t * 0.004) * 0.08;
+      spin = t * 0.006;
+      scale = t < USE.burstAt ? 0.9 * easeBack(pop) : 0.9 * (1 - easeInOut(clamp01((t - USE.burstAt) / (USE.end - USE.burstAt - 50))));
+      if (t > USE.burstAt - 100) {
+        ringU = clamp01((t - USE.burstAt + 100) / 500);
         sparkle = 1 + 2 * ringU;
       }
     }

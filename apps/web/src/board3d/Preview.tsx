@@ -24,6 +24,7 @@ const PREVIEW_BOARDS: Record<string, { boardId: string; name: string; star: stri
   merge: { boardId: "merge", name: "Yoshi's Island", star: "s38", starts: ["s05", "s05", "s24", "s50"] },
   underworld: { boardId: "redemption-island", name: "The Underworld", star: null, starts: ["s03", "s03", "s12", "s22"] },
 };
+const bagParam = window.location.hash.match(/items=([\w,-]+)/)?.[1].split(",") ?? null;
 const previewBoard = () => window.location.hash.match(/board=(merge|underworld)/)?.[1] ?? "main";
 
 export function Preview() {
@@ -39,17 +40,18 @@ export function Preview() {
       players: [
         // a mid-game spread, so every event has something to work with: Peach can
         // afford a star or a star steal, and Toad and Yoshi have stars to take
-        { id: "p1", name: "Peach", coins: 60, stars: 1, items: ["reroll-block", "guard-charm"] },
-        { id: "p2", name: "Toad", coins: 35, stars: 2 },
-        { id: "p3", name: "Yoshi", coins: 18, stars: 1 },
-        { id: "p4", name: "Daisy", coins: 44 },
+        // ?items=a,b,c (item ids) fills everyone's bag instead, to try items out
+        { id: "p1", name: "Peach", coins: 60, stars: 1, items: bagParam ?? ["reroll-block", "guard-charm"] },
+        { id: "p2", name: "Toad", coins: 35, stars: 2, items: bagParam ?? [] },
+        { id: "p3", name: "Yoshi", coins: 18, stars: 1, items: bagParam ?? [] },
+        { id: "p4", name: "Daisy", coins: 44, items: bagParam ?? [] },
       ],
     });
     s = apply(ctx, s, { type: "startBoard", now: 0 }).state;
     // #/preview?star puts Peach right before the star, to try the star cutscene
     // and ?fork puts her just before the s03 fork
     // the options themselves, not ?stock=... (an item id can contain "star")
-    const hash = window.location.hash.replace(/stock=[\w,-]*/, "");
+    const hash = window.location.hash.replace(/(stock|items)=[\w,-]*/g, "");
     // and ?event puts her just before the s21 event space (her first roll is a 1)
     // and ?shop just before the purple bottom-left shop (?pinkshop: the pink top one)
     const p1Start = which !== "main"
