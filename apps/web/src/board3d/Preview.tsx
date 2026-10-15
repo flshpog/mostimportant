@@ -25,10 +25,12 @@ export function Preview() {
       boardId: "preview",
       starSpace: "s62",
       players: [
-        { id: "p1", name: "Peach", coins: 30 },
-        { id: "p2", name: "Toad", coins: 30 },
-        { id: "p3", name: "Yoshi", coins: 30 },
-        { id: "p4", name: "Daisy", coins: 30 },
+        // a mid-game spread, so every event has something to work with: Peach can
+        // afford a star or a star steal, and Toad and Yoshi have stars to take
+        { id: "p1", name: "Peach", coins: 60, stars: 1 },
+        { id: "p2", name: "Toad", coins: 35, stars: 2 },
+        { id: "p3", name: "Yoshi", coins: 18, stars: 1 },
+        { id: "p4", name: "Daisy", coins: 44 },
       ],
     });
     s = apply(ctx, s, { type: "startBoard", now: 0 }).state;
@@ -37,9 +39,6 @@ export function Preview() {
     const hash = window.location.hash;
     // and ?event puts her just before the s21 event space (her first roll is a 1)
     const p1Start = hash.includes("event") ? "s20" : hash.includes("star") ? "s61" : hash.includes("fork") ? "s02" : "s45";
-    // a star for Toad, so a forced star steal has something to take
-    if (hash.includes("starSteal")) s = apply(ctx, s, { type: "setStars", playerId: "p2", stars: 2, now: 0 }).state;
-    if (hash.includes("starSteal")) s = apply(ctx, s, { type: "setCoins", playerId: "p1", coins: 60, now: 0 }).state;
     for (const [id, space] of [["p1", p1Start], ["p2", "s45"], ["p3", "s88"], ["p4", "s12"]] as const) {
       s = apply(ctx, s, { type: "movePlayer", playerId: id, spaceId: space, now: 0 }).state;
     }
