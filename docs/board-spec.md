@@ -45,7 +45,7 @@ the owner is not rushing this and wants it done right. that means:
 
 - **engine**: a pure package. input = current state + action, output = new state + list of events. deterministic given a dice result. no discord, no network, no database inside it. this is what makes it testable.
 - **server is authoritative**: dice are rolled on the server with a secure RNG. clients only animate results the server already decided. the website never calculates game outcomes.
-- **event log**: every change is an event (`DiceRolled`, `PlayerMoved`, `PassedSpace`, `LandedOnSpace`, `CoinsChanged`, `StarPurchased`, `StarMoved`, `ShopPurchase`, `BowserSpin`, `ForkChoiceRequired`, ...). the website animates from events, the bot narrates from events, and the log doubles as season history and an undo/audit trail for the hosts.
+- **event log**: every change is an event (`DiceRolled`, `PlayerMoved`, `PassedSpace`, `LandedOnSpace`, `CoinsChanged`, `StarPurchased`, `StarMoved`, `ShopPurchase`, `EventDrawn`, `ForkChoiceRequired`, ...). the website animates from events, the bot narrates from events, and the log doubles as season history and an undo/audit trail for the hosts.
 - **static site constraint**: the website is static, so it cannot host the websocket server. the website connects to the game server (wherever the bot is hosted) over HTTPS/WSS. the server must allow the site's origin (CORS).
 - **monorepo suggestion** (confirm in phase 1): `packages/engine`, `packages/board-data`, `apps/server` (or folded into the bot), `apps/web`, shared `packages/types`.
 
@@ -60,7 +60,7 @@ the owner is not rushing this and wants it done right. that means:
 ```ts
 // the star is not a space type: it sits on a blue space and moves at runtime.
 // boo icons are ignored (owner decision), so there is no boo type.
-type SpaceType = "blue" | "red" | "green" | "shop" | "bowser" | "start";
+type SpaceType = "blue" | "red" | "green" | "shop" | "event" | "start";
 interface Space {
   id: string;            // stable, e.g. "s01"
   type: SpaceType;
@@ -84,7 +84,7 @@ interface Space {
 | red | -3 coins (never below 0) |
 | green | nothing happens |
 | shop | enter the shop (spend coins on items) |
-| bowser | spin a punishment wheel |
+| event (yellow) | a random event: coin steal, star steal or swap places (see below) |
 | start | starting space |
 
 ### owner decisions (2026-10-14)
@@ -92,8 +92,8 @@ interface Space {
 **spaces**
 - **star-icon spaces** on the reference image are ignored: they are plain blue spaces with no marker. each board's starting star space is set in `season-config.json` (`boards[].starStart`); all four main boards start the star on **s62**.
 - **boo icons:** ignore them. they have no effect and are not special spaces.
-- **the red X over the bowser figure (left side):** the space beside it (s57) stays **red**. the other bowser spaces stay bowser spaces.
-- **triggers:** shops trigger when passed or landed on. bowser spaces trigger **only on landing**. blue/red/green apply only on landing.
+- **the red X over the bowser figure (left side):** the space beside it (s57) stays **red**. the other bowser spaces became event spaces (see below).
+- **triggers:** shops trigger when passed or landed on. event spaces trigger **only on landing**. blue/red/green apply only on landing.
 - **starting coins:** 10.
 
 **star**
@@ -103,7 +103,14 @@ interface Space {
 **coins and items**
 - coins are only for the board: they buy stars and shop items. they are **not** S2 bells and are not used anywhere else in the survivor game.
 - shop: the full item list comes later. each item should eventually have a small sprite (made for the game, or an existing item sprite the owner supplies).
-- bowser wheel: contents come later.
+
+**event spaces (2026-10-15, replaces bowser spaces entirely)**
+- bowser spaces are gone. the three former bowser spaces (s21, s36, s68) are yellow **event** spaces.
+- landing on one, the server draws one event at random by weight (`events.*.weight` in `season-config.json`, default equal; 0 turns an event off):
+  - **coin steal:** the player picks a tribemate; the game rolls one of `events.coinSteal.percents` (default 5/10/25/50%) and moves that share of the target's coins (rounded down) to the player. it can't be declined; on timeout it robs the richest tribemate.
+  - **star steal:** pay `events.starSteal.price` (default 40, to the bank) to take one star from a tribemate who has one. it can be declined, and a timeout declines. if nobody has a star, or the player can't pay, nothing happens.
+  - **swap places:** trade board positions with any tribemate. neither player triggers the space they end up on. it can be declined, and a timeout declines.
+- the event is decided before the player picks; the coin-steal percentage is rolled at the same time and revealed after the pick.
 
 **turns (per board)**
 - fixed order, set by hosts per board.
@@ -141,7 +148,7 @@ interface Space {
 
 **moving between boards:** players keep their coins, stars and items whenever they move to another board. the only exception is going to redemption island, which resets everything (see above).
 
-**still not defined (ask the owner, do not invent):** shop inventory, prices and sprites; bowser wheel contents; merge and redemption island layouts.
+**still not defined (ask the owner, do not invent):** shop inventory, prices and sprites; merge and redemption island layouts.
 
 all numeric values (coin amounts, star price, cooldown and turn-window hours) live in `season-config.json`, never in code.
 
@@ -153,8 +160,8 @@ runs inside the bot. how to run it locally, the API and the live-update protocol
 
 ## engine behaviour (phase 3, `packages/engine`)
 
-- pure functions: `apply(ctx, state, action) -> { state, events }`. every action carries `now`; dice, the new star space and bowser outcomes are always passed in by the server.
-- **prompts:** forks, the star and shops pause the move and wait for the player. each prompt times out after `turns.choiceTimeoutMinutes` (default 60, editable): a fork takes its **first listed exit**, the star and shop are **skipped**. the bowser spin isn't a player choice; the server resolves it right away.
+- pure functions: `apply(ctx, state, action) -> { state, events }`. every action carries `now`; dice, the new star space and the drawn event are always passed in by the server.
+- **prompts:** forks, the star and shops pause the move and wait for the player. each prompt times out after `turns.choiceTimeoutMinutes` (default 60, editable): a fork takes its **first listed exit**, the star and shop are **skipped**. the event draw isn't a player choice; the server resolves it right away. event target picks time out like other prompts (see event spaces).
 - **order on arrival:** star prompt, then shop prompt, then (on the final space only) the landing effect. landing on the star still pays the blue +3 after the prompt.
 - **cooldown** runs from the moment of the roll, not from the end of the move.
 - **pause** freezes every clock (windows, cooldowns, prompt timers) for the length of the pause.

@@ -17,7 +17,7 @@ const TYPE_COLORS: Record<SpaceType, string> = {
   red: "#e0393e",
   green: "#2ea94f",
   shop: "#9b4fc0",
-  bowser: "#202020",
+  event: "#f2c230",
   start: "#f2a900",
 };
 

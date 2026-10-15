@@ -16,6 +16,8 @@ describe("message helpers", () => {
       { kind: "star", boardId: "luigis-mansion", buy: false },
       { kind: "shop", boardId: "warioware-inc", itemId: "mushroom" },
       { kind: "shop", boardId: "warioware-inc", itemId: null },
+      { kind: "event", boardId: "warioware-inc", targetId: "100000000000000002" },
+      { kind: "event", boardId: "warioware-inc", targetId: null },
     ] as const) {
       expect(parseButtonId(buttonId(a))).toEqual(a);
     }

@@ -9,9 +9,11 @@ export type ButtonAction =
   | { kind: "roll"; boardId: string }
   | { kind: "fork"; boardId: string; next: string }
   | { kind: "star"; boardId: string; buy: boolean }
-  | { kind: "shop"; boardId: string; itemId: string | null };
+  | { kind: "shop"; boardId: string; itemId: string | null }
+  | { kind: "event"; boardId: string; targetId: string | null };
 
 const LEAVE = "__leave";
+const PASS = "__pass";
 
 export function buttonId(a: ButtonAction): string {
   switch (a.kind) {
@@ -23,6 +25,8 @@ export function buttonId(a: ButtonAction): string {
       return `board:star:${a.boardId}:${a.buy ? "buy" : "skip"}`;
     case "shop":
       return `board:shop:${a.boardId}:${a.itemId ?? LEAVE}`;
+    case "event":
+      return `board:event:${a.boardId}:${a.targetId ?? PASS}`;
   }
 }
 
@@ -33,6 +37,7 @@ export function parseButtonId(id: string): ButtonAction | null {
   if (kind === "fork") return { kind, boardId, next: value };
   if (kind === "star") return { kind, boardId, buy: value === "buy" };
   if (kind === "shop") return { kind, boardId, itemId: value === LEAVE ? null : value };
+  if (kind === "event") return { kind, boardId, targetId: value === PASS ? null : value };
   return null;
 }
 
@@ -74,7 +79,7 @@ export function direction(layout: Board, from: string, to: string): string {
 // can be retired and a new one posted.
 export function promptKey(state: BoardState): string | null {
   const m = state.move;
-  if (!m?.choice || m.choice.kind === "bowser") return null;
+  if (!m?.choice || m.choice.kind === "eventDraw") return null;
   return `${m.playerId}:${m.choice.kind}:${m.choice.spaceId}:${m.rolledAt}:${m.remaining}`;
 }
 
@@ -96,7 +101,7 @@ function rows(buttons: ButtonBuilder[]): ActionRowBuilder<ButtonBuilder>[] {
 export function promptMessage(boardId: string, state: BoardState, layout: Board, config: SeasonConfig): OutgoingMessage | null {
   const m = state.move;
   const c = m?.choice;
-  if (!m || !c || c.kind === "bowser") return null;
+  if (!m || !c || c.kind === "eventDraw") return null;
   const p = state.players[m.playerId];
   if (!p) return null;
   const who = `<@${p.id}>`;
@@ -126,6 +131,24 @@ export function promptMessage(boardId: string, state: BoardState, layout: Board,
       ]),
       allowedMentions: mention,
     };
+  }
+  if (c.kind === "coinSteal" || c.kind === "starSteal" || c.kind === "swap") {
+    const targets = c.targets.map((id) => state.players[id]).filter((t) => !!t).slice(0, 24);
+    const label = (t: (typeof targets)[number]) =>
+      (c.kind === "coinSteal" ? `${t.name} (${t.coins} coins)` : c.kind === "starSteal" ? `${t.name} (${t.stars} ⭐)` : t.name).slice(0, 80);
+    const buttons = targets.map((t) =>
+      new ButtonBuilder().setCustomId(buttonId({ kind: "event", boardId, targetId: t.id })).setLabel(label(t)).setStyle(ButtonStyle.Primary),
+    );
+    if (c.kind !== "coinSteal") {
+      buttons.push(new ButtonBuilder().setCustomId(buttonId({ kind: "event", boardId, targetId: null })).setLabel("No thanks").setStyle(ButtonStyle.Secondary));
+    }
+    const text =
+      c.kind === "coinSteal"
+        ? `💰 ${who}, ${bold("Coin Steal")}! Pick a tribemate. You'll take a random 5-50% of their coins.\n-# ${until}you'll steal from whoever has the most.`
+        : c.kind === "starSteal"
+          ? `🌟 ${who}, ${bold("Star Steal")}! Pay ${bold(`${c.price} coins`)} to take a star from someone? You have ${p.coins}.\n-# ${until}you'll pass on it.`
+          : `🔄 ${who}, ${bold("Swap Places")}! Pick someone to trade spots with.\n-# ${until}you'll stay where you are.`;
+    return { content: text, components: rows(buttons), allowedMentions: mention };
   }
   const items = config.shop.items.filter((i) => i.price <= p.coins).slice(0, 24);
   const buttons = items.map((i) =>

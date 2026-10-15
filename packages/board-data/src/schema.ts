@@ -3,7 +3,7 @@ import { z } from "zod";
 // Space types the engine understands. "star" is not a space type: the star sits on
 // a blue space and moves at runtime. Each board's starting star space is set in
 // season-config.json (boards[].starStart).
-export const SpaceTypeSchema = z.enum(["blue", "red", "green", "shop", "bowser", "start"]);
+export const SpaceTypeSchema = z.enum(["blue", "red", "green", "shop", "event", "start"]);
 export type SpaceType = z.infer<typeof SpaceTypeSchema>;
 
 const SpaceIdSchema = z.string().regex(/^s\d{2,3}$/, "space ids look like s01");
@@ -17,7 +17,7 @@ export const SpaceSchema = z
     // Outgoing directed edges. More than one means a fork.
     next: z.array(SpaceIdSchema).min(1, "every space needs at least one exit"),
     label: z.string().optional(),
-    // True if passing (not only landing) triggers the space, e.g. shops. Bowser
+    // True if passing (not only landing) triggers the space, e.g. shops. Event
     // spaces trigger on landing only.
     passEffect: z.boolean().optional(),
     // Transcription flags for the owner to confirm. Cleared once confirmed.
@@ -74,18 +74,20 @@ export const ShopItemSchema = z
   .strict();
 export type ShopItem = z.infer<typeof ShopItemSchema>;
 
-// Placeholder shape until the owner defines the wheel: each outcome is a weighted
-// slice that changes coins and/or stars.
-export const BowserOutcomeSchema = z
+// Event spaces: landing draws one event at random by weight (0 turns an event off).
+const EventWeight = z.number().nonnegative();
+export const EventsSchema = z
   .object({
-    id: z.string().min(1),
-    label: z.string().min(1),
-    weight: z.number().positive(),
-    coins: z.number().int().default(0),
-    stars: z.number().int().default(0),
+    // Pick a tribemate; take one of these percentages (rolled at random) of their coins.
+    coinSteal: z.object({ weight: EventWeight, percents: z.array(z.number().int().min(0).max(100)).min(1) }).strict(),
+    // Pay `price` coins to take one star from a tribemate who has one.
+    starSteal: z.object({ weight: EventWeight, price: z.number().int().nonnegative() }).strict(),
+    // Trade board positions with any tribemate.
+    swap: z.object({ weight: EventWeight }).strict(),
   })
   .strict();
-export type BowserOutcome = z.infer<typeof BowserOutcomeSchema>;
+export type EventsConfig = z.infer<typeof EventsSchema>;
+export type EventKind = keyof EventsConfig;
 
 export const SeasonConfigSchema = z
   .object({
@@ -123,7 +125,7 @@ export const SeasonConfigSchema = z
         items: z.array(ShopItemSchema),
       })
       .strict(),
-    bowser: z.object({ wheel: z.array(BowserOutcomeSchema) }).strict(),
+    events: EventsSchema,
     boards: z.array(BoardInstanceSchema).min(1),
     redemptionIsland: z
       .object({

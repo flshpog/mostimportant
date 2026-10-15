@@ -260,6 +260,16 @@ export function createHttpHandler(deps: HttpDeps) {
       },
     ],
 
+    [
+      "POST",
+      /^\/api\/play\/event$/,
+      async (req, res) => {
+        const user = requireUser(req);
+        const { targetId } = await readJson(req);
+        send(res, 200, { events: await service.eventTarget(user.sub, typeof targetId === "string" ? targetId : null) });
+      },
+    ],
+
     // Host dashboard.
     [
       "GET",

@@ -35,10 +35,10 @@ const SPACE_FILL: Record<SpaceType, string> = {
   red: "#e5484d",
   green: "#3fb950",
   shop: "#8e4ec6",
-  bowser: "#26222b",
+  event: "#f2c230",
   start: "#f5a524",
 };
-const SPACE_GLYPH: Partial<Record<SpaceType, string>> = { shop: "S", bowser: "B", start: "GO" };
+const SPACE_GLYPH: Partial<Record<SpaceType, string>> = { shop: "S", event: "!", start: "GO" };
 const TOKEN_COLORS = ["#ef476f", "#118ab2", "#06d6a0", "#ffd166", "#8338ec", "#fb5607", "#3a86ff", "#ff006e"];
 const NY = new Intl.DateTimeFormat("en-US", { timeZone: "America/New_York", weekday: "short", hour: "numeric", minute: "2-digit" });
 
@@ -210,7 +210,7 @@ function drawSpaces(ctx: SKRSContext2D, layout: Board, at: (id: string) => Pt) {
     ctx.fill();
     const glyph = SPACE_GLYPH[s.type];
     if (glyph) {
-      ctx.fillStyle = s.type === "bowser" ? "#ff6b6b" : "#ffffff";
+      ctx.fillStyle = s.type === "event" ? "#5a3d00" : "#ffffff";
       ctx.font = `${glyph.length > 1 ? 10 : 13}px NunitoXB`;
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
@@ -386,7 +386,7 @@ function drawPanel(ctx: SKRSContext2D, input: RenderInput, avatars: Map<string, 
     ["red", "-3 coins"],
     ["green", "nothing"],
     ["shop", "shop"],
-    ["bowser", "Bowser"],
+    ["event", "event"],
   ];
   let ly = H - 64 - legend.length * 26;
   ctx.font = "14px NunitoXB";

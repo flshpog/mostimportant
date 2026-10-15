@@ -148,7 +148,7 @@ runs fiovivor.org's DNS).
 remaining, none blocking phase 2:
 
 1. **VPS reverse proxy (phase 4):** ports 80/443 are already taken on the ubuntu 22.04 box, so find out what's serving them and add `board.fiovivor.org` alongside it without disturbing it.
-2. **shop items and bowser wheel:** content comes later; the engine treats them as data.
+2. **shop items:** content comes later (bowser spaces were replaced by event spaces on 2026-10-15); the engine treats them as data.
 3. **merge board (yoshi's island) and redemption island layouts:** designed later, before the merge.
 
 ---

@@ -198,6 +198,21 @@ export function TestConsole() {
                 </button>
               </div>
             )}
+            {(choice?.kind === "coinSteal" || choice?.kind === "starSteal" || choice?.kind === "swap") && (
+              <div className="row">
+                <span>{choice.kind}:</span>
+                {choice.targets.map((id) => (
+                  <button key={id} className="button" onClick={() => run("Event", () => api("/api/play/event", { body: { targetId: id } }))}>
+                    {state.players[id]?.name ?? id}
+                  </button>
+                ))}
+                {choice.kind !== "coinSteal" && (
+                  <button className="button" onClick={() => run("Event", () => api("/api/play/event", { body: {} }))}>
+                    Pass
+                  </button>
+                )}
+              </div>
+            )}
             {choice?.kind === "shop" && (
               <div className="row">
                 <span>Shop:</span>

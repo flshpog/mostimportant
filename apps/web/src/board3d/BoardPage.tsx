@@ -108,9 +108,18 @@ export function BoardPage() {
           animator.hop.delete(e.playerId as string);
           animator.shown.set(e.playerId as string, spaceToWorld(lay, e.to as string));
         }
+        if (e.type === "PlayersSwapped") {
+          // a single long hop each way, so the swap reads as a swap
+          animator.enqueue(e.playerId as string, spaceToWorld(lay, e.playerTo as string));
+          animator.enqueue(e.targetId as string, spaceToWorld(lay, e.targetTo as string));
+        }
         if (e.type === "CoinsChanged" && e.reason !== "host" && e.delta !== 0) {
           const d = e.delta as number;
           add.push({ id: ++popupId.current, playerId: e.playerId as string, text: `${d > 0 ? "+" : ""}${d} 🪙`, tone: d > 0 ? "good" : "bad" });
+        }
+        if (e.type === "StarsChanged" && e.reason === "event") {
+          const d = e.delta as number;
+          add.push({ id: ++popupId.current, playerId: e.playerId as string, text: `${d > 0 ? "+" : ""}${d} ⭐`, tone: d > 0 ? "star" : "bad" });
         }
         if (e.type === "StarPurchased") add.push({ id: ++popupId.current, playerId: e.playerId as string, text: "+1 ⭐", tone: "star" });
         if (e.type === "DiceRolled" && followTurns) setMode({ kind: "follow", playerId: e.playerId as string });
@@ -192,6 +201,7 @@ export function BoardPage() {
           fork: (next) => run(() => api("/api/play/fork", { body: { next } })),
           star: (buy) => run(() => api("/api/play/star", { body: { buy } })),
           shop: (itemId) => run(() => api("/api/play/shop", { body: itemId ? { itemId } : {} })),
+          event: (targetId) => run(() => api("/api/play/event", { body: targetId ? { targetId } : {} })),
         }}
       />
     </div>

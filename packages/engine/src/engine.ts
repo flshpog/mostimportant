@@ -4,9 +4,11 @@ import type {
   Action,
   ActionResult,
   BoardState,
+  ChoiceKind,
   CoinReason,
   EngineContext,
   EngineEvent,
+  EventChoiceKind,
   MoveState,
   PlayerState,
 } from "./types";
@@ -81,8 +83,11 @@ export function apply(ctx: EngineContext, state: BoardState, action: Action): Ac
     case "shopSkip":
       r.shopSkip(action.playerId);
       break;
-    case "spinBowser":
-      r.spinBowser(action.playerId, action.outcomeId);
+    case "drawEvent":
+      r.drawEvent(action.playerId, action.event, action.percent);
+      break;
+    case "eventTarget":
+      r.eventTarget(action.playerId, action.targetId);
       break;
     case "setCoins":
       r.setCoins(action.playerId, action.coins);
@@ -143,6 +148,12 @@ export function starCandidates(ctx: EngineContext, state: BoardState): string[] 
   return ctx.layout.spaces
     .filter((s) => ctx.rules.star.spawnOn.includes(s.type) && s.id !== state.star)
     .map((s) => s.id);
+}
+
+// Events the server may draw on an event space (weight above 0).
+export function enabledEvents(ctx: EngineContext): { event: EventChoiceKind; weight: number }[] {
+  const e = ctx.rules.events;
+  return (["coinSteal", "starSteal", "swap"] as const).map((event) => ({ event, weight: e[event].weight })).filter((x) => x.weight > 0);
 }
 
 export function affordableItems(ctx: EngineContext, coins: number): string[] {
@@ -216,7 +227,7 @@ class Run {
     this.emit({ type: "CoinsChanged", playerId: p.id, delta: actual, coins: p.coins, reason });
   }
 
-  private changeStars(p: PlayerState, delta: number, reason: "star" | "bowser" | "host") {
+  private changeStars(p: PlayerState, delta: number, reason: "star" | "event" | "host") {
     const next = Math.max(0, p.stars + delta);
     const actual = next - p.stars;
     p.stars = next;
@@ -254,10 +265,18 @@ class Run {
     for (let i = 0; i < MAX_CATCH_UP; i++) {
       const m = this.s.move;
       const c = m?.choice;
-      if (m && c && c.kind !== "bowser" && this.now >= c.expiresAt) {
+      if (m && c && c.kind !== "eventDraw" && this.now >= c.expiresAt) {
         if (c.kind === "fork") this.resolveFork(c.options[0], true);
         else if (c.kind === "star") this.resolveSkipStar(true);
-        else this.closeShop(true);
+        else if (c.kind === "shop") this.closeShop(true);
+        else if (c.kind === "coinSteal") {
+          // Stealing only helps, so a timeout takes from the richest tribemate.
+          const targets = c.targets.filter((id) => this.s.players[id]);
+          if (targets.length) {
+            const richest = targets.reduce((a, b) => (this.s.players[b].coins > this.s.players[a].coins ? b : a));
+            this.resolveEventTarget(richest, true);
+          } else this.fizzle("coinSteal", "no_targets");
+        } else this.declineEvent(true);
         continue;
       }
       const t = this.s.turn;
@@ -309,7 +328,7 @@ class Run {
     if (this.s.move) {
       this.s.move.rolledAt += shift;
       const c = this.s.move.choice;
-      if (c && c.kind !== "bowser") c.expiresAt += shift;
+      if (c && c.kind !== "eventDraw") c.expiresAt += shift;
     }
     this.s.paused = false;
     this.s.pausedAt = null;
@@ -339,7 +358,7 @@ class Run {
     this.continueMove();
   }
 
-  private requireChoice<K extends "fork" | "star" | "shop" | "bowser">(playerId: string, kind: K) {
+  private requireChoice<K extends ChoiceKind>(playerId: string, kind: K) {
     this.catchUp();
     this.requireLive();
     const m = this.s.move;
@@ -418,13 +437,13 @@ class Run {
     if (sp.type === "blue") this.changeCoins(p, coins.blue, "blue");
     else if (sp.type === "red") this.changeCoins(p, coins.red, "red");
     else if (sp.type === "green" && coins.green !== 0) this.changeCoins(p, coins.green, "green");
-    else if (sp.type === "bowser") {
-      if (this.ctx.rules.bowser.wheel.length) {
-        m.choice = { kind: "bowser", spaceId: sp.id };
-        this.emit({ type: "BowserSpinRequired", playerId: p.id, spaceId: sp.id });
+    else if (sp.type === "event") {
+      if (enabledEvents(this.ctx).length) {
+        // The server sees this and draws the event with drawEvent.
+        m.choice = { kind: "eventDraw", spaceId: sp.id };
         return;
       }
-      this.emit({ type: "BowserNoWheel", playerId: p.id, spaceId: sp.id });
+      this.emit({ type: "EventFizzled", playerId: p.id, event: null, reason: "no_events" });
     }
     this.finishMove();
   }
@@ -506,15 +525,87 @@ class Run {
     this.continueMove();
   }
 
-  spinBowser(playerId: string, outcomeId: string) {
-    const { m } = this.requireChoice(playerId, "bowser");
-    const outcome = this.ctx.rules.bowser.wheel.find((o) => o.id === outcomeId);
-    if (!outcome) throw new EngineError("wrong_choice", "That isn't on the Bowser wheel.");
+  // ---- event spaces ----
+
+  drawEvent(playerId: string, event: EventChoiceKind, percent: number) {
+    const { m, choice } = this.requireChoice(playerId, "eventDraw");
     const p = this.player(playerId);
-    this.emit({ type: "BowserSpin", playerId, outcomeId: outcome.id, label: outcome.label });
-    if (outcome.coins) this.changeCoins(p, outcome.coins, "bowser");
-    if (outcome.stars) this.changeStars(p, outcome.stars, "bowser");
+    const rules = this.ctx.rules.events;
+    if (!(event in rules)) throw new EngineError("wrong_choice", "That isn't an event.");
+    const others = this.s.turn.order.filter((id) => id !== playerId && this.s.players[id]);
+    const targets = event === "starSteal" ? others.filter((id) => this.s.players[id].stars > 0) : others;
+    this.emit({ type: "EventDrawn", playerId, spaceId: choice.spaceId, event, targets });
     m.choice = null;
+    if (!others.length) return this.fizzle(event, "no_targets");
+    const expiresAt = this.choiceExpiry();
+    if (event === "coinSteal") {
+      if (!Number.isInteger(percent) || percent < 0 || percent > 100) throw new EngineError("invalid_amount", "The steal percentage must be 0-100.");
+      m.choice = { kind: "coinSteal", spaceId: choice.spaceId, targets, percent, expiresAt };
+    } else if (event === "starSteal") {
+      const price = rules.starSteal.price;
+      if (!targets.length) return this.fizzle(event, "no_stars");
+      if (p.coins < price) return this.fizzle(event, "too_poor", price);
+      m.choice = { kind: "starSteal", spaceId: choice.spaceId, targets, price, expiresAt };
+    } else {
+      m.choice = { kind: "swap", spaceId: choice.spaceId, targets, expiresAt };
+    }
+  }
+
+  // The player picks who the event hits, or null to pass (star steal and swap only).
+  eventTarget(playerId: string, targetId: string | null) {
+    this.catchUp();
+    this.requireLive();
+    const c = this.s.move?.playerId === playerId ? this.s.move.choice : null;
+    if (!c || (c.kind !== "coinSteal" && c.kind !== "starSteal" && c.kind !== "swap")) {
+      throw new EngineError("no_pending_choice", "You don't have an event to resolve right now.");
+    }
+    if (targetId === null) {
+      if (c.kind === "coinSteal") throw new EngineError("wrong_choice", "Pick someone to steal from.");
+      return this.declineEvent(false);
+    }
+    if (!c.targets.includes(targetId) || !this.s.players[targetId]) throw new EngineError("wrong_choice", "You can't pick that player.");
+    this.resolveEventTarget(targetId, false);
+  }
+
+  private resolveEventTarget(targetId: string, auto: boolean) {
+    const m = this.s.move!;
+    const c = m.choice!;
+    const p = this.player(m.playerId);
+    const t = this.player(targetId);
+    if (c.kind === "coinSteal") {
+      const amount = Math.floor((t.coins * c.percent) / 100);
+      this.emit({ type: "CoinsStolen", playerId: p.id, targetId, percent: c.percent, amount, auto });
+      this.changeCoins(t, -amount, "event");
+      this.changeCoins(p, amount, "event");
+    } else if (c.kind === "starSteal") {
+      if (t.stars < 1) throw new EngineError("wrong_choice", `${t.name} doesn't have a star anymore.`);
+      if (p.coins < c.price) throw new EngineError("not_enough_coins", `You need ${c.price} coins to steal a star.`);
+      this.emit({ type: "StarStolen", playerId: p.id, targetId, price: c.price });
+      this.changeCoins(p, -c.price, "event");
+      this.changeStars(t, -1, "event");
+      this.changeStars(p, 1, "event");
+    } else if (c.kind === "swap") {
+      const mine = p.space;
+      p.space = t.space;
+      t.space = mine;
+      this.emit({ type: "PlayersSwapped", playerId: p.id, targetId, playerTo: p.space, targetTo: t.space });
+    }
+    m.choice = null;
+    this.finishMove();
+  }
+
+  private declineEvent(auto: boolean) {
+    const m = this.s.move!;
+    const kind = m.choice!.kind as EventChoiceKind;
+    m.choice = null;
+    this.emit({ type: "EventDeclined", playerId: m.playerId, event: kind, auto });
+    this.finishMove();
+  }
+
+  private fizzle(event: EventChoiceKind, reason: "no_targets" | "no_stars" | "too_poor", price?: number) {
+    const m = this.s.move!;
+    m.choice = null;
+    this.emit({ type: "EventFizzled", playerId: m.playerId, event, reason, ...(price !== undefined ? { price } : {}) });
     this.finishMove();
   }
 

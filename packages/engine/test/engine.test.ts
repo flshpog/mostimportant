@@ -61,37 +61,134 @@ describe("space effects on landing", () => {
     expect(types(ev)).not.toContain("CoinsChanged");
   });
 
-  it("bowser with an empty wheel just reports it", () => {
+  it("event spaces only trigger on landing, not passing", () => {
     const g = started(ctxFor());
-    g.setup("alice", "s04");
-    const ev = g.roll("alice", 2); // passes the shop (skip below), lands on bowser
-    expect(types(ev)).toContain("ShopOpened");
-    const ev2 = g.do({ type: "shopSkip", playerId: "alice", now: g.now });
-    expect(types(ev2)).toContain("BowserNoWheel");
+    g.setup("alice", "s05");
+    g.roll("alice", 2); // passes s06, lands on the s07 fork... s07 is the landing
+    expect(g.state.move).toBeNull();
+    expect(g.p("alice").space).toBe("s07");
+  });
+
+  it("with every event weighted 0, an event space does nothing", () => {
+    const off = { coinSteal: { weight: 0, percents: [5] }, starSteal: { weight: 0, price: 40 }, swap: { weight: 0 } };
+    const g = started(ctxFor(lineLayout, { events: off }));
+    g.setup("alice", "s05");
+    const ev = g.roll("alice", 1);
+    expect(ev).toContainEqual({ type: "EventFizzled", playerId: "alice", event: null, reason: "no_events" });
+    expect(g.state.move).toBeNull();
+  });
+});
+
+describe("event spaces", () => {
+  // alice lands on the s06 event space and waits for the server's draw.
+  function atEvent(players = ["alice", "bob", "cara"]) {
+    const g = started(ctxFor(), players);
+    g.setup("alice", "s05");
+    g.roll("alice", 1);
+    expect(g.state.move?.choice?.kind).toBe("eventDraw");
+    return g;
+  }
+  const draw = (g: Game, event: "coinSteal" | "starSteal" | "swap", percent = 25) =>
+    g.do({ type: "drawEvent", playerId: "alice", event, percent, now: g.now });
+  const target = (g: Game, targetId: string | null, playerId = "alice") => g.do({ type: "eventTarget", playerId, targetId, now: g.now });
+
+  it("only the server's draw settles the landing, and players can't draw", () => {
+    const g = atEvent();
+    expectError(() => target(g, "bob"), "no_pending_choice");
+    // no timeout on the draw itself
+    g.advance(5);
+    expect(types(g.tick())).toEqual([]);
+  });
+
+  it("coin steal takes the rolled share of the target's coins, rounded down", () => {
+    const g = atEvent();
+    g.p("bob").coins = 0;
+    g.state.players.bob.coins = 15;
+    const ev = draw(g, "coinSteal", 25);
+    expect(ev[0]).toEqual({ type: "EventDrawn", playerId: "alice", spaceId: "s06", event: "coinSteal", targets: ["bob", "cara"] });
+    expect(g.state.move?.choice).toMatchObject({ kind: "coinSteal", percent: 25 });
+    const ev2 = target(g, "bob");
+    expect(ev2[0]).toEqual({ type: "CoinsStolen", playerId: "alice", targetId: "bob", percent: 25, amount: 3, auto: false });
+    expect(g.p("bob").coins).toBe(12);
+    expect(g.p("alice").coins).toBe(13);
     expect(g.state.move).toBeNull();
   });
 
-  it("bowser with a wheel waits for the server's spin, then applies it", () => {
-    const g = started(
-      ctxFor(lineLayout, { bowser: { wheel: [{ id: "tax", label: "Bowser tax", weight: 1, coins: -5, stars: 0 }] } }),
-    );
-    g.setup("alice", "s05");
-    const ev = g.roll("alice", 1);
-    expect(types(ev)).toContain("BowserSpinRequired");
-    expect(g.state.move?.choice?.kind).toBe("bowser");
-    const ev2 = g.do({ type: "spinBowser", playerId: "alice", outcomeId: "tax", now: g.now });
-    expect(g.p("alice").coins).toBe(5);
-    expect(types(ev2)).toEqual(["BowserSpin", "CoinsChanged", "TurnEnded", "TurnStarted"]);
+  it("coin steal can't be declined, and on timeout robs the richest tribemate", () => {
+    const g = atEvent();
+    g.state.players.bob.coins = 4;
+    g.state.players.cara.coins = 40;
+    draw(g, "coinSteal", 50);
+    expectError(() => target(g, null), "wrong_choice");
+    expectError(() => target(g, "alice"), "wrong_choice");
+    g.advance(1);
+    const ev = g.tick();
+    expect(ev).toContainEqual({ type: "CoinsStolen", playerId: "alice", targetId: "cara", percent: 50, amount: 20, auto: true });
+    expect(g.p("alice").coins).toBe(30);
   });
 
-  it("bowser only triggers on landing, not passing", () => {
-    const g = started(
-      ctxFor(lineLayout, { bowser: { wheel: [{ id: "tax", label: "Bowser tax", weight: 1, coins: -5, stars: 0 }] } }),
-    );
-    g.setup("alice", "s05");
-    const ev = g.roll("alice", 2); // passes s06 bowser, lands on s07 fork... s07 is the landing
-    expect(types(ev)).not.toContain("BowserSpinRequired");
-    expect(g.p("alice").space).toBe("s07");
+  it("star steal costs coins and moves one star", () => {
+    const g = atEvent();
+    g.state.players.alice.coins = 45;
+    g.state.players.cara.stars = 2;
+    const ev = draw(g, "starSteal");
+    expect(ev[0]).toMatchObject({ event: "starSteal", targets: ["cara"] });
+    expectError(() => target(g, "bob"), "wrong_choice");
+    target(g, "cara");
+    expect(g.p("alice")).toMatchObject({ coins: 5, stars: 1 });
+    expect(g.p("cara").stars).toBe(1);
+  });
+
+  it("star steal fizzles when nobody has a star or you can't pay", () => {
+    let g = atEvent();
+    g.state.players.alice.coins = 100;
+    expect(draw(g, "starSteal")).toContainEqual({ type: "EventFizzled", playerId: "alice", event: "starSteal", reason: "no_stars" });
+    expect(g.state.move).toBeNull();
+    g = atEvent();
+    g.state.players.bob.stars = 1;
+    expect(draw(g, "starSteal")).toContainEqual({ type: "EventFizzled", playerId: "alice", event: "starSteal", reason: "too_poor", price: 40 });
+    expect(g.p("alice").coins).toBe(10);
+  });
+
+  it("star steal and swap can be declined, and time out to a decline", () => {
+    let g = atEvent();
+    g.state.players.alice.coins = 50;
+    g.state.players.bob.stars = 1;
+    draw(g, "starSteal");
+    expect(target(g, null)).toContainEqual({ type: "EventDeclined", playerId: "alice", event: "starSteal", auto: false });
+    expect(g.p("alice").coins).toBe(50);
+    g = atEvent();
+    draw(g, "swap");
+    g.advance(1);
+    expect(g.tick()).toContainEqual({ type: "EventDeclined", playerId: "alice", event: "swap", auto: true });
+    expect(g.p("alice").space).toBe("s06");
+  });
+
+  it("swap trades positions without triggering either space", () => {
+    const g = atEvent();
+    g.state.players.bob.space = "s02";
+    draw(g, "swap");
+    const ev = target(g, "bob");
+    expect(ev[0]).toEqual({ type: "PlayersSwapped", playerId: "alice", targetId: "bob", playerTo: "s02", targetTo: "s06" });
+    expect(types(ev)).not.toContain("CoinsChanged");
+    expect(g.p("alice").space).toBe("s02");
+    expect(g.p("bob").space).toBe("s06");
+  });
+
+  it("alone on the board, every event fizzles", () => {
+    const g = atEvent(["alice"]);
+    expect(draw(g, "swap")).toContainEqual({ type: "EventFizzled", playerId: "alice", event: "swap", reason: "no_targets" });
+  });
+
+  it("pausing freezes the event timer", () => {
+    const g = atEvent();
+    draw(g, "swap");
+    g.do({ type: "pause", now: g.now });
+    g.advance(3);
+    g.do({ type: "resume", now: g.now });
+    g.advance(0.5);
+    g.tick();
+    expect(g.state.move?.choice?.kind).toBe("swap");
   });
 });
 

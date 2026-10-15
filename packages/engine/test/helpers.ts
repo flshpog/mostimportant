@@ -16,12 +16,16 @@ export const rules: Rules = {
       { id: "golden-pipe", name: "Golden Pipe", price: 30 },
     ],
   },
-  bowser: { wheel: [] },
+  events: {
+    coinSteal: { weight: 1, percents: [5, 10, 25, 50] },
+    starSteal: { weight: 1, price: 40 },
+    swap: { weight: 1 },
+  },
 };
 
 const pos = (i: number) => ({ x: (i % 10) / 10, y: Math.floor(i / 10) / 10 });
 
-// s01 start -> s02 blue -> s03 red -> s04 green -> s05 shop -> s06 bowser -> s07 blue (fork)
+// s01 start -> s02 blue -> s03 red -> s04 green -> s05 shop -> s06 event -> s07 blue (fork)
 //   s07 -> s08 blue -> s09 blue -> s01
 //   s07 -> s10 red -> s01
 export const lineLayout: Board = {
@@ -35,7 +39,7 @@ export const lineLayout: Board = {
     { id: "s03", type: "red", pos: pos(3), next: ["s04"] },
     { id: "s04", type: "green", pos: pos(4), next: ["s05"] },
     { id: "s05", type: "shop", pos: pos(5), next: ["s06"], passEffect: true },
-    { id: "s06", type: "bowser", pos: pos(6), next: ["s07"] },
+    { id: "s06", type: "event", pos: pos(6), next: ["s07"] },
     { id: "s07", type: "blue", pos: pos(7), next: ["s08", "s10"] },
     { id: "s08", type: "blue", pos: pos(8), next: ["s09"] },
     { id: "s09", type: "blue", pos: pos(9), next: ["s01"] },

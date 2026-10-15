@@ -2,7 +2,7 @@ import type { Board, SeasonConfig } from "@everest/board-data";
 
 // The parts of season-config.json the engine reads. Passed in, never imported, so the
 // engine stays pure and tests can tweak rules freely.
-export type Rules = Pick<SeasonConfig, "coins" | "star" | "dice" | "turns" | "shop" | "bowser">;
+export type Rules = Pick<SeasonConfig, "coins" | "star" | "dice" | "turns" | "shop" | "events">;
 
 export interface EngineContext {
   layout: Board;
@@ -22,7 +22,18 @@ export type Choice =
   | { kind: "fork"; spaceId: string; options: string[]; expiresAt: number }
   | { kind: "star"; spaceId: string; price: number; expiresAt: number }
   | { kind: "shop"; spaceId: string; bought: number; expiresAt: number }
-  | { kind: "bowser"; spaceId: string };
+  // Landed on an event space; the server draws the event straight away.
+  | { kind: "eventDraw"; spaceId: string }
+  // The drawn event, waiting for the player to pick a target. `percent` is rolled at
+  // draw time so a timeout can resolve it without randomness in the engine.
+  | { kind: "coinSteal"; spaceId: string; targets: string[]; percent: number; expiresAt: number }
+  | { kind: "starSteal"; spaceId: string; targets: string[]; price: number; expiresAt: number }
+  | { kind: "swap"; spaceId: string; targets: string[]; expiresAt: number };
+
+export type ChoiceKind = Choice["kind"];
+// Choices that wait on the player (and time out), as opposed to ones the server settles.
+export type PlayerChoice = Exclude<Choice, { kind: "eventDraw" }>;
+export type EventChoiceKind = "coinSteal" | "starSteal" | "swap";
 
 // A roll in progress. Movement pauses here while a choice is pending.
 export interface MoveState {
@@ -54,7 +65,7 @@ export interface BoardState {
   move: MoveState | null;
 }
 
-export type CoinReason = "blue" | "red" | "green" | "star" | "shop" | "bowser" | "host";
+export type CoinReason = "blue" | "red" | "green" | "star" | "shop" | "event" | "host";
 
 export type EngineEvent =
   | { type: "BoardStarted"; order: string[] }
@@ -70,7 +81,7 @@ export type EngineEvent =
   | { type: "PassedSpace"; playerId: string; spaceId: string; spaceType: string }
   | { type: "LandedOnSpace"; playerId: string; spaceId: string; spaceType: string }
   | { type: "CoinsChanged"; playerId: string; delta: number; coins: number; reason: CoinReason }
-  | { type: "StarsChanged"; playerId: string; delta: number; stars: number; reason: "star" | "bowser" | "host" }
+  | { type: "StarsChanged"; playerId: string; delta: number; stars: number; reason: "star" | "event" | "host" }
   | { type: "StarOffered"; playerId: string; spaceId: string; price: number }
   | { type: "StarUnaffordable"; playerId: string; spaceId: string; price: number; coins: number }
   | { type: "StarPurchased"; playerId: string; spaceId: string; price: number }
@@ -80,9 +91,13 @@ export type EngineEvent =
   | { type: "ShopUnaffordable"; playerId: string; spaceId: string }
   | { type: "ShopPurchase"; playerId: string; itemId: string; price: number }
   | { type: "ShopClosed"; playerId: string; auto: boolean }
-  | { type: "BowserSpinRequired"; playerId: string; spaceId: string }
-  | { type: "BowserSpin"; playerId: string; outcomeId: string; label: string }
-  | { type: "BowserNoWheel"; playerId: string; spaceId: string }
+  | { type: "EventDrawn"; playerId: string; spaceId: string; event: EventChoiceKind; targets: string[] }
+  // The drawn event couldn't happen: nobody to target, nobody with a star, or too poor.
+  | { type: "EventFizzled"; playerId: string; event: EventChoiceKind | null; reason: "no_events" | "no_targets" | "no_stars" | "too_poor"; price?: number }
+  | { type: "EventDeclined"; playerId: string; event: EventChoiceKind; auto: boolean }
+  | { type: "CoinsStolen"; playerId: string; targetId: string; percent: number; amount: number; auto: boolean }
+  | { type: "StarStolen"; playerId: string; targetId: string; price: number }
+  | { type: "PlayersSwapped"; playerId: string; targetId: string; playerTo: string; targetTo: string }
   | { type: "PlayerAdded"; playerId: string; spaceId: string }
   | { type: "PlayerRemoved"; playerId: string; player: PlayerState }
   | { type: "PlayerTeleported"; playerId: string; from: string; to: string }
@@ -106,7 +121,10 @@ export type Action =
   | { type: "skipStar"; playerId: string; now: number }
   | { type: "shopBuy"; playerId: string; itemId: string; now: number }
   | { type: "shopSkip"; playerId: string; now: number }
-  | { type: "spinBowser"; playerId: string; outcomeId: string; now: number }
+  // Server-only: settles an eventDraw with the event it drew (and the coin-steal roll).
+  | { type: "drawEvent"; playerId: string; event: EventChoiceKind; percent: number; now: number }
+  // Player picks the event's target, or null to decline (not allowed for coin steal).
+  | { type: "eventTarget"; playerId: string; targetId: string | null; now: number }
   // host actions
   | { type: "setCoins"; playerId: string; coins: number; now: number }
   | { type: "setStars"; playerId: string; stars: number; now: number }

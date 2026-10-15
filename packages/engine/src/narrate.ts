@@ -1,4 +1,6 @@
-import type { EngineEvent } from "./types";
+import type { EngineEvent, EventChoiceKind } from "./types";
+
+export const EVENT_NAMES: Record<EventChoiceKind, string> = { coinSteal: "Coin Steal", starSteal: "Star Steal", swap: "Swap Places" };
 
 // One line of plain English per event, for the website feed and the Discord bot.
 // `name` resolves a player id to a display name; `item` resolves an item id.
@@ -36,11 +38,11 @@ export function describeEvent(
     case "LandedOnSpace":
       return `${name(event.playerId)} landed on ${event.spaceType === "start" ? "the start" : `a ${event.spaceType} space`}.`;
     case "CoinsChanged":
-      if (event.reason === "star" || event.reason === "shop") return null;
+      if (event.reason === "star" || event.reason === "shop" || event.reason === "event") return null;
       if (event.delta === 0) return event.reason === "red" ? `${name(event.playerId)} had no coins to lose.` : null;
       return `${name(event.playerId)} ${event.delta > 0 ? "got" : "lost"} ${coins(event.delta)}${event.reason === "host" ? " (host)" : ""}. Now ${event.coins}.`;
     case "StarsChanged":
-      if (event.reason === "star") return null;
+      if (event.reason === "star" || event.reason === "event") return null;
       return `${name(event.playerId)} ${event.delta >= 0 ? "got" : "lost"} ${Math.abs(event.delta)} star${Math.abs(event.delta) === 1 ? "" : "s"}${event.reason === "host" ? " (host)" : ""}.`;
     case "StarOffered":
       return `${name(event.playerId)} reached the star! It costs ${coins(event.price)}.`;
@@ -60,12 +62,21 @@ export function describeEvent(
       return `${name(event.playerId)} bought ${item(event.itemId)} for ${coins(event.price)}.`;
     case "ShopClosed":
       return null;
-    case "BowserSpinRequired":
-      return `${name(event.playerId)} landed on Bowser...`;
-    case "BowserSpin":
-      return `Bowser's wheel: ${event.label}`;
-    case "BowserNoWheel":
-      return `${name(event.playerId)} landed on Bowser, but he's not home.`;
+    case "EventDrawn":
+      return `❗ ${name(event.playerId)} hit an event: ${EVENT_NAMES[event.event]}!`;
+    case "EventFizzled":
+      if (event.reason === "no_events") return `${name(event.playerId)} landed on an event space, but nothing happened.`;
+      if (event.reason === "no_stars") return "Nobody has a star to steal, so nothing happens.";
+      if (event.reason === "too_poor") return `${name(event.playerId)} needs ${coins(event.price ?? 0)} to steal a star, so nothing happens.`;
+      return "There's nobody to pick, so nothing happens.";
+    case "EventDeclined":
+      return event.auto ? `${name(event.playerId)} didn't pick in time, so nothing happens.` : `${name(event.playerId)} passed on the ${EVENT_NAMES[event.event].toLowerCase()}.`;
+    case "CoinsStolen":
+      return `💰 ${name(event.playerId)} stole ${event.percent}% of ${name(event.targetId)}'s coins: ${coins(event.amount)}!${event.auto ? " (picked automatically)" : ""}`;
+    case "StarStolen":
+      return `🌟 ${name(event.playerId)} paid ${coins(event.price)} and stole a star from ${name(event.targetId)}!`;
+    case "PlayersSwapped":
+      return `🔄 ${name(event.playerId)} swapped places with ${name(event.targetId)}!`;
     case "PlayerAdded":
       return `${name(event.playerId)} joined the board.`;
     case "PlayerRemoved":

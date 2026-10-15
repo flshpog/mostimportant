@@ -397,6 +397,7 @@ export class BoardDiscord {
         await interaction.editReply({ components: [] }).catch(() => undefined);
       } else if (action.kind === "fork") await service.chooseFork(uid, action.next, "discord");
       else if (action.kind === "star") await (action.buy ? service.buyStar(uid, "discord") : service.skipStar(uid, "discord"));
+      else if (action.kind === "event") await service.eventTarget(uid, action.targetId, "discord");
       else await (action.itemId ? service.shopBuy(uid, action.itemId, "discord") : service.shopSkip(uid, "discord"));
     } catch (e) {
       await interaction.followUp({ content: this.friendly(e), ephemeral: true });

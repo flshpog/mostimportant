@@ -42,12 +42,10 @@ const ctx: EngineContext = {
         { id: "golden-pipe", name: "Golden Pipe", price: 25 },
       ],
     },
-    bowser: {
-      wheel: [
-        { id: "coins-10", label: "Lose 10 coins", weight: 3, coins: -10, stars: 0 },
-        { id: "star", label: "Lose a star", weight: 1, coins: 0, stars: -1 },
-        { id: "nothing", label: "Bowser's in a good mood", weight: 1, coins: 0, stars: 0 },
-      ],
+    events: {
+      coinSteal: { weight: 1, percents: [5, 10, 25, 50] },
+      starSteal: { weight: 1, price: 40 },
+      swap: { weight: 1 },
     },
   },
 };
@@ -83,7 +81,7 @@ function simulate(seed: number, players: number, turns: number) {
   let state = initial;
   let now = T0;
   const actions: Action[] = [];
-  const stats = { rolls: 0, skips: 0, stars: 0, shops: 0, forks: 0, bowser: 0 };
+  const stats = { rolls: 0, skips: 0, stars: 0, shops: 0, forks: 0, events: 0 };
 
   const step = (action: Action) => {
     const r = apply(ctx, state, action);
@@ -93,7 +91,7 @@ function simulate(seed: number, players: number, turns: number) {
       if (e.type === "StarPurchased") stats.stars++;
       if (e.type === "ShopPurchase") stats.shops++;
       if (e.type === "ForkChosen") stats.forks++;
-      if (e.type === "BowserSpin") stats.bowser++;
+      if (e.type === "EventDrawn") stats.events++;
     }
     state = r.state;
     actions.push(action);
@@ -120,7 +118,11 @@ function simulate(seed: number, players: number, turns: number) {
     while (state.move) {
       const c = state.move.choice!;
       now += Math.floor(rnd() * 30) * 60_000;
-      if (c.kind !== "bowser" && rnd() < 0.1) {
+      if (c.kind === "eventDraw") {
+        // what the server does
+        const event = pick(["coinSteal", "starSteal", "swap"] as const);
+        step({ type: "drawEvent", playerId: pid, event, percent: pick(ctx.rules.events.coinSteal.percents), now });
+      } else if (rnd() < 0.1) {
         now = c.expiresAt;
         step({ type: "tick", now });
       } else if (c.kind === "fork") step({ type: "chooseFork", playerId: pid, next: pick(c.options), now });
@@ -131,7 +133,8 @@ function simulate(seed: number, players: number, turns: number) {
         const affordable = ctx.rules.shop.items.filter((i) => i.price <= coins);
         step(rnd() < 0.6 && affordable.length ? { type: "shopBuy", playerId: pid, itemId: pick(affordable).id, now } : { type: "shopSkip", playerId: pid, now });
       } else {
-        step({ type: "spinBowser", playerId: pid, outcomeId: pick(ctx.rules.bowser.wheel).id, now });
+        const options: (string | null)[] = c.kind === "coinSteal" ? [...c.targets] : [...c.targets, null];
+        step({ type: "eventTarget", playerId: pid, targetId: pick(options), now });
       }
     }
 

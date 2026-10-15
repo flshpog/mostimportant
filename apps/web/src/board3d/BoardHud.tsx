@@ -13,6 +13,7 @@ export interface HudActions {
   fork(next: string): void;
   star(buy: boolean): void;
   shop(itemId: string | null): void;
+  event(targetId: string | null): void;
 }
 
 // Everything drawn over the 3D board. On wide screens: title top-left, a side panel
@@ -83,6 +84,30 @@ export function BoardHud(props: {
           <button className="button" onClick={() => actions.star(false)}>
             No thanks
           </button>
+        </div>
+      )}
+      {(choice?.kind === "coinSteal" || choice?.kind === "starSteal" || choice?.kind === "swap") && (
+        <div className="event-prompt">
+          <p className="event-title">
+            {choice.kind === "coinSteal" ? "💰 Coin Steal! Pick a tribemate." : choice.kind === "starSteal" ? `🌟 Star Steal! Pay ${choice.price} coins to take a star?` : "🔄 Swap Places! Pick someone to trade spots with."}
+          </p>
+          <div className="row">
+            {choice.targets
+              .filter((id) => state.players[id])
+              .map((id) => {
+                const t = state.players[id];
+                return (
+                  <button key={id} className="button" onClick={() => actions.event(id)}>
+                    {t.name} {choice.kind === "coinSteal" ? `(${t.coins} 🪙)` : choice.kind === "starSteal" ? `(${t.stars} ⭐)` : ""}
+                  </button>
+                );
+              })}
+            {choice.kind !== "coinSteal" && (
+              <button className="button" onClick={() => actions.event(null)}>
+                No thanks
+              </button>
+            )}
+          </div>
         </div>
       )}
       {choice?.kind === "shop" && (

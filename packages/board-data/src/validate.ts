@@ -27,7 +27,7 @@ function reachable(from: string, edges: Map<string, string[]>): Set<string> {
 
 // Structural checks on a board graph. Schema errors short-circuit everything else.
 export function validateBoard(input: unknown): BoardReport {
-  const counts = { blue: 0, red: 0, green: 0, shop: 0, bowser: 0, start: 0 } as Record<SpaceType, number>;
+  const counts = { blue: 0, red: 0, green: 0, shop: 0, event: 0, start: 0 } as Record<SpaceType, number>;
   const report: BoardReport = { errors: [], warnings: [], counts, forks: [], review: [] };
 
   const parsed = BoardSchema.safeParse(input);

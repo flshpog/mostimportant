@@ -9,7 +9,7 @@ export const TILE_COLOURS: Record<SpaceType, string> = {
   red: "#e5484d",
   green: "#3fb950",
   shop: "#8e4ec6",
-  bowser: "#2b2530",
+  event: "#f2c230",
   start: "#f5a524",
 };
 

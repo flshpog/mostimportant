@@ -3,6 +3,7 @@ import type { Board, SeasonConfig } from "@everest/board-data";
 import {
   apply,
   createBoardState,
+  enabledEvents,
   EngineError,
   starCandidates,
   type Action,
@@ -226,19 +227,20 @@ export class BoardService extends EventEmitter {
     return run;
   }
 
-  // Applies one action and any follow-ups the server owns (bowser spins).
+  // Applies one action and any follow-ups the server owns (drawing events).
   private applyLocked(rt: BoardRuntime, action: Action, meta: ActionMeta): StoredEvent[] {
     const before = rt.state;
     const result = apply(this.ctx(rt), before, action);
     if (action.type === "tick" && !result.events.length) return [];
     const out = this.commit(rt, { kind: "action", by: meta.by, action, before }, result.state, result.events, meta);
-    // A bowser landing waits for a spin. That's the server's job, not the player's.
-    while (rt.state.move?.choice?.kind === "bowser") {
-      const wheel = this.ctx(rt).rules.bowser.wheel;
-      const outcome = pickWeighted(this.rng, wheel);
-      const spin: Action = { type: "spinBowser", playerId: rt.state.move.playerId, outcomeId: outcome.id, now: this.clock() };
-      const r = apply(this.ctx(rt), rt.state, spin);
-      out.push(...this.commit(rt, { kind: "action", by: null, action: spin, before: rt.state }, r.state, r.events, meta));
+    // An event landing waits for the draw. That's the server's job, not the player's.
+    while (rt.state.move?.choice?.kind === "eventDraw") {
+      const ctx = this.ctx(rt);
+      const { event } = pickWeighted(this.rng, enabledEvents(ctx));
+      const percent = pick(this.rng, ctx.rules.events.coinSteal.percents);
+      const draw: Action = { type: "drawEvent", playerId: rt.state.move.playerId, event, percent, now: this.clock() };
+      const r = apply(ctx, rt.state, draw);
+      out.push(...this.commit(rt, { kind: "action", by: null, action: draw, before: rt.state }, r.state, r.events, meta));
     }
     this.schedule(rt);
     return out;
@@ -251,7 +253,7 @@ export class BoardService extends EventEmitter {
     const s = rt.state;
     if (!s.started || s.paused) return;
     const c = s.move?.choice;
-    const wake = c && c.kind !== "bowser" ? c.expiresAt : !s.move ? s.turn.deadline : null;
+    const wake = c && c.kind !== "eventDraw" ? c.expiresAt : !s.move ? s.turn.deadline : null;
     if (wake === null) return;
     const delay = Math.min(Math.max(0, wake - this.clock()) + 25, MAX_TIMER_MS);
     rt.timer = setTimeout(() => {
@@ -358,6 +360,10 @@ export class BoardService extends EventEmitter {
 
   shopSkip(userId: string, source: ActionSource = "web") {
     return this.playerAction(userId, source, (now) => ({ type: "shopSkip", playerId: userId, now }));
+  }
+
+  eventTarget(userId: string, targetId: string | null, source: ActionSource = "web") {
+    return this.playerAction(userId, source, (now) => ({ type: "eventTarget", playerId: userId, targetId, now }));
   }
 
   private playerAction(userId: string, source: ActionSource, make: (now: number) => Action): Promise<StoredEvent[]> {

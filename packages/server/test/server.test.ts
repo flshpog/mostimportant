@@ -143,15 +143,18 @@ describe("playing", () => {
     expect(blue.map((s: { id: string }) => s.id)).toContain(moved.event.to);
   });
 
-  it("the server spins the bowser wheel itself", async () => {
-    h.season.bowser = { wheel: [{ id: "tax", label: "Bowser tax", weight: 1, coins: -4, stars: 0 }] };
+  it("the server draws the event, and the player picks the target", async () => {
+    h.season.events = { coinSteal: { weight: 1, percents: [5, 50] }, starSteal: { weight: 0, price: 40 }, swap: { weight: 0 } };
     await h.api("/api/host/boards/mario-stadium/actions", { method: "POST", as: HOST, body: { action: { type: "movePlayer", playerId: ALICE, spaceId: "s20" } } });
-    h.rng.queue = [1];
-    const r = await h.api("/api/play/roll", { method: "POST", as: ALICE }); // s20 -> s21 bowser
+    h.rng.queue = [1, 1, 1]; // roll 1, draw coin steal, the 50% roll
+    const r = await h.api("/api/play/roll", { method: "POST", as: ALICE }); // s20 -> s21 event
     const types = r.body.events.map((e: { event: { type: string } }) => e.event.type);
-    expect(types).toEqual(expect.arrayContaining(["BowserSpinRequired", "BowserSpin", "TurnEnded"]));
+    expect(types).toContain("EventDrawn");
     const s = await h.api("/api/boards/mario-stadium", { as: ALICE });
-    expect(s.body.state.players[ALICE].coins).toBe(6);
+    expect(s.body.state.move.choice).toMatchObject({ kind: "coinSteal", percent: 50 });
+    expect((await h.api("/api/play/event", { method: "POST", as: ALICE, body: {} })).status).toBe(400);
+    const r2 = await h.api("/api/play/event", { method: "POST", as: ALICE, body: { targetId: BOB } });
+    expect(r2.body.events[0].event).toMatchObject({ type: "CoinsStolen", targetId: BOB, amount: 5 });
   });
 });
 

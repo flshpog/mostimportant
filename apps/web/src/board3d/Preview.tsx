@@ -55,7 +55,7 @@ export function Preview() {
           { seq: 2, text: "Toad got 3 coins. Now 13." },
           { seq: 1, text: "It's Peach's turn." },
         ]}
-        actions={{ roll: () => undefined, fork: () => undefined, star: () => undefined, shop: () => undefined }}
+        actions={{ roll: () => undefined, fork: () => undefined, star: () => undefined, shop: () => undefined, event: () => undefined }}
       />
     </div>
   );
