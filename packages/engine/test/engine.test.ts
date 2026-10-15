@@ -724,23 +724,25 @@ describe("the shop and items", () => {
     g.roll("alice", 5);
   });
 
-  it("a Custom Dice Block offers two numbers to pick from; a timeout takes the higher", () => {
+  it("a Custom Dice Block rolls nothing: you choose any number; a timeout takes the highest", () => {
     let g = atShop();
     g.p("alice").items = ["reroll-block"];
     use(g, "reroll-block");
-    expectError(() => g.roll("alice", 3, 3), "invalid_dice");
-    const ev = g.roll("alice", 3, 1);
-    expect(ev[0]).toMatchObject({ type: "DiceRolled", dice: [3, 1], choose: true });
-    expect(g.state.move?.choice).toMatchObject({ kind: "dicePick", options: [3, 1] });
-    g.do({ type: "pickDie", playerId: "alice", value: 1, now: g.now });
+    expectError(() => g.roll("alice", 3), "invalid_dice");
+    const ev = g.roll("alice");
+    expect(ev[0]).toMatchObject({ type: "DiceRolled", dice: [], choose: true, item: "reroll-block" });
+    expect(g.state.move?.choice).toMatchObject({ kind: "dicePick", options: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10], item: "reroll-block" });
+    expectError(() => g.do({ type: "pickDie", playerId: "alice", value: 11, now: g.now }), "wrong_choice");
+    const picked = g.do({ type: "pickDie", playerId: "alice", value: 1, now: g.now });
+    expect(picked[0]).toMatchObject({ type: "DiePicked", value: 1, item: "reroll-block", auto: false });
     expect(g.p("alice").space).toBe("s05");
 
     g = atShop();
     g.p("alice").items = ["reroll-block"];
     use(g, "reroll-block");
-    g.roll("alice", 1, 2);
+    g.roll("alice");
     g.advance(1);
-    expect(g.tick()).toContainEqual({ type: "DiePicked", playerId: "alice", value: 2, total: 2, auto: true });
+    expect(g.tick()).toContainEqual({ type: "DiePicked", playerId: "alice", value: 10, total: 10, auto: true, item: "reroll-block" });
   });
 
   it("a Poison Mushroom halves the target's next roll, once", () => {

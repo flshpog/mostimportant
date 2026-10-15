@@ -266,6 +266,11 @@ export class BoardDiscord {
   // A few quick edits that land on the result the server already rolled.
   private async diceAnimation(ch: BoardChannel, roll: Extract<EngineEvent, { type: "DiceRolled" }>, state: BoardState, lines: string[]) {
     const who = bold(this.names(state)(roll.playerId));
+    // a Custom Dice Block doesn't roll: the player chooses next
+    if (roll.choose) {
+      await this.reveal(ch, [], lines);
+      return;
+    }
     const frame = this.opts.diceFrameMs ?? 450;
     const { min, max } = this.opts.loadConfig().dice;
     const face = () => min + Math.floor(Math.random() * (max - min + 1)); // cosmetic only

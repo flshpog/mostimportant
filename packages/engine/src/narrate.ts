@@ -25,7 +25,7 @@ export function describeEvent(
     case "TurnEnded":
       return null;
     case "DiceRolled": {
-      if (event.choose) return `${name(event.playerId)} rolled a ${event.dice[0]} and a ${event.dice[1]}, and gets to pick one.`;
+      if (event.choose) return `${name(event.playerId)} gets to choose their number with ${event.item ? item(event.item) : "a Custom Dice Block"}!`;
       const raw = event.halvedFrom ?? event.total;
       const roll = event.dice.length > 1 ? `rolled ${event.dice.join(" + ")} = ${raw}` : `rolled a ${raw}`;
       return event.halvedFrom !== undefined
@@ -33,7 +33,7 @@ export function describeEvent(
         : `${name(event.playerId)} ${roll}.`;
     }
     case "DiePicked": {
-      const how = event.auto ? "didn't pick in time and goes with" : "picked";
+      const how = event.auto ? "didn't choose in time and goes with" : "chose";
       return event.halvedFrom !== undefined
         ? `${name(event.playerId)} ${how} ${event.value}, but they're poisoned: halved to ${event.total}.`
         : `${name(event.playerId)} ${how} ${event.value}.`;

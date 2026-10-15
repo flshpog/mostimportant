@@ -188,6 +188,7 @@ export function BoardHud(props: {
         </>,
       );
     } else {
+      const choosing = state.pendingRoll?.playerId === meId && itemDef(ctx, state.pendingRoll.itemId)?.effect.kind === "custom";
       dock = card(
         "roll",
         <DiceIcon />,
@@ -195,7 +196,7 @@ export function BoardHud(props: {
         state.pendingRoll?.playerId === meId ? <>Rolling with your {itemDef(ctx, state.pendingRoll.itemId)?.name}</> : null,
         <>
           <button className="dock-button go big" onClick={actions.roll}>
-            <DiceIcon /> Roll
+            <DiceIcon /> {choosing ? "Choose your number" : "Roll"}
           </button>
           {usable.length > 0 && !state.itemUsed && (
             <button className="dock-button items" onClick={() => setBag({})}>
@@ -206,16 +207,19 @@ export function BoardHud(props: {
       );
     }
   } else if (props.ready && choice?.kind === "dicePick") {
+    // a Custom Dice Block: any number in its range
     dock = card(
       "roll",
       <DiceIcon />,
-      "Pick your roll!",
-      `Your ${season.shop.items.find((i) => i.effect.kind === "reroll")?.name ?? "dice"} rolled two numbers. Which one do you take?`,
-      choice.options.map((v) => (
-        <button key={v} className="dock-button pick big" onClick={() => actions.pick(v)}>
-          {v}
-        </button>
-      )),
+      "Choose your number!",
+      `Your ${itemDef(ctx, choice.item ?? "")?.name ?? "Custom Dice Block"} lets you pick exactly how far to go.`,
+      <div className="number-grid">
+        {choice.options.map((v) => (
+          <button key={v} className="dock-button pick" onClick={() => actions.pick(v)}>
+            {v}
+          </button>
+        ))}
+      </div>,
     );
   } else if (props.ready && choice?.kind === "fork") {
     dock = card(

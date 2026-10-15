@@ -13,8 +13,10 @@ export interface DiceShow {
   // every die rolled (a Mushroom rolls two or three), in the item's colour if any
   dice?: number[];
   colour?: string;
-  // a Custom Dice Block: two numbers to pick from, no total yet
+  // two numbers to pick from, no total yet
   choose?: boolean;
+  // a Custom Dice Block: the number was chosen, not rolled
+  chosen?: boolean;
   // a poisoned roll, halved from this
   halvedFrom?: number;
 }
@@ -246,7 +248,7 @@ export function DiceOverlay({ roll, onDone }: { roll: DiceShow | null; onDone: (
           <>{roll.mine ? "Rolling…" : `${roll.name} is rolling…`}</>
         ) : (
           <>
-            {roll.mine ? "You rolled" : `${roll.name} rolled`} {result}
+            {roll.mine ? (roll.chosen ? "You chose" : "You rolled") : `${roll.name} ${roll.chosen ? "chose" : "rolled"}`} {result}
             {roll.halvedFrom !== undefined && (
               <span className="poisoned">
                 {" "}

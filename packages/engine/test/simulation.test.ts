@@ -125,12 +125,8 @@ function simulate(seed: number, players: number, turns: number) {
     const die = (lo: number, hi: number) => lo + Math.floor(rnd() * (hi - lo + 1));
     let dice: number[];
     if (pending?.kind === "dice") dice = Array.from({ length: pending.count }, () => die(pending.min, pending.max));
-    else if (pending?.kind === "reroll") {
-      const a = die(pending.min, pending.max);
-      let b = die(pending.min, pending.max);
-      while (b === a) b = die(pending.min, pending.max);
-      dice = [a, b];
-    } else dice = [die(1, 10)];
+    else if (pending?.kind === "custom") dice = [];
+    else dice = [die(1, 10)];
     step({ type: "roll", playerId: pid, dice, now });
     stats.rolls++;
 

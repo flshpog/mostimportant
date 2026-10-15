@@ -78,8 +78,8 @@ const Die = z.number().int().positive();
 export const ItemEffectSchema = z.discriminatedUnion("kind", [
   // Roll `count` dice from min to max and add them (Mushrooms).
   z.object({ kind: z.literal("dice"), count: z.number().int().positive(), min: Die, max: Die }).strict(),
-  // Roll two different numbers and pick one (Custom Dice Block).
-  z.object({ kind: z.literal("reroll"), min: Die, max: Die }).strict(),
+  // No roll: choose any number from min to max (Custom Dice Block).
+  z.object({ kind: z.literal("custom"), min: Die, max: Die }).strict(),
   // Held: takes `amount` off the next star you buy, then it's used up (Magic Lamp).
   z.object({ kind: z.literal("starDiscount"), amount: z.number().int().positive() }).strict(),
   // Shows you where the star goes next (Crystal Ball).

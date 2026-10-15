@@ -103,7 +103,7 @@ interface Space {
 **coins and items**
 - coins are only for the board: they buy stars and shop items. they are **not** S2 bells and are not used anywhere else in the survivor game.
 - shop (owner decisions 2026-10-15): ten items, all numbers in `season-config.json` (`shop.items[].effect`):
-  - Mushroom (10): two dice added. Golden Mushroom (20): three dice. Slow Mushroom (8): a 1-5 die. Bullet Bill (8): a 6-10 die. Custom Dice Block (6): two different numbers, pick one (a timeout takes the higher).
+  - Mushroom (10): two dice added. Golden Mushroom (20): three dice. Slow Mushroom (8): a 1-5 die. Bullet Bill (8): a 6-10 die. Custom Dice Block (6): no roll, choose any number from 1 to 10 like in Mario Party Superstars (a timeout takes 10).
   - Magic Lamp (6): takes 10 off your next star, by itself while carried. Crystal Ball (6): shows only you where the star appears next (the server fixes that spot ahead of time and never sends it to other players).
   - Blue Shell (10): blocks the next steal against you (coin steal, star steal or Boo Bell), by itself while carried; a blocked star steal isn't paid for.
   - Poison Mushroom (10): halves a tribemate's next roll (rounded down, at least 1). Boo Bell (9): takes 7 coins from a tribemate (all they have if fewer).

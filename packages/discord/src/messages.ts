@@ -187,11 +187,13 @@ export function promptMessage(boardId: string, state: BoardState, layout: Board,
     return { content: text, components: rows(buttons), allowedMentions: mention };
   }
   if (c.kind === "dicePick") {
+    // a Custom Dice Block: any number in its range
     const buttons = c.options.map((value) =>
-      new ButtonBuilder().setCustomId(buttonId({ kind: "pick", boardId, value })).setLabel(`Take ${value}`).setStyle(ButtonStyle.Primary),
+      new ButtonBuilder().setCustomId(buttonId({ kind: "pick", boardId, value })).setLabel(String(value)).setStyle(ButtonStyle.Primary),
     );
+    const block = config.shop.items.find((i) => i.id === c.item)?.name ?? "Custom Dice Block";
     return {
-      content: `🎲 ${who}, your ${config.shop.items.find((i) => i.effect.kind === "reroll")?.name ?? "dice"} rolled ${c.options.map((v) => bold(String(v))).join(" and ")}. Which one?\n-# ${until}you'll take the higher one.`,
+      content: `🎲 ${who}, your ${bold(block)} lets you choose! How far do you want to go?\n-# ${until}you'll go ${Math.max(...c.options)}.`,
       components: rows(buttons),
       allowedMentions: mention,
     };

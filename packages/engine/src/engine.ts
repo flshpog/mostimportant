@@ -184,12 +184,13 @@ export function affordableItems(ctx: EngineContext, coins: number): string[] {
 }
 
 // The dice a player's next roll uses: a dice item if they used one this turn,
-// otherwise one normal die. `distinct`: the dice must differ (Custom Dice Block).
+// otherwise one normal die. A Custom Dice Block rolls nothing (count 0): the player
+// chooses instead. `distinct`: the dice must differ.
 export function rollSpec(ctx: EngineContext, state: BoardState, playerId: string): { count: number; min: number; max: number; distinct: boolean } {
   const pr = state.pendingRoll;
   const e = pr && pr.playerId === playerId ? itemDef(ctx, pr.itemId)?.effect : undefined;
   if (e?.kind === "dice") return { count: e.count, min: e.min, max: e.max, distinct: false };
-  if (e?.kind === "reroll") return { count: 2, min: e.min, max: e.max, distinct: true };
+  if (e?.kind === "custom") return { count: 0, min: e.min, max: e.max, distinct: false };
   return { count: 1, min: ctx.rules.dice.min, max: ctx.rules.dice.max, distinct: false };
 }
 
@@ -475,7 +476,7 @@ class Run {
     const pr = this.s.pendingRoll;
     if (!pr || pr.playerId !== playerId) return null;
     const e = itemDef(this.ctx, pr.itemId)?.effect;
-    return e && (e.kind === "dice" || e.kind === "reroll") ? e : null;
+    return e && (e.kind === "dice" || e.kind === "custom") ? e : null;
   }
 
   roll(playerId: string, dice: number[]) {
@@ -486,10 +487,8 @@ class Run {
       if (dice.length !== item.count || dice.some((d) => !ok(d, item.min, item.max))) {
         throw new EngineError("invalid_dice", `That item rolls ${item.count} dice from ${item.min} to ${item.max}.`);
       }
-    } else if (item?.kind === "reroll") {
-      if (dice.length !== 2 || dice[0] === dice[1] || dice.some((d) => !ok(d, item.min, item.max))) {
-        throw new EngineError("invalid_dice", "A Custom Dice Block rolls two different numbers.");
-      }
+    } else if (item?.kind === "custom") {
+      if (dice.length) throw new EngineError("invalid_dice", "A Custom Dice Block doesn't roll: you choose the number.");
     } else {
       const { min, max } = this.ctx.rules.dice;
       if (!dice.length || dice.some((d) => !ok(d, min, max))) {
@@ -499,10 +498,11 @@ class Run {
     const itemId = this.s.pendingRoll?.itemId;
     this.s.pendingRoll = null;
     this.s.move = { playerId: p.id, remaining: 0, rolledAt: this.now, arrival: null, choice: null };
-    if (item?.kind === "reroll") {
-      // two numbers to choose from; the move starts once one is picked
-      this.emit({ type: "DiceRolled", playerId, dice: [...dice], total: 0, item: itemId, choose: true });
-      this.s.move.choice = { kind: "dicePick", spaceId: p.space, options: [...dice], expiresAt: this.choiceExpiry() };
+    if (item?.kind === "custom") {
+      // every number to choose from; the move starts once one is picked
+      const options = Array.from({ length: item.max - item.min + 1 }, (_, i) => item.min + i);
+      this.emit({ type: "DiceRolled", playerId, dice: [], total: 0, item: itemId, choose: true });
+      this.s.move.choice = { kind: "dicePick", spaceId: p.space, options, expiresAt: this.choiceExpiry(), ...(itemId ? { item: itemId } : {}) };
       return;
     }
     const raw = dice.reduce((a, b) => a + b, 0);
@@ -528,16 +528,17 @@ class Run {
 
   pickDie(playerId: string, value: number) {
     const { choice } = this.requireChoice(playerId, "dicePick");
-    if (!choice.options.includes(value)) throw new EngineError("wrong_choice", "That isn't one of your numbers.");
+    if (!choice.options.includes(value)) throw new EngineError("wrong_choice", "That isn't one of the numbers you can choose.");
     this.resolveDicePick(value, false);
   }
 
   private resolveDicePick(value: number, auto: boolean) {
     const m = this.s.move!;
     const p = this.player(m.playerId);
+    const item = m.choice?.kind === "dicePick" ? m.choice.item : undefined;
     m.choice = null;
     const total = this.poisonCheck(p, value);
-    this.emit({ type: "DiePicked", playerId: p.id, value, total, ...(total !== value ? { halvedFrom: value } : {}), auto });
+    this.emit({ type: "DiePicked", playerId: p.id, value, total, ...(total !== value ? { halvedFrom: value } : {}), auto, ...(item ? { item } : {}) });
     this.startMove(total);
   }
 
@@ -578,7 +579,7 @@ class Run {
     p.items.splice(idx, 1);
     this.s.itemUsed = true;
     this.emit({ type: "ItemUsed", playerId, itemId, ...(target ? { targetId: target.id } : {}) });
-    if (e.kind === "dice" || e.kind === "reroll") this.s.pendingRoll = { playerId, itemId };
+    if (e.kind === "dice" || e.kind === "custom") this.s.pendingRoll = { playerId, itemId };
     else if (e.kind === "poison") target!.poisoned = true;
     else if (e.kind === "steal") {
       const t = target!;

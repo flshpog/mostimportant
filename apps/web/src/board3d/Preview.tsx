@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState } from "react";
 import { loadLayouts, loadSeasonConfig } from "@everest/board-data";
-import { apply, createBoardState, currentPlayerId, describeEvent, itemDef, starCandidates, type Action, type BoardState, type EngineEvent } from "@everest/engine";
+import { apply, createBoardState, currentPlayerId, describeEvent, itemDef, rollSpec, starCandidates, type Action, type BoardState, type EngineEvent } from "@everest/engine";
 import { Board3D, type CamMode } from "./Board3D";
 import { TokenAnimator } from "./Tokens";
 import { BoardHud } from "./BoardHud";
@@ -39,7 +39,7 @@ export function Preview() {
       players: [
         // a mid-game spread, so every event has something to work with: Peach can
         // afford a star or a star steal, and Toad and Yoshi have stars to take
-        { id: "p1", name: "Peach", coins: 60, stars: 1, items: ["star-compass", "guard-charm"] },
+        { id: "p1", name: "Peach", coins: 60, stars: 1, items: ["reroll-block", "guard-charm"] },
         { id: "p2", name: "Toad", coins: 35, stars: 2 },
         { id: "p3", name: "Yoshi", coins: 18, stars: 1 },
         { id: "p4", name: "Daisy", coins: 44 },
@@ -125,8 +125,12 @@ export function Preview() {
       if (s.move || dice || !pid) return null;
       const first = firstRoll.current;
       firstRoll.current = false;
-      const d = first && window.location.hash.includes("event") ? 1 : season.dice.min + Math.floor(Math.random() * (season.dice.max - season.dice.min + 1));
-      return { type: "roll", playerId: pid, dice: [d], now };
+      if (first && window.location.hash.includes("event")) return { type: "roll", playerId: pid, dice: [1], now };
+      // whatever the player's item calls for, like the server
+      const spec = rollSpec(ctx, s, pid);
+      const out: number[] = [];
+      while (out.length < spec.count) out.push(spec.min + Math.floor(Math.random() * (spec.max - spec.min + 1)));
+      return { type: "roll", playerId: pid, dice: out, now };
     });
   const fork = (next: string) =>
     act((s, now) => {

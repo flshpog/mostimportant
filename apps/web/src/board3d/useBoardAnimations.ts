@@ -85,6 +85,11 @@ export function useBoardAnimations(opts: {
         switch (e.type) {
           case "DiceRolled":
             mover = pid;
+            // a Custom Dice Block rolls nothing: the die comes once a number is chosen
+            if (e.choose) {
+              if (pid === meId) showBanner(cursor, { tone: "info", text: "Choose your number!" });
+              break;
+            }
             {
               const item = e.item as string | undefined;
               const roll: DiceShow = {
@@ -137,6 +142,28 @@ export function useBoardAnimations(opts: {
             else if (e.reason !== "host" && e.reason !== "event" && e.reason !== "item" && e.delta !== 0) popup(pid, e.delta as number, "coin");
             break;
           case "DiePicked":
+            if (e.item) {
+              // the block comes down on the chosen number
+              const roll: DiceShow = {
+                key: ++nextId.current,
+                playerId: pid,
+                name: name(pid),
+                total: e.total as number,
+                mine: pid === meId,
+                dice: [e.value as number],
+                colour: ITEM_DICE_COLOURS[e.item as string],
+                choose: false,
+                chosen: true,
+                halvedFrom: e.halvedFrom as number | undefined,
+              };
+              later(cursor, () => {
+                setDice(roll);
+                if (followTurns) setMode({ kind: "follow", playerId: pid });
+              });
+              animator.wait(pid, DICE_TOTAL_MS);
+              cursor += DICE_TOTAL_MS;
+              break;
+            }
             showBanner(cursor, {
               tone: "info",
               text:

@@ -34,7 +34,8 @@ export type Choice =
   | { kind: "starSteal"; spaceId: string; targets: string[]; price: number; expiresAt: number }
   | { kind: "swap"; spaceId: string; targets: string[]; expiresAt: number }
   // Custom Dice Block: pick one of two rolled numbers.
-  | { kind: "dicePick"; spaceId: string; options: number[]; expiresAt: number };
+  // `item`: the item that offered the numbers (a Custom Dice Block).
+  | { kind: "dicePick"; spaceId: string; options: number[]; expiresAt: number; item?: string };
 
 export type ChoiceKind = Choice["kind"];
 // Choices that wait on the player (and time out), as opposed to ones the server settles.
@@ -92,7 +93,7 @@ export type EngineEvent =
   // `item`: the dice item used. `choose`: a Custom Dice Block, the player picks one of
   // `dice` next. `halvedFrom`: a poisoned roll, halved from this total.
   | { type: "DiceRolled"; playerId: string; dice: number[]; total: number; item?: string; choose?: boolean; halvedFrom?: number }
-  | { type: "DiePicked"; playerId: string; value: number; total: number; halvedFrom?: number; auto: boolean }
+  | { type: "DiePicked"; playerId: string; value: number; total: number; halvedFrom?: number; auto: boolean; item?: string }
   | { type: "PlayerMoved"; playerId: string; from: string; to: string; remaining: number }
   | { type: "ForkChoiceRequired"; playerId: string; spaceId: string; options: string[]; remaining: number }
   | { type: "ForkChosen"; playerId: string; spaceId: string; next: string; auto: boolean }

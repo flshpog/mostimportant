@@ -1677,8 +1677,15 @@ button.link {
   --b: var(--paper-2);
 }
 .dock-button.pick {
-  min-width: 96px;
-  font-size: 30px;
+  min-width: 0;
+  font-size: 26px;
+}
+/* the Custom Dice Block's numbers, two rows of five */
+.number-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+  width: min(100%, 420px);
 }
 .dice-caption .poisoned {
   color: #8e4ec6;

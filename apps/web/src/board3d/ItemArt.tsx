@@ -135,5 +135,5 @@ export const ITEM_DICE_COLOURS: Record<string, string> = {
   "golden-mushroom": "#f5b100",
   "slow-mushroom": "#4fa3e0",
   "fast-mushroom": "#3a3a46",
-  "reroll-block": "#f2c230",
+  "reroll-block": "#5bc0eb",
 };
