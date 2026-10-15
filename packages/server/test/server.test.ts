@@ -143,6 +143,16 @@ describe("playing", () => {
     expect(blue.map((s: { id: string }) => s.id)).toContain(moved.event.to);
   });
 
+  it("the server never draws an event that can't happen", async () => {
+    // star steal would win almost every draw, but nobody has a star yet
+    h.season.events = { coinSteal: { weight: 1, percents: [5] }, starSteal: { weight: 1000, price: 0 }, swap: { weight: 0 } };
+    await h.api("/api/host/boards/mario-stadium/actions", { method: "POST", as: HOST, body: { action: { type: "movePlayer", playerId: ALICE, spaceId: "s20" } } });
+    h.rng.queue = [1, 1000]; // roll 1, then the top of the weight range
+    const r = await h.api("/api/play/roll", { method: "POST", as: ALICE });
+    const drawn = r.body.events.find((e: { event: { type: string } }) => e.event.type === "EventDrawn");
+    expect(drawn.event.event).toBe("coinSteal");
+  });
+
   it("the server draws the event, and the player picks the target", async () => {
     h.season.events = { coinSteal: { weight: 1, percents: [5, 50] }, starSteal: { weight: 0, price: 40 }, swap: { weight: 0 } };
     await h.api("/api/host/boards/mario-stadium/actions", { method: "POST", as: HOST, body: { action: { type: "movePlayer", playerId: ALICE, spaceId: "s20" } } });

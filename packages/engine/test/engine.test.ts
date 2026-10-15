@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { loadLayouts } from "@everest/board-data";
-import { EngineError, replay, undo, undoTurn, type EngineEvent } from "../src";
+import { EngineError, possibleEvents, replay, undo, undoTurn, type EngineEvent } from "../src";
 import { ctxFor, Game, HOUR, lineLayout, T0, types } from "./helpers";
 
 const main = loadLayouts().main;
@@ -173,6 +173,18 @@ describe("event spaces", () => {
     expect(types(ev)).not.toContain("CoinsChanged");
     expect(g.p("alice").space).toBe("s02");
     expect(g.p("bob").space).toBe("s06");
+  });
+
+  it("possibleEvents leaves out events that would fizzle", () => {
+    const g = atEvent();
+    const kinds = () => possibleEvents(g.ctx, g.state, "alice").map((x) => x.event);
+    expect(kinds()).toEqual(["coinSteal", "swap"]); // nobody has a star
+    g.state.players.bob.stars = 1;
+    expect(kinds()).toEqual(["coinSteal", "swap"]); // alice has 10 coins, needs 40
+    g.state.players.alice.coins = 40;
+    expect(kinds()).toEqual(["coinSteal", "starSteal", "swap"]);
+    const alone = atEvent(["alice"]);
+    expect(possibleEvents(alone.ctx, alone.state, "alice")).toEqual([]);
   });
 
   it("alone on the board, every event fizzles", () => {

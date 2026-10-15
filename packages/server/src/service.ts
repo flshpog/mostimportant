@@ -4,6 +4,7 @@ import {
   apply,
   createBoardState,
   enabledEvents,
+  possibleEvents,
   EngineError,
   starCandidates,
   type Action,
@@ -236,7 +237,9 @@ export class BoardService extends EventEmitter {
     // An event landing waits for the draw. That's the server's job, not the player's.
     while (rt.state.move?.choice?.kind === "eventDraw") {
       const ctx = this.ctx(rt);
-      const { event } = pickWeighted(this.rng, enabledEvents(ctx));
+      // only events that can actually happen; if none can, any enabled one (it fizzles)
+      const possible = possibleEvents(ctx, rt.state, rt.state.move.playerId);
+      const { event } = pickWeighted(this.rng, possible.length ? possible : enabledEvents(ctx));
       const percent = pick(this.rng, ctx.rules.events.coinSteal.percents);
       const draw: Action = { type: "drawEvent", playerId: rt.state.move.playerId, event, percent, now: this.clock() };
       const r = apply(ctx, rt.state, draw);

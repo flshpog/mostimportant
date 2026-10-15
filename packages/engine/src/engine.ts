@@ -156,6 +156,20 @@ export function enabledEvents(ctx: EngineContext): { event: EventChoiceKind; wei
   return (["coinSteal", "starSteal", "swap"] as const).map((event) => ({ event, weight: e[event].weight })).filter((x) => x.weight > 0);
 }
 
+// The enabled events that would actually do something for this player right now:
+// steals and swaps need a tribemate, and a star steal needs someone with a star and
+// enough coins to pay. The server draws from these, so an event space never lands on
+// one that just fizzles. Empty when nothing can happen (e.g. alone on the board).
+export function possibleEvents(ctx: EngineContext, state: BoardState, playerId: string): { event: EventChoiceKind; weight: number }[] {
+  const others = state.turn.order.filter((id) => id !== playerId && state.players[id]);
+  const coins = state.players[playerId]?.coins ?? 0;
+  return enabledEvents(ctx).filter(({ event }) => {
+    if (!others.length) return false;
+    if (event === "starSteal") return coins >= ctx.rules.events.starSteal.price && others.some((id) => state.players[id].stars > 0);
+    return true;
+  });
+}
+
 export function affordableItems(ctx: EngineContext, coins: number): string[] {
   return ctx.rules.shop.items.filter((i) => i.price <= coins).map((i) => i.id);
 }

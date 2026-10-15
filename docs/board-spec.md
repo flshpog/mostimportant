@@ -106,7 +106,7 @@ interface Space {
 
 **event spaces (2026-10-15, replaces bowser spaces entirely)**
 - bowser spaces are gone. the three former bowser spaces (s21, s36, s68) are yellow **event** spaces.
-- landing on one, the server draws one event at random by weight (`events.*.weight` in `season-config.json`, default equal; 0 turns an event off):
+- landing on one, the server draws one event at random by weight (`events.*.weight` in `season-config.json`, default equal; 0 turns an event off), **only among events that can actually happen** for that player (owner decision 2026-10-15): a star steal is only in the draw when a tribemate has a star and the player can pay. If nothing can happen (alone on the board), it fizzles.
   - **coin steal:** the player picks a tribemate; the game rolls one of `events.coinSteal.percents` (default 5/10/25/50%) and moves that share of the target's coins (rounded down) to the player. it can't be declined; on timeout it robs the richest tribemate.
   - **star steal:** pay `events.starSteal.price` (default 40, to the bank) to take one star from a tribemate who has one. it can be declined, and a timeout declines. if nobody has a star, or the player can't pay, nothing happens.
   - **swap places:** trade board positions with any tribemate. neither player triggers the space they end up on. it can be declined, and a timeout declines.
