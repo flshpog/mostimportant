@@ -12,7 +12,7 @@ import {
 } from "discord.js";
 import { loadImage, type Image } from "@napi-rs/canvas";
 import type { SeasonConfig } from "@everest/board-data";
-import { currentPlayerId, describeEvent, EngineError, type BoardState, type EngineEvent } from "@everest/engine";
+import { currentPlayerId, describeEvent, EngineError, EVENT_NAMES, type BoardState, type EngineEvent } from "@everest/engine";
 import { ServiceError, type ActionMeta, type BoardService, type HostActionInput, type StoredEvent, type WireEvent } from "@everest/server";
 import { bold, direction, narrate, parseButtonId, promptKey, promptMessage, rollButton, ts, turnMessage } from "./messages";
 import { prepareBackdrops, renderBoard, renderForkCloseup } from "./render";
@@ -69,6 +69,7 @@ interface SavedBoard {
 const MAX_TIMER_MS = 2 ** 31 - 1;
 const NO_MENTIONS = { parse: [] as never[] };
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+const EVENT_SCENES = new Set(["EventDrawn", "CoinsStolen", "StarStolen", "PlayersSwapped"]);
 
 // Turns board events into Discord messages and Discord clicks into board actions.
 // Every message comes from engine events, whatever caused them (Discord, the
@@ -227,9 +228,17 @@ export class BoardDiscord {
     if (!meta.host) {
       const lines = narrate(events, this.names(state), this.itemName);
       const roll = events.find((e): e is Extract<EngineEvent, { type: "DiceRolled" }> => e.type === "DiceRolled");
+      const scene = events.find((e) => EVENT_SCENES.has(e.type)) as EngineEvent | undefined;
       if (roll) {
         await this.retireTurnMessage(ch, boardId);
         await this.diceAnimation(ch, roll, state, lines);
+        spoke = true;
+      } else if (scene) {
+        await this.eventScene(ch, scene, state);
+        if (lines.length) {
+          await sleep(this.opts.lineGapMs ?? 1300);
+          await this.reveal(ch, [], lines);
+        }
         spoke = true;
       } else if (lines.length) {
         await this.reveal(ch, [], lines);
@@ -260,6 +269,51 @@ export class BoardDiscord {
     const result = roll.dice.length > 1 ? `rolled ${roll.dice.join(" + ")} = ${bold(String(roll.total))}` : `rolled a ${bold(String(roll.total))}!`;
     await msg.edit({ content: `🎲 ${who} ${result}` });
     await this.reveal(ch, [`🎲 ${who} ${result}`], lines, msg);
+  }
+
+  // Event spaces play out over a few edits instead of one line: the event "spins"
+  // before it's revealed, the steal wheel ticks through its percentages, and steals
+  // and swaps happen in two beats. Every outcome was already decided by the server.
+  private async eventScene(ch: BoardChannel, e: EngineEvent, state: BoardState) {
+    const name = (id: string) => bold(this.names(state)(id));
+    const frame = this.opts.diceFrameMs ?? 450;
+    const gap = this.opts.lineGapMs ?? 1300;
+    const spin = async (msg: Message, prefix: string, faces: string[], result: string) => {
+      // slows down as it goes, like a wheel
+      const order = [...faces, ...faces].slice(0, 6);
+      for (let i = 0; i < order.length; i++) {
+        await sleep(frame * (0.5 + i * 0.18));
+        await msg.edit({ content: `${prefix} ${order[i]}` });
+      }
+      await sleep(frame);
+      await msg.edit({ content: `${prefix} ${result}` });
+    };
+    if (e.type === "EventDrawn") {
+      const prefix = `❗ ${name(e.playerId)} landed on an event space!`;
+      const msg = await ch.send({ content: `${prefix} 🎰 Spinning...`, allowedMentions: NO_MENTIONS });
+      const faces = Object.values(EVENT_NAMES).map((n) => `🎰 ${n}...`);
+      await spin(msg, prefix, faces, `It's ${bold(EVENT_NAMES[e.event])}!`);
+    } else if (e.type === "CoinsStolen") {
+      const lead = e.auto
+        ? `💰 ${name(e.playerId)} didn't pick in time, so ${name(e.targetId)} (the richest) gets robbed.`
+        : `💰 ${name(e.playerId)} is stealing from ${name(e.targetId)}!`;
+      const prefix = `${lead}\n🎡 Spinning the steal wheel...`;
+      const msg = await ch.send({ content: prefix, allowedMentions: NO_MENTIONS });
+      const faces = this.opts.loadConfig().events.coinSteal.percents.map((p) => bold(`${p}%`));
+      await spin(msg, prefix, faces, `it lands on ${bold(`${e.percent}%`)}!`);
+      await sleep(gap);
+      await msg.edit({ content: `${prefix} it lands on ${bold(`${e.percent}%`)}!\n${name(e.playerId)} takes ${bold(`${e.amount} coin${e.amount === 1 ? "" : "s"}`)} from ${name(e.targetId)}!` });
+    } else if (e.type === "StarStolen") {
+      const first = `🌟 ${name(e.playerId)} pays ${bold(`${e.price} coins`)}...`;
+      const msg = await ch.send({ content: first, allowedMentions: NO_MENTIONS });
+      await sleep(gap);
+      await msg.edit({ content: `${first}\n...and snatches a star from ${name(e.targetId)}! ⭐` });
+    } else if (e.type === "PlayersSwapped") {
+      const first = `🔄 ${name(e.playerId)} and ${name(e.targetId)} float up into the sky...`;
+      const msg = await ch.send({ content: first, allowedMentions: NO_MENTIONS });
+      await sleep(gap);
+      await msg.edit({ content: `${first}\n...and swap places!` });
+    }
   }
 
   // Adds narration lines one at a time to a single message (editing `msg`, or a new

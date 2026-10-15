@@ -74,6 +74,21 @@ describe("the bridge", () => {
   });
   afterEach(() => r.close());
 
+  it("plays an event out in steps: the draw, the steal wheel, then the take", async () => {
+    r.season.events = { coinSteal: { weight: 1, percents: [5, 50] }, starSteal: { weight: 0, price: 40 }, swap: { weight: 0 } };
+    await r.service.hostAction("mario-stadium", { type: "startBoard" }, HOST);
+    await r.service.hostAction("mario-stadium", { type: "movePlayer", playerId: PEACH, spaceId: "s20" }, HOST);
+    r.dice.push(1, 1, 1); // roll a 1 onto the s21 event space, draw coin steal, roll 50%
+    await r.service.roll(PEACH, "web");
+    await settle(r);
+    expect(r.channel.texts().some((t) => t.includes("landed on an event space! It's **Coin Steal**!"))).toBe(true);
+    await r.service.eventTarget(PEACH, TOAD, "web");
+    await settle(r);
+    const steal = r.channel.texts().find((t) => t.includes("Spinning the steal wheel"));
+    expect(steal).toContain("it lands on **50%**!");
+    expect(steal).toContain("**Peach** takes **5 coins** from **Toad**!");
+  });
+
   it("keeps one board image and edits it in place", async () => {
     const images = r.channel.live().filter((m) => m.files.length);
     expect(images).toHaveLength(1);

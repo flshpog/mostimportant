@@ -47,7 +47,18 @@ export const ts = (ms: number, style: "t" | "f" | "R" = "f") => `<t:${Math.floor
 export const bold = (s: string) => `**${s.replace(/\*/g, "")}**`;
 
 // Events whose text Discord shows elsewhere (dice animation, prompts, turn pings).
-const SHOWN_ELSEWHERE = new Set(["DiceRolled", "TurnStarted", "ForkChoiceRequired", "StarOffered", "ShopOpened"]);
+// Events get their own little scenes in the bridge (eventScene).
+const SHOWN_ELSEWHERE = new Set([
+  "DiceRolled",
+  "TurnStarted",
+  "ForkChoiceRequired",
+  "StarOffered",
+  "ShopOpened",
+  "EventDrawn",
+  "CoinsStolen",
+  "StarStolen",
+  "PlayersSwapped",
+]);
 
 // Plain-English lines for a batch of events, ready to post.
 export function narrate(events: WireEvent[], names: (id: string) => string, items: (id: string) => string): string[] {
