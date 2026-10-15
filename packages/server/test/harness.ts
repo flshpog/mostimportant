@@ -85,6 +85,7 @@ export async function startHarness(seasonOverrides: Partial<SeasonConfig> = {}, 
     host_user_ids: [],
     data_dir: dataDir,
     session_days: 30,
+    updates_thread: { enabled: true, name: "{board} updates" },
   };
   const start = () =>
     startBoardServer({

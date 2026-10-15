@@ -17,6 +17,8 @@ export const ServerConfigSchema = z.object({
   // Testing only: post every board (and Redemption Island) in this one channel
   // instead of the channels in season-config.json. Set it in board.local.json.
   test_channel_id: SnowflakeSchema.nullable().optional(),
+  // Discord: everything but the board image goes in a per-board thread.
+  updates_thread: z.object({ enabled: z.boolean(), name: z.string().min(1).max(100) }),
 });
 export type ServerConfig = z.infer<typeof ServerConfigSchema>;
 

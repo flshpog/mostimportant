@@ -368,7 +368,7 @@ describe("discord login", () => {
       return new Response(JSON.stringify({ id: ALICE, username: "alice", global_name: "Alice A", avatar: "abc" }));
     }) as typeof fetch;
     h.srv = await startBoardServer({
-      config: { enabled: true, port: 0, public_url: "http://localhost:8787", site_url: `${ORIGIN}/board/`, allowed_origins: [ORIGIN], guild_id: "1414321682025545822", host_role_id: "1414321682415357962", host_user_ids: [], data_dir: h.dataDir, session_days: 30 },
+      config: { enabled: true, port: 0, public_url: "http://localhost:8787", site_url: `${ORIGIN}/board/`, allowed_origins: [ORIGIN], guild_id: "1414321682025545822", host_role_id: "1414321682415357962", host_user_ids: [], data_dir: h.dataDir, session_days: 30, updates_thread: { enabled: true, name: "{board} updates" } },
       dataDir: h.dataDir,
       layouts: loadLayouts(),
       loadConfig: () => h.season,

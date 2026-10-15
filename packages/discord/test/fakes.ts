@@ -41,9 +41,31 @@ export class FakeMessage {
   }
 }
 
+let channelSeq = 0;
+// Every fake channel and thread, by id, so the bridge can look threads up again.
+export const channels = new Map<string, FakeChannel>();
+
 export class FakeChannel implements BoardChannel {
   sent: FakeMessage[] = [];
+  threadsCreated: FakeChannel[] = [];
+  archived = false;
   private n = 0;
+  constructor(
+    readonly id: string = `c${++channelSeq}`,
+    readonly name = "",
+  ) {
+    channels.set(this.id, this);
+  }
+  threads = {
+    create: async (opts: { name: string }) => {
+      const t = new FakeChannel(`t${++channelSeq}`, opts.name);
+      this.threadsCreated.push(t);
+      return t;
+    },
+  };
+  async setArchived(v: boolean) {
+    this.archived = v;
+  }
   async send(opts: any) {
     if (typeof opts === "string") opts = { content: opts };
     const m = new FakeMessage(`m${++this.n}`, opts.content ?? "", opts.components ?? [], opts.files ?? []);
@@ -98,7 +120,7 @@ export interface Rig {
   close(): void;
 }
 
-export async function rig(opts: { realClock?: boolean; season?: Partial<SeasonConfig> } = {}): Promise<Rig> {
+export async function rig(opts: { realClock?: boolean; season?: Partial<SeasonConfig>; thread?: boolean } = {}): Promise<Rig> {
   const dataDir = mkdtempSync(join(tmpdir(), "board-discord-"));
   const season: SeasonConfig = { ...loadSeasonConfig(), ...opts.season };
   const clock = { now: T0 };
@@ -113,7 +135,7 @@ export async function rig(opts: { realClock?: boolean; season?: Partial<SeasonCo
     log: () => undefined,
   });
   service.init();
-  const channel = new FakeChannel();
+  const channel = new FakeChannel(season.boards[0].channelId);
   const client = { users: { fetch: async () => Promise.reject(new Error("offline")) } } as any;
   const discord = new BoardDiscord({
     client,
@@ -124,8 +146,9 @@ export async function rig(opts: { realClock?: boolean; season?: Partial<SeasonCo
     clock: now,
     diceFrameMs: 0,
     imageDebounceMs: 0,
-    // Only Mario Stadium has a channel in these tests.
-    getChannel: async (id) => (id === season.boards[0].channelId ? channel : null),
+    // Only Mario Stadium's channel (and threads made in it) exist in these tests.
+    getChannel: async (id) => (id === channel.id || channel.threadsCreated.some((t) => t.id === id) ? channels.get(id)! : null),
+    updatesThread: { enabled: !!opts.thread, name: "🎲 {board} updates" },
     log: () => undefined,
   });
   await discord.start();

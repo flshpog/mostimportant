@@ -113,9 +113,15 @@ the moment they're moved off it.
 Started by the bot alongside the server. Everything it posts comes from board events,
 whatever caused them: a `/roll`, a website roll, a button, a timeout or a host.
 
-| in each tribe's board channel | |
+With `updates_thread` on (the default, in `config/board.json`), the board's channel holds only
+the board image, and everything else goes in one thread per board ("🎲 {board} updates"),
+where players can also `/roll` and press buttons. The bot needs **Create Public Threads** and
+**Send Messages in Threads** in the board channels. Turn it off to post everything in the
+channel itself.
+
+| | |
 |---|---|
-| board image | one message, edited in place after every change (`/board refresh` re-posts it at the bottom) |
+| board image (channel) | one message, edited in place after every change, linking to the thread (`/board refresh` re-posts it at the bottom) |
 | dice | a short animation (a few quick edits) that lands on the server's roll, then what happened |
 | prompts | fork / star / shop buttons, mentioning the player. Only they can click. Buttons disappear once the choice is made (on Discord, the website or by timeout) |
 | turn pings | "it's your turn" with a Roll button, or "you're up next, your turn opens at ..." and a second ping the moment it opens |

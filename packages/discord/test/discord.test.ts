@@ -234,3 +234,54 @@ describe("turn pings on the real clock", () => {
     }
   });
 });
+
+describe("updates thread", () => {
+  let r: Rig;
+  beforeEach(async () => {
+    r = await rig({ thread: true });
+    await r.service.transfer(PEACH, "mario-stadium", HOST, { name: "Peach" });
+    await r.service.transfer(TOAD, "mario-stadium", HOST, { name: "Toad" });
+    await settle(r);
+  });
+  afterEach(() => r.close());
+
+  it("keeps only the board image in the channel and everything else in one thread", async () => {
+    await r.service.hostAction("mario-stadium", { type: "startBoard" }, HOST);
+    r.dice.push(2);
+    await r.service.roll(PEACH, "web");
+    await settle(r);
+    expect(r.channel.threadsCreated.map((t) => t.name)).toEqual(["🎲 Mario Stadium updates"]);
+    const thread = r.channel.threadsCreated[0];
+    // channel: just the image, linking to the thread
+    expect(r.channel.live()).toHaveLength(1);
+    expect(r.channel.live()[0].files).toHaveLength(1);
+    expect(r.channel.live()[0].content).toContain(`play in <#${thread.id}>`);
+    // thread: turn ping, dice, prompt
+    const texts = thread.texts();
+    expect(texts.some((t) => t.includes("it's your turn"))).toBe(true);
+    expect(texts.some((t) => t.startsWith("🎲 **Peach** rolled a **2**!"))).toBe(true);
+    expect(texts.some((t) => t.startsWith("🔀"))).toBe(true);
+  });
+
+  it("/roll typed inside the thread clears its private reply", async () => {
+    await r.service.hostAction("mario-stadium", { type: "startBoard" }, HOST);
+    await settle(r);
+    const thread = r.channel.threadsCreated[0];
+    r.dice.push(1);
+    const i = fakeInteraction(PEACH, { channelId: thread.id });
+    await r.discord.handleRoll(i);
+    expect(i.calls.map((c: { type: string }) => c.type)).toEqual(["deferReply", "deleteReply"]);
+  });
+
+  it("reuses the same thread, reopening it if Discord archived it", async () => {
+    await r.service.hostAction("mario-stadium", { type: "startBoard" }, HOST);
+    await settle(r);
+    const thread = r.channel.threadsCreated[0];
+    thread.archived = true;
+    await r.service.hostAction("mario-stadium", { type: "pause" }, HOST);
+    await r.service.hostAction("mario-stadium", { type: "resume" }, HOST);
+    await settle(r);
+    expect(r.channel.threadsCreated).toHaveLength(1);
+    expect(thread.archived).toBe(false);
+  });
+});

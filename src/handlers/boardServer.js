@@ -114,6 +114,7 @@ async function start(client) {
         dataDir,
         isHost: async (id) => config.host_user_ids.includes(id) || (await isHost(id)),
         hostRoleId: config.host_role_id,
+        updatesThread: config.updates_thread,
         logToHost: (text) => logToHost(client, text),
     });
     await client.boardDiscord.start();

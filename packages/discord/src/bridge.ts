@@ -19,8 +19,13 @@ import { renderBoard } from "./render";
 
 // What the bot needs to send. Text channels, threads and test fakes all fit.
 export interface BoardChannel {
+  id: string;
   send(options: MessageCreateOptions | string): Promise<Message>;
   messages: { fetch(id: string): Promise<Message> };
+  // Text channels can start threads; threads can be archived.
+  threads?: { create(options: { name: string; autoArchiveDuration?: number; reason?: string }): Promise<BoardChannel> };
+  archived?: boolean | null;
+  setArchived?(archived: boolean): Promise<unknown>;
 }
 
 export interface BoardDiscordOptions {
@@ -29,6 +34,9 @@ export interface BoardDiscordOptions {
   loadConfig: () => SeasonConfig;
   dataDir: string;
   isHost: (userId: string) => Promise<boolean>;
+  // Post everything except the board image in a per-board thread, so the main
+  // channel stays clean. `{board}` in the name becomes the board's name.
+  updatesThread?: { enabled: boolean; name: string };
   // The host role. Slash commands carry the user's roles, so /board checks them
   // directly before falling back to isHost.
   hostRoleId?: string;
@@ -44,6 +52,7 @@ export interface BoardDiscordOptions {
 
 interface SavedBoard {
   imageMessageId?: string;
+  threadId?: string;
   prompt?: { messageId: string; key: string };
   turnMessageId?: string;
   pingedWindow?: number;
@@ -87,7 +96,7 @@ export class BoardDiscord {
     await Promise.all(
       this.opts.service.boardIds().map((id) =>
         this.enqueue(id, async () => {
-          const ch = await this.channel(id);
+          const ch = await this.feed(id);
           if (!ch) return;
           const { state } = this.opts.service.state(id);
           await this.syncPrompt(id, ch, state);
@@ -129,11 +138,36 @@ export class BoardDiscord {
     return next;
   }
 
-  private async channel(boardId: string): Promise<BoardChannel | null> {
-    const id = this.opts.service.summary(boardId).channelId;
+  private async fetchChannel(id: string): Promise<BoardChannel | null> {
     if (this.opts.getChannel) return this.opts.getChannel(id);
     const ch = await this.opts.client.channels.fetch(id).catch(() => null);
     return ch && ch.isTextBased() && "send" in ch ? (ch as unknown as BoardChannel) : null;
+  }
+
+  // The board's own channel, where the board image lives.
+  private channel(boardId: string): Promise<BoardChannel | null> {
+    return this.fetchChannel(this.opts.service.summary(boardId).channelId);
+  }
+
+  // Where everything else goes: the board's updates thread (created on first use,
+  // reopened if Discord archived it), or the channel itself with threads off.
+  private async feed(boardId: string): Promise<BoardChannel | null> {
+    const parent = await this.channel(boardId);
+    const thread = this.opts.updatesThread;
+    if (!parent || !thread?.enabled || !parent.threads) return parent;
+    const saved = this.board(boardId);
+    if (saved.threadId) {
+      const existing = await this.fetchChannel(saved.threadId);
+      if (existing) {
+        if (existing.archived && existing.setArchived) await existing.setArchived(false).catch(() => undefined);
+        return existing;
+      }
+    }
+    const name = thread.name.replace("{board}", this.opts.service.summary(boardId).name).slice(0, 100);
+    const created = await parent.threads.create({ name, autoArchiveDuration: 10080, reason: "Season 3 board updates" });
+    saved.threadId = created.id;
+    this.persist();
+    return created;
   }
 
   private async fetchMessage(ch: BoardChannel, id: string | undefined): Promise<Message | null> {
@@ -163,7 +197,7 @@ export class BoardDiscord {
   private onReset = (boardId: string, state: BoardState) => {
     if (this.stopped) return;
     void this.enqueue(boardId, async () => {
-      const ch = await this.channel(boardId);
+      const ch = await this.feed(boardId);
       if (!ch) return;
       await ch.send({ content: "⏪ The hosts rewound the board.", allowedMentions: NO_MENTIONS });
       await this.syncPrompt(boardId, ch, state);
@@ -174,7 +208,7 @@ export class BoardDiscord {
   };
 
   private async handleBatch(boardId: string, events: WireEvent[], state: BoardState, meta: ActionMeta) {
-    const ch = await this.channel(boardId);
+    const ch = await this.feed(boardId);
     if (!ch) return;
     // Player moves and timeouts are narrated; host edits are silent (the image and
     // prompts still update).
@@ -262,7 +296,7 @@ export class BoardDiscord {
         const { state: now } = this.opts.service.state(boardId);
         if (now.turn.windowOpensAt !== opensAt || currentPlayerId(now) !== pid || now.move || now.paused) return;
         if (opensAt > this.clock()) return this.schedulePing(boardId, now); // long waits re-arm
-        const ch = await this.channel(boardId);
+        const ch = await this.feed(boardId);
         if (ch) await this.announceTurn(boardId, ch, now);
       });
     }, delay);
@@ -303,8 +337,10 @@ export class BoardDiscord {
     await Promise.all(state.turn.order.map(async (id) => avatars.set(id, await this.avatar(id))));
     const png = renderBoard({ layout: this.opts.service.layout(boardId), state, boardName: summary.name, avatars, now: this.clock() });
     const files = [new AttachmentBuilder(png, { name: `${boardId}.png` })];
-    const content = `🗺️ ${bold(summary.name)} · updated ${ts(this.clock(), "R")}`;
     const saved = this.board(boardId);
+    if (this.opts.updatesThread?.enabled) await this.feed(boardId); // make sure the thread exists to link to
+    const playIn = saved.threadId ? ` · play in <#${saved.threadId}>` : "";
+    const content = `🗺️ ${bold(summary.name)} · updated ${ts(this.clock(), "R")}${playIn}`;
     const existing = await this.fetchMessage(ch, saved.imageMessageId);
     if (existing && !opts.repost) {
       await existing.edit({ content, files, attachments: [] } as MessageEditOptions);
@@ -329,10 +365,13 @@ export class BoardDiscord {
     } catch (e) {
       return interaction.editReply(this.friendly(e));
     }
-    const channelId = service.summary(boardId).channelId;
-    // The roll itself shows up in the board channel; this private reply just gets out of the way.
-    if (interaction.channelId === channelId) await interaction.deleteReply().catch(() => undefined);
-    else await interaction.editReply(`🎲 Rolled! See <#${channelId}>.`);
+    const home = this.board(boardId).threadId ?? service.summary(boardId).channelId;
+    // The roll itself shows up in the board's thread/channel; this private reply just gets out of the way.
+    if (interaction.channelId === home || interaction.channelId === service.summary(boardId).channelId) {
+      await interaction.deleteReply().catch(() => undefined);
+    } else {
+      await interaction.editReply(`🎲 Rolled! See <#${home}>.`);
+    }
   }
 
   async handleButton(interaction: ButtonInteraction) {
