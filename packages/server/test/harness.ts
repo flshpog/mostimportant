@@ -73,7 +73,8 @@ export async function startHarness(seasonOverrides: Partial<SeasonConfig> = {}, 
   const dataDir = mkdtempSync(join(tmpdir(), "everest-board-"));
   const rng = new ScriptedRandom();
   const clock = { now: T0 };
-  const season: SeasonConfig = { ...loadSeasonConfig(), ...seasonOverrides };
+  // Turn timings pinned so local tweaks to season-config.json don't break the tests.
+  const season: SeasonConfig = { ...loadSeasonConfig(), turns: { cooldownHours: 4, windowHours: 12, firstTurnUnlimited: true, choiceTimeoutMinutes: 60 }, ...seasonOverrides };
   const config: ServerConfig = {
     enabled: true,
     port: 0,

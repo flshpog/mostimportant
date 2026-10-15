@@ -29,6 +29,8 @@ const HOST_ACTIONS = new Set<HostActionInput["type"]>([
   "addPlayer",
   "removePlayer",
   "setTurnOrder",
+  "openTurnNow",
+  "skipTurn",
   "pause",
   "resume",
 ]);

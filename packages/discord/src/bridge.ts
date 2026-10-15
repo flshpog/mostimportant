@@ -499,6 +499,10 @@ export class BoardDiscord {
           events = await host(boardId, { type: "setTurnOrder", order });
           break;
         }
+        case "turn":
+          boardId = boardOpt();
+          events = await host(boardId, { type: interaction.options.getString("action", true) === "skip" ? "skipTurn" : "openTurnNow" });
+          break;
         case "undo":
           boardId = boardOpt();
           events = await service.undo(

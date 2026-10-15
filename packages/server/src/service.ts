@@ -43,6 +43,8 @@ export type HostAction = Extract<
       | "addPlayer"
       | "removePlayer"
       | "setTurnOrder"
+      | "openTurnNow"
+      | "skipTurn"
       | "pause"
       | "resume";
   }

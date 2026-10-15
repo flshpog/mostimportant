@@ -428,6 +428,31 @@ describe("host actions", () => {
     expect(g.p("dan").coins).toBe(10);
   });
 
+  it("open the current turn early, keeping the full window from now", () => {
+    const g = started(ctxFor());
+    g.roll("alice", 1); // bob's window opens in 4h
+    g.advance(1);
+    expectError(() => g.roll("bob", 1), "cooldown");
+    const ev = g.do({ type: "openTurnNow", now: g.now });
+    expect(ev).toEqual([{ type: "TurnStarted", playerId: "bob", windowOpensAt: g.now, deadline: g.now + 12 * HOUR }]);
+    g.roll("bob", 1);
+  });
+
+  it("skip the current player; the next one can roll right away", () => {
+    const g = started(ctxFor());
+    g.roll("alice", 1);
+    const ev = g.do({ type: "skipTurn", now: g.now });
+    expect(ev[0]).toEqual({ type: "TurnSkipped", playerId: "bob", byHost: true });
+    g.roll("cara", 1);
+  });
+
+  it("won't open or skip a turn mid-move", () => {
+    const g = started(ctxFor());
+    g.roll("alice", 4); // waiting at the shop
+    expectError(() => g.do({ type: "openTurnNow", now: g.now }), "busy");
+    expectError(() => g.do({ type: "skipTurn", now: g.now }), "busy");
+  });
+
   it("reordering keeps the current player's turn", () => {
     const g = started(ctxFor());
     g.roll("alice", 1);

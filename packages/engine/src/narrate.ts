@@ -19,7 +19,7 @@ export function describeEvent(
     case "TurnStarted":
       return `It's ${name(event.playerId)}'s turn.`;
     case "TurnSkipped":
-      return `${name(event.playerId)} ran out of time and missed their turn.`;
+      return event.byHost ? `The hosts skipped ${name(event.playerId)}'s turn.` : `${name(event.playerId)} ran out of time and missed their turn.`;
     case "TurnEnded":
       return null;
     case "DiceRolled":

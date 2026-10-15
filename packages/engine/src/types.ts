@@ -61,7 +61,7 @@ export type EngineEvent =
   | { type: "BoardPaused" }
   | { type: "BoardResumed" }
   | { type: "TurnStarted"; playerId: string; windowOpensAt: number; deadline: number | null }
-  | { type: "TurnSkipped"; playerId: string }
+  | { type: "TurnSkipped"; playerId: string; byHost?: boolean }
   | { type: "TurnEnded"; playerId: string }
   | { type: "DiceRolled"; playerId: string; dice: number[]; total: number }
   | { type: "PlayerMoved"; playerId: string; from: string; to: string; remaining: number }
@@ -117,5 +117,9 @@ export type Action =
   | { type: "addPlayer"; player: { id: string; name: string; coins?: number; stars?: number; items?: string[] }; spaceId?: string; now: number }
   | { type: "removePlayer"; playerId: string; now: number }
   | { type: "setTurnOrder"; order: string[]; now: number }
+  // Opens the current player's window right now (ends their cooldown early).
+  | { type: "openTurnNow"; now: number }
+  // Skips the current player; the next player's window opens right now.
+  | { type: "skipTurn"; now: number }
   | { type: "pause"; now: number }
   | { type: "resume"; now: number };

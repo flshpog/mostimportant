@@ -111,6 +111,12 @@ export function apply(ctx: EngineContext, state: BoardState, action: Action): Ac
     case "setTurnOrder":
       r.setTurnOrder(action.order);
       break;
+    case "openTurnNow":
+      r.openTurnNow();
+      break;
+    case "skipTurn":
+      r.skipTurn();
+      break;
     case "pause":
       r.pause();
       break;
@@ -596,6 +602,22 @@ class Run {
       t.windowOpensAt = null;
       t.deadline = null;
     }
+  }
+
+  openTurnNow() {
+    this.requireLive();
+    if (this.s.move) throw new EngineError("busy", "Someone is mid-move. Let it finish first.");
+    if (!this.s.turn.order.length) throw new EngineError("invalid_order", "There's nobody on this board.");
+    this.openWindow(this.now);
+  }
+
+  skipTurn() {
+    this.requireLive();
+    if (this.s.move) throw new EngineError("busy", "Someone is mid-move. Let it finish or undo it first.");
+    const t = this.s.turn;
+    if (!t.order.length) throw new EngineError("invalid_order", "There's nobody on this board.");
+    this.emit({ type: "TurnSkipped", playerId: t.order[t.index], byHost: true });
+    this.advanceTurn(this.now);
   }
 
   setTurnOrder(order: string[]) {

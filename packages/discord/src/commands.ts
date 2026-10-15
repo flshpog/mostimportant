@@ -88,6 +88,19 @@ export function buildBoardCommand(config: SeasonConfig) {
     )
     .addSubcommand((s) =>
       s
+        .setName("turn")
+        .setDescription("Open the current turn now (end the cooldown), or skip the current player.")
+        .addStringOption((o) => board(o))
+        .addStringOption((o) =>
+          o
+            .setName("action")
+            .setDescription("What to do")
+            .setRequired(true)
+            .addChoices({ name: "open now (end the cooldown)", value: "open" }, { name: "skip this player", value: "skip" }),
+        ),
+    )
+    .addSubcommand((s) =>
+      s
         .setName("undo")
         .setDescription("Undo the last change, or the whole last turn.")
         .addStringOption((o) => board(o))

@@ -26,7 +26,9 @@ function mulberry32(seed: number) {
 }
 
 const layout = loadLayouts().main;
-const config = loadSeasonConfig();
+// Real rules, but turn timings pinned so local tweaks to season-config.json don't
+// change what the test means.
+const config = { ...loadSeasonConfig(), turns: { cooldownHours: 4, windowHours: 12, firstTurnUnlimited: true, choiceTimeoutMinutes: 60 } };
 // The real config, plus a stand-in shop and wheel so those paths get exercised.
 const ctx: EngineContext = {
   layout,
@@ -107,7 +109,10 @@ function simulate(seed: number, players: number, turns: number) {
       step({ type: "tick", now });
       continue;
     }
-    now = Math.max(now, opens) + Math.floor(rnd() * 11 * HOUR);
+    now = Math.max(now, opens);
+    // Roll somewhere inside the window, never after it closes.
+    if (state.turn.deadline !== null) now += Math.floor(rnd() * Math.max(0, state.turn.deadline - now - 1));
+    else now += Math.floor(rnd() * 11 * HOUR);
     step({ type: "roll", playerId: pid, dice: [1 + Math.floor(rnd() * 10)], now });
     stats.rolls++;
 

@@ -122,7 +122,7 @@ export interface Rig {
 
 export async function rig(opts: { realClock?: boolean; season?: Partial<SeasonConfig>; thread?: boolean } = {}): Promise<Rig> {
   const dataDir = mkdtempSync(join(tmpdir(), "board-discord-"));
-  const season: SeasonConfig = { ...loadSeasonConfig(), ...opts.season };
+  const season: SeasonConfig = { ...loadSeasonConfig(), turns: { cooldownHours: 4, windowHours: 12, firstTurnUnlimited: true, choiceTimeoutMinutes: 60 }, ...opts.season };
   const clock = { now: T0 };
   const dice: number[] = [];
   const now = opts.realClock ? Date.now : () => clock.now;

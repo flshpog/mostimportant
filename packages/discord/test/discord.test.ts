@@ -47,7 +47,7 @@ describe("message helpers", () => {
     expect(buildRollCommand().toJSON().name).toBe("roll");
     const board = buildBoardCommand(loadSeasonConfig()).toJSON();
     expect(board.options?.map((o) => o.name)).toEqual(
-      expect.arrayContaining(["status", "start", "pause", "resume", "send", "remove", "coins", "stars", "give", "take", "move", "star", "order", "undo", "refresh"]),
+      expect.arrayContaining(["status", "start", "pause", "resume", "send", "remove", "coins", "stars", "give", "take", "move", "star", "order", "turn", "undo", "refresh"]),
     );
   });
 
