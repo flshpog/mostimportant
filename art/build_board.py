@@ -415,6 +415,19 @@ def house_meshes():
     return me, wm
 
 def boo_mesh():
+    """The Boo: Yanez-Designs' fan-made model from Sketchfab (CC BY 4.0, credit in
+    art/boo.blend and docs/CREDITS.md), appended from art/boo.blend. Falls back to a
+    simple home-made Boo if that file is missing."""
+    if "Kit_boo_fan" in bpy.data.meshes:
+        return bpy.data.meshes["Kit_boo_fan"]
+    path = os.path.join(REPO, "art", "boo.blend")
+    if os.path.exists(path):
+        with bpy.data.libraries.load(path, link=False) as (src, dst):
+            dst.meshes = ["Kit_boo_fan"]
+        return bpy.data.meshes["Kit_boo_fan"]
+    return simple_boo_mesh()
+
+def simple_boo_mesh():
     """A Boo: a round white ghost with a little tail and stubby arms, and a face built
     from separate pieces (two tall eyes, a wide mouth with fangs and a tongue) so it
     stays crisp instead of being painted onto the sphere."""
@@ -581,8 +594,9 @@ def scatter_night(L, terrain, rng):
     for i, p in enumerate(free_spots(L, terrain, 9, 1.4, 3.0, boo_room, rng)):
         ob = bpy.data.objects.new(f"Boo {i}", boo)
         ob.location = (p.x, p.y, p.z + rng.uniform(1.4, 2.8))
-        # faces towards the front of the board, where the camera usually is
-        ob.rotation_euler = (rng.uniform(-0.15, 0.15), rng.uniform(-0.2, 0.2), rng.uniform(-0.65, 0.65))
+        # faces towards the front of the board, tipped back so the face looks up at
+        # the camera (which looks down on the board) instead of showing the tail
+        ob.rotation_euler = (rng.uniform(-0.8, -0.55), rng.uniform(-0.2, 0.2), rng.uniform(-0.65, 0.65))
         s = rng.uniform(0.75, 1.3)
         ob.scale = (s, s, s)
         link(ob, "Boos")
