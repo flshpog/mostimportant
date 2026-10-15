@@ -111,6 +111,11 @@ interface Space {
 - the bag holds 3 items; one item per turn, used before rolling.
 - **tribe advantage:** every shop on a board also sells that tribe's advantage, centred, 40 coins, once per board: Mario Stadium Launch Star, Luigi's Mansion Poltergust 5000, WarioWare Garlic, Waluigi Pinball Bob-omb. Players see only its picture and "Tribe Advantage". Buying it takes the coins and is narrated, but it doesn't go in the bag: the host role is pinged in channel 1414321682839109813 (`config/board.json` `host_ping_channel_id`) to hand it over. Pictures live in `apps/web/public/advantages/`.
 
+**the merge and Redemption Island boards (built 2026-10-15)**
+- **Yoshi's Island** (merge, `boards/merge.json`, theme day): 64 spaces round a big island in the sea, a shortcut through the middle (fork s12) and a detour over the top (fork s18), one purple and one pink shop, four event spaces, the star starts on s38. Yoshi eggs, flowers and clouds. It only exists once `season-config.json` `merge.channelId` is set.
+- **The Underworld** (Redemption Island, `boards/underworld.json`, theme night): 30 spaces, one shortcut (fork s07), one shop selling every item, two event spaces, no star. Dark purple ground, dead trees, graves, lanterns, a haunted house, and purple fog and mist on the website.
+- Both islands are built in Blender by `art/build_board.py` from their layout JSON (output: `art/board-merge.blend`, `art/board-underworld.blend`, the website models and the Discord backdrops). Change a layout, re-run it.
+
 **event spaces (2026-10-15, replaces bowser spaces entirely)**
 - bowser spaces are gone. the three former bowser spaces (s21, s36, s68) are yellow **event** spaces.
 - landing on one, the server draws one event at random by weight (`events.*.weight` in `season-config.json`, default equal; 0 turns an event off), **only among events that can actually happen** for that player (owner decision 2026-10-15): a star steal is only in the draw when a tribemate has a star and the player can pay. If nothing can happen (alone on the board), it fizzles.
