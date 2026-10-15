@@ -16,7 +16,7 @@
     "max": 10
   },
   "turns": {
-    "cooldownHours": 0.02,
+    "cooldownHours": 4,
     "windowHours": 12,
     "firstTurnUnlimited": true,
     "choiceTimeoutMinutes": 60
