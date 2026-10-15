@@ -5,6 +5,8 @@ import {
   createBoardState,
   enabledEvents,
   possibleEvents,
+  publicState,
+  rollSpec,
   EngineError,
   starCandidates,
   type Action,
@@ -302,9 +304,10 @@ export class BoardService extends EventEmitter {
     };
   }
 
+  // The board as players may see it (no hidden next-star spot).
   state(boardId: string): { state: BoardState; seq: number } {
     const rt = this.runtime(boardId);
-    return { state: rt.state, seq: rt.seq };
+    return { state: publicState(rt.state), seq: rt.seq };
   }
 
   layout(boardId: string): Board {
@@ -333,8 +336,15 @@ export class BoardService extends EventEmitter {
   roll(userId: string, source: ActionSource = "web"): Promise<StoredEvent[]> {
     return this.enqueue(() => {
       const rt = this.boardOfPlayer(userId);
-      const { min, max } = this.ctx(rt).rules.dice;
-      const action: Action = { type: "roll", playerId: userId, dice: [this.rng.int(min, max)], now: this.clock() };
+      // one die, or whatever a dice item calls for (a Reroll Block's two must differ)
+      const spec = rollSpec(this.ctx(rt), rt.state, userId);
+      const dice: number[] = [];
+      while (dice.length < spec.count) {
+        const d = this.rng.int(spec.min, spec.max);
+        if (spec.distinct && dice.includes(d) && spec.max > spec.min) continue;
+        dice.push(d);
+      }
+      const action: Action = { type: "roll", playerId: userId, dice, now: this.clock() };
       return this.applyLocked(rt, action, { by: userId, source, host: false });
     });
   }
@@ -348,7 +358,9 @@ export class BoardService extends EventEmitter {
       const rt = this.boardOfPlayer(userId);
       const candidates = starCandidates(this.ctx(rt), rt.state);
       if (!candidates.length) throw new EngineError("invalid_star_space", "There's nowhere for the star to move to.");
-      const newStarSpace = pick(this.rng, candidates);
+      // where a Star Compass said it would go, if that's still a valid spot
+      const next = rt.state.nextStar;
+      const newStarSpace = next && candidates.includes(next) ? next : pick(this.rng, candidates);
       return this.applyLocked(rt, { type: "buyStar", playerId: userId, newStarSpace, now: this.clock() }, { by: userId, source, host: false });
     });
   }
@@ -363,6 +375,24 @@ export class BoardService extends EventEmitter {
 
   shopSkip(userId: string, source: ActionSource = "web") {
     return this.playerAction(userId, source, (now) => ({ type: "shopSkip", playerId: userId, now }));
+  }
+
+  // Uses an item before rolling. For a Star Compass, the result is where the star
+  // goes next, returned to this player only (it never goes in the event log).
+  useItem(userId: string, itemId: string, targetId: string | null, source: ActionSource = "web"): Promise<{ events: StoredEvent[]; nextStar?: string }> {
+    return this.enqueue(() => {
+      const rt = this.boardOfPlayer(userId);
+      const ctx = this.ctx(rt);
+      const candidates = starCandidates(ctx, rt.state);
+      const nextStarSpace = rt.state.nextStar ?? (candidates.length ? pick(this.rng, candidates) : undefined);
+      const events = this.applyLocked(rt, { type: "useItem", playerId: userId, itemId, targetId, nextStarSpace, now: this.clock() }, { by: userId, source, host: false });
+      const compass = ctx.rules.shop.items.find((i) => i.id === itemId)?.effect.kind === "compass";
+      return compass && rt.state.nextStar ? { events, nextStar: rt.state.nextStar } : { events };
+    });
+  }
+
+  pickDie(userId: string, value: number, source: ActionSource = "web") {
+    return this.playerAction(userId, source, (now) => ({ type: "pickDie", playerId: userId, value, now }));
   }
 
   eventTarget(userId: string, targetId: string | null, source: ActionSource = "web") {

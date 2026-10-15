@@ -22,6 +22,8 @@
     "  other message (dice, moves, prompts, turn pings) goes in a thread, where players can",
     "  also /roll. {board} in the name becomes the board's name. enabled: false posts",
     "  everything in the channel itself.",
+    "host_ping_channel_id - when someone buys a tribe advantage, the host role is pinged here",
+    "  with who bought which one, so the hosts can hand it out.",
     "test_channel_id - testing only, in board.local.json: every board posts in this one channel",
     "  instead of its real tribe channel. Leave it out (or null) for the real season.",
     "Secrets go in .env, never here: DISCORD_CLIENT_SECRET, BOARD_SESSION_SECRET."
@@ -36,5 +38,6 @@
   "host_user_ids": [],
   "data_dir": "data/board",
   "session_days": 30,
-  "updates_thread": { "enabled": true, "name": "🎲 {board} updates" }
+  "updates_thread": { "enabled": true, "name": "🎲 {board} updates" },
+  "host_ping_channel_id": "1414321682839109813"
 }

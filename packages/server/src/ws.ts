@@ -1,7 +1,7 @@
 import type { IncomingMessage, Server } from "node:http";
 import type { Duplex } from "node:stream";
 import { WebSocketServer, WebSocket } from "ws";
-import type { BoardState } from "@everest/engine";
+import { publicState, type BoardState } from "@everest/engine";
 import type { SessionUser } from "./auth";
 import { originAllowed, sessionFrom, type HttpDeps } from "./http";
 import type { StoredEvent } from "./store";
@@ -114,13 +114,13 @@ export function attachWebSocket(server: Server, deps: HttpDeps) {
     const seq = events[events.length - 1].seq;
     for (const c of clients) {
       if (!c.boards.has(board) || dropIfNotAllowed(c, board)) continue;
-      send(c, { op: "events", board, events, seq, state });
+      send(c, { op: "events", board, events, seq, state: publicState(state) });
     }
   };
   const onReset = (board: string, state: BoardState, seq: number) => {
     for (const c of clients) {
       if (!c.boards.has(board) || dropIfNotAllowed(c, board)) continue;
-      send(c, { op: "reset", board, seq, state });
+      send(c, { op: "reset", board, seq, state: publicState(state) });
     }
   };
   service.on("events", onEvents);

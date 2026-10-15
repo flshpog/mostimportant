@@ -130,6 +130,8 @@ async function start(client) {
         hostRoleId: config.host_role_id,
         updatesThread: config.updates_thread,
         logToHost: (text) => logToHost(client, text),
+        // tribe advantage purchases ping the hosts here (the test channel when testing)
+        hostPingChannelId: config.test_channel_id || config.host_ping_channel_id || undefined,
     });
     await client.boardDiscord.start();
     return running;

@@ -1,8 +1,11 @@
 import { existsSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import {
+  ActionRowBuilder,
   AttachmentBuilder,
   type AutocompleteInteraction,
+  ButtonBuilder,
+  ButtonStyle,
   type ButtonInteraction,
   type ChatInputCommandInteraction,
   type Client,
@@ -12,10 +15,10 @@ import {
 } from "discord.js";
 import { loadImage, type Image } from "@napi-rs/canvas";
 import type { SeasonConfig } from "@everest/board-data";
-import { currentPlayerId, describeEvent, EngineError, EVENT_NAMES, type BoardState, type EngineEvent } from "@everest/engine";
+import { currentPlayerId, describeEvent, EngineError, EVENT_NAMES, itemDef, shopStock, usableItems, type BoardState, type EngineEvent } from "@everest/engine";
 import { ServiceError, type ActionMeta, type BoardService, type HostActionInput, type StoredEvent, type WireEvent } from "@everest/server";
-import { bold, direction, narrate, parseButtonId, promptKey, promptMessage, rollButton, ts, turnMessage } from "./messages";
-import { prepareBackdrops, renderBoard, renderForkCloseup } from "./render";
+import { bold, buttonId, direction, narrate, parseButtonId, promptKey, promptMessage, rollButton, ts, turnMessage } from "./messages";
+import { prepareBackdrops, renderBoard, renderForkCloseup, renderSpotCloseup } from "./render";
 
 // What the bot needs to send. Text channels, threads and test fakes all fit.
 export interface BoardChannel {
@@ -41,6 +44,10 @@ export interface BoardDiscordOptions {
   // directly before falling back to isHost.
   hostRoleId?: string;
   logToHost?: (text: string) => Promise<unknown>;
+  // Where the hosts get pinged when someone buys a tribe advantage (they hand it out).
+  hostPingChannelId?: string;
+  // Folder with the tribe advantage images (shared with the website).
+  advantageDir?: string;
   clock?: () => number;
   // Overridable so tests run fast.
   diceFrameMs?: number;
@@ -245,6 +252,7 @@ export class BoardDiscord {
         spoke = true;
       }
     }
+    for (const e of events) if (e.type === "AdvantagePurchased") await this.pingHostsAdvantage(boardId, e.playerId, e.price, state);
     const turnChanged = events.some((e) => e.type === "TurnStarted" || e.type === "BoardStarted");
     // let the move sink in before asking for the next thing
     if (spoke && (promptKey(state) !== (this.board(boardId).prompt?.key ?? null) || turnChanged)) await sleep(this.opts.beatMs ?? 1500);
@@ -266,7 +274,13 @@ export class BoardDiscord {
       await msg.edit({ content: `🎲 ${who} is rolling... ${bold(String(face()))}` });
     }
     await sleep(frame);
-    const result = roll.dice.length > 1 ? `rolled ${roll.dice.join(" + ")} = ${bold(String(roll.total))}` : `rolled a ${bold(String(roll.total))}!`;
+    const raw = roll.halvedFrom ?? roll.total;
+    let result = roll.choose
+      ? `rolled a ${bold(String(roll.dice[0]))} and a ${bold(String(roll.dice[1]))}!`
+      : roll.dice.length > 1
+        ? `rolled ${roll.dice.join(" + ")} = ${bold(String(raw))}!`
+        : `rolled a ${bold(String(raw))}!`;
+    if (roll.halvedFrom !== undefined) result += ` But they're poisoned: halved to ${bold(String(roll.total))}.`;
     await msg.edit({ content: `🎲 ${who} ${result}` });
     await this.reveal(ch, [`🎲 ${who} ${result}`], lines, msg);
   }
@@ -346,10 +360,13 @@ export class BoardDiscord {
       const layout = this.opts.service.layout(boardId);
       const msg = promptMessage(boardId, state, layout, this.opts.loadConfig(), saved.imageMessageUrl);
       if (!msg) return;
-      const files = await this.forkCloseup(boardId, state).catch((e) => {
-        this.log("[board] fork close-up failed; sending the prompt without it", e);
-        return [];
-      });
+      const files = [
+        ...(await this.forkCloseup(boardId, state).catch((e) => {
+          this.log("[board] fork close-up failed; sending the prompt without it", e);
+          return [];
+        })),
+        ...this.advantageImage(boardId, state),
+      ];
       const sent = await ch.send({ ...msg, files });
       saved.prompt = { messageId: sent.id, key };
       this.persist();
@@ -377,6 +394,49 @@ export class BoardDiscord {
     return [new AttachmentBuilder(img, { name: "fork.jpg" })];
   }
 
+  private advantageFile(boardId: string): { path: string; name: string } | null {
+    const adv = this.opts.loadConfig().shop.advantage?.perBoard[boardId];
+    if (!adv) return null;
+    const dir = this.opts.advantageDir ?? join(__dirname, "..", "..", "..", "apps", "web", "public", "advantages");
+    const path = join(dir, adv.image);
+    return existsSync(path) ? { path, name: `tribe-advantage${adv.image.slice(adv.image.lastIndexOf("."))}` } : null;
+  }
+
+  // In a shop that still has the tribe advantage, its picture goes with the prompt.
+  private advantageImage(boardId: string, state: BoardState): AttachmentBuilder[] {
+    const c = state.move?.choice;
+    if (c?.kind !== "shop") return [];
+    const ctx = { layout: this.opts.service.layout(boardId), rules: this.opts.loadConfig() };
+    if (!shopStock(ctx, state, c.spaceId).advantage) return [];
+    const file = this.advantageFile(boardId);
+    return file ? [new AttachmentBuilder(file.path, { name: file.name })] : [];
+  }
+
+  // Someone bought the tribe advantage: it isn't an in-game item, so the hosts hand it
+  // out. Says who, which board and which advantage, and pings the host role.
+  private async pingHostsAdvantage(boardId: string, playerId: string, price: number, state: BoardState) {
+    const channelId = this.opts.hostPingChannelId;
+    const adv = this.opts.loadConfig().shop.advantage?.perBoard[boardId];
+    const text = `🛍️ ${bold(this.names(state)(playerId))} (<@${playerId}>) bought ${bold(this.opts.service.summary(boardId).name)}'s tribe advantage, ${bold(adv?.name ?? "the tribe advantage")}, for ${price} coins. Please hand it over!`;
+    if (!channelId) {
+      await this.opts.logToHost?.(text);
+      return;
+    }
+    const ch = await this.fetchChannel(channelId);
+    if (!ch) {
+      this.log(`[board] can't reach the host ping channel ${channelId}; tribe advantage bought on ${boardId} by ${playerId}`);
+      await this.opts.logToHost?.(text);
+      return;
+    }
+    const role = this.opts.hostRoleId;
+    const file = this.advantageFile(boardId);
+    await ch.send({
+      content: role ? `<@&${role}> ${text}` : text,
+      allowedMentions: { roles: role ? [role] : [], users: [] },
+      files: file ? [new AttachmentBuilder(file.path, { name: file.name })] : [],
+    });
+  }
+
   // The last turn message's Roll button goes once it's been used or superseded.
   private async retireTurnMessage(ch: BoardChannel, boardId: string) {
     const old = await this.fetchMessage(ch, this.board(boardId).turnMessageId);
@@ -391,7 +451,8 @@ export class BoardDiscord {
     const opens = state.turn.windowOpensAt;
     // Opening any moment now: skip "you're up next" and let the ping be the message.
     if (opens !== null && opens > this.clock() && opens - this.clock() < (this.opts.upNextMinMs ?? 120_000)) return;
-    const msg = turnMessage(boardId, state, pid, this.clock());
+    const ctx = { layout: this.opts.service.layout(boardId), rules: this.opts.loadConfig() };
+    const msg = turnMessage(boardId, state, pid, this.clock(), usableItems(ctx, state, pid).length > 0);
     const sent = await ch.send(msg);
     saved.turnMessageId = sent.id;
     // Open now means this message was the ping; don't send a second one.
@@ -507,6 +568,7 @@ export class BoardDiscord {
       return interaction.reply({ content: "That button isn't for you.", ephemeral: true });
     }
     const { state } = service.state(action.boardId);
+    if (action.kind === "items" || action.kind === "use") return this.handleItems(interaction, action, state);
     if (action.kind !== "roll" && state.move?.playerId !== uid) {
       const owner = state.move ? this.names(state)(state.move.playerId) : null;
       return interaction.reply({ content: owner ? `That's ${owner}'s choice to make.` : "That choice has already been made.", ephemeral: true });
@@ -519,9 +581,67 @@ export class BoardDiscord {
       } else if (action.kind === "fork") await service.chooseFork(uid, action.next, "discord");
       else if (action.kind === "star") await (action.buy ? service.buyStar(uid, "discord") : service.skipStar(uid, "discord"));
       else if (action.kind === "event") await service.eventTarget(uid, action.targetId, "discord");
-      else await (action.itemId ? service.shopBuy(uid, action.itemId, "discord") : service.shopSkip(uid, "discord"));
+      else if (action.kind === "pick") await service.pickDie(uid, action.value, "discord");
+      else if (action.kind === "shop") await (action.itemId ? service.shopBuy(uid, action.itemId, "discord") : service.shopSkip(uid, "discord"));
     } catch (e) {
       await interaction.followUp({ content: this.friendly(e), ephemeral: true });
+    }
+  }
+
+  // The Items button: a private menu of the player's usable items, then (for Poison and
+  // the Boo Bell) who to use it on. A Star Compass answers privately with a picture.
+  private async handleItems(
+    interaction: ButtonInteraction,
+    action: { kind: "items" } | { kind: "use"; itemId: string; targetId: string | null },
+    state: BoardState,
+  ) {
+    const { service } = this.opts;
+    const uid = interaction.user.id;
+    const boardId = service.boardIdOf(uid)!;
+    const config = this.opts.loadConfig();
+    const ctx = { layout: service.layout(boardId), rules: config };
+    const reply = (content: string, components: ActionRowBuilder<ButtonBuilder>[] = [], files: AttachmentBuilder[] = []) =>
+      action.kind === "items"
+        ? interaction.reply({ content, components, files, ephemeral: true })
+        : interaction.update({ content, components, files });
+    if (currentPlayerId(state) !== uid || state.move) return reply("You can use items on your turn, before you roll.");
+    const held = (state.players[uid]?.items ?? []).map((id) => itemDef(ctx, id)).filter((i) => i && (i.effect.kind === "guard" || i.effect.kind === "starDiscount"));
+    const heldNote = held.length ? `\n-# ${[...new Set(held.map((i) => i!.name))].join(" and ")} work${held.length === 1 ? "s" : ""} by ${held.length === 1 ? "itself" : "themselves"} while you carry ${held.length === 1 ? "it" : "them"}.` : "";
+    if (action.kind === "items") {
+      const usable = usableItems(ctx, state, uid);
+      if (!usable.length) return reply(`You don't have anything to use right now.${heldNote}`);
+      const counts = new Map<string, number>();
+      for (const i of usable) counts.set(i.id, (counts.get(i.id) ?? 0) + 1);
+      const buttons = [...counts].map(([id, n]) => {
+        const item = itemDef(ctx, id)!;
+        return new ButtonBuilder().setCustomId(buttonId({ kind: "use", boardId, itemId: id, targetId: null })).setLabel(`${item.name}${n > 1 ? ` ×${n}` : ""}`).setStyle(ButtonStyle.Primary);
+      });
+      const lines = [...counts.keys()].map((id) => `• ${bold(itemDef(ctx, id)!.name)} — ${itemDef(ctx, id)!.description ?? ""}`);
+      return reply(`🎒 Your items (one per turn, before you roll):\n${lines.join("\n")}${heldNote}`, [new ActionRowBuilder<ButtonBuilder>().addComponents(buttons.slice(0, 5))]);
+    }
+    const item = itemDef(ctx, action.itemId);
+    if (!item) return reply("That item doesn't exist anymore.");
+    const needsTarget = item.effect.kind === "poison" || item.effect.kind === "steal";
+    if (needsTarget && !action.targetId) {
+      const others = state.turn.order.filter((id) => id !== uid && state.players[id]);
+      const buttons = others.slice(0, 5).map((id) =>
+        new ButtonBuilder()
+          .setCustomId(buttonId({ kind: "use", boardId, itemId: item.id, targetId: id }))
+          .setLabel(`${state.players[id].name}${item.effect.kind === "steal" ? ` (${state.players[id].coins} coins)` : ""}`.slice(0, 80))
+          .setStyle(ButtonStyle.Danger),
+      );
+      return reply(`Who do you want to use the ${bold(item.name)} on?`, [new ActionRowBuilder<ButtonBuilder>().addComponents(buttons)]);
+    }
+    try {
+      const { nextStar } = await service.useItem(uid, item.id, action.targetId, "discord");
+      if (nextStar) {
+        const { state: now } = service.state(boardId);
+        const img = renderSpotCloseup({ layout: ctx.layout, state: now, boardName: "", now: this.clock(), spaceId: nextStar });
+        return reply(`🧭 Only you can see this: the star will appear ${bold("here")} next, once someone buys it. Now roll!`, [], [new AttachmentBuilder(img, { name: "next-star.jpg" })]);
+      }
+      return reply(`✅ You used the ${bold(item.name)}. Now roll!`);
+    } catch (e) {
+      return reply(this.friendly(e));
     }
   }
 

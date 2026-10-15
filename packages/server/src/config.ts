@@ -19,6 +19,8 @@ export const ServerConfigSchema = z.object({
   test_channel_id: SnowflakeSchema.nullable().optional(),
   // Discord: everything but the board image goes in a per-board thread.
   updates_thread: z.object({ enabled: z.boolean(), name: z.string().min(1).max(100) }),
+  // Discord: the host role is pinged here when someone buys a tribe advantage.
+  host_ping_channel_id: SnowflakeSchema.optional(),
 });
 export type ServerConfig = z.infer<typeof ServerConfigSchema>;
 

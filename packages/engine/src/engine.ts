@@ -180,6 +180,24 @@ export function affordableItems(ctx: EngineContext, coins: number): string[] {
   return ctx.rules.shop.items.filter((i) => i.price <= coins).map((i) => i.id);
 }
 
+// The dice a player's next roll uses: a dice item if they used one this turn,
+// otherwise one normal die. `distinct`: the dice must differ (Reroll Block).
+export function rollSpec(ctx: EngineContext, state: BoardState, playerId: string): { count: number; min: number; max: number; distinct: boolean } {
+  const pr = state.pendingRoll;
+  const e = pr && pr.playerId === playerId ? itemDef(ctx, pr.itemId)?.effect : undefined;
+  if (e?.kind === "dice") return { count: e.count, min: e.min, max: e.max, distinct: false };
+  if (e?.kind === "reroll") return { count: 2, min: e.min, max: e.max, distinct: true };
+  return { count: 1, min: ctx.rules.dice.min, max: ctx.rules.dice.max, distinct: false };
+}
+
+// The board as players may see it: everything but where the star goes next, which
+// only a Star Compass reveals (to its user).
+export function publicState(state: BoardState): BoardState {
+  if (state.nextStar === undefined) return state;
+  const { nextStar: _hidden, ...rest } = state;
+  return rest;
+}
+
 // The id the tribe advantage is bought under (it isn't a bag item).
 export const ADVANTAGE_ID = "tribe-advantage";
 

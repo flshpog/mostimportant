@@ -143,6 +143,25 @@ describe("playing", () => {
     expect(blue.map((s: { id: string }) => s.id)).toContain(moved.event.to);
   });
 
+  it("a Mushroom makes the server roll two dice", async () => {
+    await h.api("/api/host/boards/mario-stadium/actions", { method: "POST", as: HOST, body: { action: { type: "grantItem", playerId: ALICE, itemId: "mushroom" } } });
+    const used = await h.api("/api/play/item", { method: "POST", as: ALICE, body: { itemId: "mushroom" } });
+    expect(used.status).toBe(200);
+    h.rng.queue = [2, 3];
+    const r = await h.api("/api/play/roll", { method: "POST", as: ALICE });
+    expect(r.body.events[0].event).toMatchObject({ type: "DiceRolled", dice: [2, 3], total: 5, item: "mushroom" });
+  });
+
+  it("the Star Compass answer goes only to its user, and the star really goes there", async () => {
+    await h.api("/api/host/boards/mario-stadium/actions", { method: "POST", as: HOST, body: { action: { type: "grantItem", playerId: ALICE, itemId: "star-compass" } } });
+    const used = await h.api("/api/play/item", { method: "POST", as: ALICE, body: { itemId: "star-compass" } });
+    expect(typeof used.body.nextStar).toBe("string");
+    // nobody can read it off the board state
+    const seen = await h.api("/api/boards/mario-stadium", { as: BOB });
+    expect(seen.body.state.nextStar).toBeUndefined();
+    expect(JSON.stringify(used.body.events)).not.toContain(used.body.nextStar);
+  });
+
   it("the server never draws an event that can't happen", async () => {
     // star steal would win almost every draw, but nobody has a star yet
     h.season.events = { coinSteal: { weight: 1, percents: [5] }, starSteal: { weight: 1000, price: 0 }, swap: { weight: 0 } };

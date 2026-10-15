@@ -1,6 +1,6 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle } from "discord.js";
 import type { Board, SeasonConfig } from "@everest/board-data";
-import { describeEvent, type BoardState, type EngineEvent } from "@everest/engine";
+import { ADVANTAGE_ID, describeEvent, shopOffer, shopStock, type BoardState, type EngineEvent } from "@everest/engine";
 import type { WireEvent } from "@everest/server";
 
 // Button ids: board:<kind>:<boardId>:<value>. Board ids are [a-z-], values are space
@@ -10,7 +10,12 @@ export type ButtonAction =
   | { kind: "fork"; boardId: string; next: string }
   | { kind: "star"; boardId: string; buy: boolean }
   | { kind: "shop"; boardId: string; itemId: string | null }
-  | { kind: "event"; boardId: string; targetId: string | null };
+  | { kind: "event"; boardId: string; targetId: string | null }
+  // Reroll Block: take one of the two numbers.
+  | { kind: "pick"; boardId: string; value: number }
+  // Open your items (a private menu), then use one (on a target, for some).
+  | { kind: "items"; boardId: string }
+  | { kind: "use"; boardId: string; itemId: string; targetId: string | null };
 
 const LEAVE = "__leave";
 // Fork buttons, in order; render.ts colours each path's arrow to match.
@@ -29,6 +34,12 @@ export function buttonId(a: ButtonAction): string {
       return `board:shop:${a.boardId}:${a.itemId ?? LEAVE}`;
     case "event":
       return `board:event:${a.boardId}:${a.targetId ?? PASS}`;
+    case "pick":
+      return `board:pick:${a.boardId}:${a.value}`;
+    case "items":
+      return `board:items:${a.boardId}:open`;
+    case "use":
+      return `board:use:${a.boardId}:${a.itemId}~${a.targetId ?? ""}`;
   }
 }
 
@@ -40,6 +51,12 @@ export function parseButtonId(id: string): ButtonAction | null {
   if (kind === "star") return { kind, boardId, buy: value === "buy" };
   if (kind === "shop") return { kind, boardId, itemId: value === LEAVE ? null : value };
   if (kind === "event") return { kind, boardId, targetId: value === PASS ? null : value };
+  if (kind === "pick") return { kind, boardId, value: Number(value) };
+  if (kind === "items") return { kind, boardId };
+  if (kind === "use") {
+    const [itemId, targetId] = value.split("~");
+    return { kind, boardId, itemId, targetId: targetId || null };
+  }
   return null;
 }
 
@@ -169,32 +186,57 @@ export function promptMessage(boardId: string, state: BoardState, layout: Board,
           : `🔄 ${who}, ${bold("Swap Places")}! Pick someone to trade spots with.\n-# ${until}you'll stay where you are.`;
     return { content: text, components: rows(buttons), allowedMentions: mention };
   }
-  const items = config.shop.items.filter((i) => i.price <= p.coins).slice(0, 24);
-  const buttons = items.map((i) =>
-    new ButtonBuilder().setCustomId(buttonId({ kind: "shop", boardId, itemId: i.id })).setLabel(`${i.name} (${i.price})`.slice(0, 80)).setStyle(ButtonStyle.Primary),
-  );
+  if (c.kind === "dicePick") {
+    const buttons = c.options.map((value) =>
+      new ButtonBuilder().setCustomId(buttonId({ kind: "pick", boardId, value })).setLabel(`Take ${value}`).setStyle(ButtonStyle.Primary),
+    );
+    return {
+      content: `🎲 ${who}, your Reroll Block rolled ${c.options.map((v) => bold(String(v))).join(" and ")}. Which one?\n-# ${until}you'll take the higher one.`,
+      components: rows(buttons),
+      allowedMentions: mention,
+    };
+  }
+  // the shop: what this one sells, what you can afford, and the tribe advantage
+  const ctx = { layout, rules: config };
+  const stock = shopStock(ctx, state, c.spaceId);
+  const offer = shopOffer(ctx, state, c.spaceId, p.id);
+  const canBuy = new Set(offer.items.map((i) => i.id));
+  const lines = stock.items.map((i) => `${canBuy.has(i.id) ? "•" : "◦"} ${bold(i.name)} · ${i.price} coins${i.description ? ` — ${i.description}` : ""}`);
+  if (stock.advantage) lines.push(`✦ ${bold("Tribe Advantage")} · ${stock.advantage.price} coins (one per tribe)`);
+  const buttons = offer.items
+    .slice(0, 23)
+    .map((i) => new ButtonBuilder().setCustomId(buttonId({ kind: "shop", boardId, itemId: i.id })).setLabel(`${i.name} (${i.price})`.slice(0, 80)).setStyle(ButtonStyle.Primary));
+  if (offer.advantage && stock.advantage) {
+    buttons.push(new ButtonBuilder().setCustomId(buttonId({ kind: "shop", boardId, itemId: ADVANTAGE_ID })).setLabel(`Tribe Advantage (${stock.advantage.price})`).setStyle(ButtonStyle.Success));
+  }
   buttons.push(new ButtonBuilder().setCustomId(buttonId({ kind: "shop", boardId, itemId: null })).setLabel("Leave the shop").setStyle(ButtonStyle.Secondary));
+  const variant = layout.spaces.find((s) => s.id === c.spaceId)?.shop;
+  const shopName = variant ? config.shop.variants[variant]?.name ?? "shop" : "shop";
+  const bag = `${p.items.length}/${config.shop.bagSize}`;
   return {
-    content: `🛍️ ${who}, welcome to the shop! You have ${bold(`${p.coins} coins`)}.\n-# ${until}you'll leave without buying.`,
+    content: `🛍️ ${who}, welcome to the ${shopName.toLowerCase()}! You have ${bold(`${p.coins} coins`)} · bag ${bag}${offer.bagFull ? " (full)" : ""}.\n${lines.join("\n")}\n-# ${until}you'll leave without buying.`,
     components: rows(buttons),
     allowedMentions: mention,
   };
 }
 
-export function rollButton(boardId: string): ActionRowBuilder<ButtonBuilder> {
-  return new ActionRowBuilder<ButtonBuilder>().addComponents(
+// Roll, plus an Items button when the player has something they can use.
+export function rollButton(boardId: string, withItems = false): ActionRowBuilder<ButtonBuilder> {
+  const row = new ActionRowBuilder<ButtonBuilder>().addComponents(
     new ButtonBuilder().setCustomId(buttonId({ kind: "roll", boardId })).setLabel("Roll").setEmoji("🎲").setStyle(ButtonStyle.Success),
   );
+  if (withItems) row.addComponents(new ButtonBuilder().setCustomId(buttonId({ kind: "items", boardId })).setLabel("Items").setEmoji("🎒").setStyle(ButtonStyle.Secondary));
+  return row;
 }
 
 // Turn announcement. `open` = the player can roll right now.
-export function turnMessage(boardId: string, state: BoardState, playerId: string, now: number): OutgoingMessage {
+export function turnMessage(boardId: string, state: BoardState, playerId: string, now: number, withItems = false): OutgoingMessage {
   const t = state.turn;
   const who = `<@${playerId}>`;
   const limit = t.deadline === null ? "There's no time limit on this one." : `You have until ${ts(t.deadline)} (${ts(t.deadline, "R")}).`;
   const open = t.windowOpensAt === null || t.windowOpensAt <= now;
   return open
-    ? { content: `🎲 ${who}, it's your turn! ${limit}`, components: [rollButton(boardId)], allowedMentions: { users: [playerId] } }
+    ? { content: `🎲 ${who}, it's your turn! ${limit}`, components: [rollButton(boardId, withItems)], allowedMentions: { users: [playerId] } }
     : {
         content: `⏳ ${who} is up next. Your turn opens ${ts(t.windowOpensAt!)} (${ts(t.windowOpensAt!, "R")}). I'll ping you then.`,
         components: [],

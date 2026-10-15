@@ -698,3 +698,40 @@ export function renderForkCloseup(input: RenderInput & { fork: string; options: 
   drawTokens(ctx, input.state, (id) => toOut(at(id)), input.avatars ?? new Map(), Math.min(2, k * 0.75));
   return out.toBuffer("image/jpeg", 88);
 }
+
+// A close-up of one space with the star drawn on it: what a Star Compass shows its
+// user (privately) about where the star goes next.
+export function renderSpotCloseup(input: RenderInput & { spaceId: string }): Buffer {
+  registerFonts();
+  const { canvas: scene, at, ratio } = drawScene(input);
+  const sceneW = scene.width / ratio;
+  const sceneH = scene.height / ratio;
+  const p = at(input.spaceId);
+  const w = Math.min(380, sceneW);
+  const h = Math.min(w / 1.6, sceneH);
+  const x0 = Math.min(Math.max(0, p.x - w / 2), Math.max(0, sceneW - w));
+  const y0 = Math.min(Math.max(0, p.y - h / 2), Math.max(0, sceneH - h));
+  const OUT_W = 800;
+  const OUT_H = Math.round(OUT_W * (h / w));
+  const k = OUT_W / w;
+  const out = createCanvas(OUT_W * RES, OUT_H * RES);
+  const ctx = out.getContext("2d");
+  ctx.scale(RES, RES);
+  ctx.drawImage(scene, x0 * ratio, y0 * ratio, w * ratio, h * ratio, 0, 0, OUT_W, OUT_H);
+  const q = { x: (p.x - x0) * k, y: (p.y - y0) * k };
+  // a gold ring on the space and the star hovering over it
+  ctx.beginPath();
+  ctx.arc(q.x, q.y, 17 * k, 0, Math.PI * 2);
+  ctx.lineWidth = 9;
+  ctx.strokeStyle = "#2b2340";
+  ctx.stroke();
+  ctx.lineWidth = 5;
+  ctx.strokeStyle = "#ffd43b";
+  ctx.stroke();
+  ctx.save();
+  ctx.translate(q.x, q.y - 26 * k * 0.6);
+  ctx.scale(2.2, 2.2);
+  drawStar(ctx, { x: 0, y: 0 });
+  ctx.restore();
+  return out.toBuffer("image/jpeg", 88);
+}

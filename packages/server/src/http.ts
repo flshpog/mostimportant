@@ -270,6 +270,28 @@ export function createHttpHandler(deps: HttpDeps) {
       },
     ],
 
+    [
+      "POST",
+      /^\/api\/play\/item$/,
+      async (req, res) => {
+        const user = requireUser(req);
+        const { itemId, targetId } = await readJson(req);
+        if (typeof itemId !== "string") throw new HttpError(400, "bad_request", "Say which item to use.");
+        // a Star Compass's answer comes back only in this response
+        send(res, 200, await service.useItem(user.sub, itemId, typeof targetId === "string" ? targetId : null));
+      },
+    ],
+    [
+      "POST",
+      /^\/api\/play\/pick$/,
+      async (req, res) => {
+        const user = requireUser(req);
+        const { value } = await readJson(req);
+        if (typeof value !== "number") throw new HttpError(400, "bad_request", "Say which number to take.");
+        send(res, 200, { events: await service.pickDie(user.sub, value) });
+      },
+    ],
+
     // Host dashboard.
     [
       "GET",
