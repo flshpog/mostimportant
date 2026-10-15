@@ -1,7 +1,7 @@
-import { useMemo, useReducer, useRef } from "react";
+import { useEffect, useMemo, useReducer, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import { AdditiveBlending, CanvasTexture, DoubleSide, type Group, type Mesh, type MeshBasicMaterial } from "three";
-import { ItemModel } from "./ItemModels";
+import { ItemModel, preloadItemModels } from "./ItemModels";
 import type { TokenAnimator } from "./Tokens";
 
 // An item arriving or being used, over a pawn.
@@ -33,9 +33,10 @@ export class ItemDropDirector {
 }
 
 const SKY = 13;
-const HOVER = 3.3; // well over the pawn's name tag
+const HOVER = 3.9; // clear of the pawn's name tag
 const SIZE = 1.6; // the models are about a metre; a bit bigger reads better from the camera
 const SPARKS = 14;
+const TILT = -0.6; // radians: the top leans away, so the front faces the camera
 const clamp01 = (t: number) => Math.min(1, Math.max(0, t));
 const easeOut = (t: number) => 1 - (1 - t) ** 3;
 const easeInOut = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2);
@@ -66,6 +67,7 @@ function beamTexture() {
 
 function One({ drop, animator, onDone }: { drop: ItemDrop; animator: TokenAnimator; onDone: () => void }) {
   const item = useRef<Group>(null);
+  const spinner = useRef<Group>(null);
   const beam = useRef<Group>(null);
   const ring = useRef<Mesh>(null);
   const sparks = useRef<Group>(null);
@@ -134,7 +136,9 @@ function One({ drop, animator, onDone }: { drop: ItemDrop; animator: TokenAnimat
     }
 
     g.position.set(at.x + (drop.kind === "buy" ? Math.sin(t * 0.003) * 0.15 * clamp01((DROP.landed - t) / 800) : 0), at.y + y, at.z);
-    g.rotation.y = spin;
+    // leaning towards the camera (which looks down from the front), turning on its own axis
+    g.rotation.set(TILT, 0, 0);
+    if (spinner.current) spinner.current.rotation.y = spin;
     g.scale.setScalar(Math.max(0.0001, scale * SIZE));
 
     if (beam.current) {
@@ -182,7 +186,9 @@ function One({ drop, animator, onDone }: { drop: ItemDrop; animator: TokenAnimat
         </group>
       )}
       <group ref={item} visible={false}>
-        <ItemModel model={drop.model} />
+        <group ref={spinner}>
+          <ItemModel model={drop.model} />
+        </group>
         <pointLight color={tint} intensity={5} distance={4.5} decay={2} />
       </group>
       <mesh ref={ring} rotation={[-Math.PI / 2, 0, 0]} visible={false}>
@@ -204,6 +210,7 @@ function One({ drop, animator, onDone }: { drop: ItemDrop; animator: TokenAnimat
 export function ItemDrops({ director, animator }: { director: ItemDropDirector; animator: TokenAnimator }) {
   // re-render only when a drop starts or finishes; the frame loop does the rest
   const [, force] = useReducer((n: number) => n + 1, 0);
+  useEffect(preloadItemModels, []);
   const seen = useRef(0);
   useFrame(() => {
     if (director.drops.length !== seen.current) {

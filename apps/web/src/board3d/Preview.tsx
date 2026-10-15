@@ -48,7 +48,8 @@ export function Preview() {
     s = apply(ctx, s, { type: "startBoard", now: 0 }).state;
     // #/preview?star puts Peach right before the star, to try the star cutscene
     // and ?fork puts her just before the s03 fork
-    const hash = window.location.hash;
+    // the options themselves, not ?stock=... (an item id can contain "star")
+    const hash = window.location.hash.replace(/stock=[\w,-]*/, "");
     // and ?event puts her just before the s21 event space (her first roll is a 1)
     // and ?shop just before the purple bottom-left shop (?pinkshop: the pink top one)
     const p1Start = which !== "main"

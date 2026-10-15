@@ -1,6 +1,6 @@
-import { useMemo } from "react";
-import { RoundedBox } from "@react-three/drei";
-import { CanvasTexture, DoubleSide, LatheGeometry, Quaternion, SRGBColorSpace, TextureLoader, Vector2, Vector3 } from "three";
+import { Suspense, useMemo } from "react";
+import { RoundedBox, useGLTF } from "@react-three/drei";
+import { Box3, CanvasTexture, DoubleSide, LatheGeometry, Quaternion, SRGBColorSpace, TextureLoader, Vector2, Vector3 } from "three";
 import { starGeometry } from "./Star";
 
 // Little 3D versions of the shop items, about a metre across, centred on the origin.
@@ -358,9 +358,46 @@ function AdvantageCard({ image }: { image: string }) {
   );
 }
 
-// `model`: an item id, "advantage:<image>" for the tribe advantage, or "" for a
-// purchase this viewer can't see.
-export function ItemModel({ model }: { model: string }) {
+// Proper models made in Blender (art/items.blend, see docs/CREDITS.md), one per item
+// id. The hand-built ones below stand in while these load, and for any item without one.
+const GLB_ITEMS = new Set([
+  "mushroom",
+  "golden-mushroom",
+  "slow-mushroom",
+  "fast-mushroom",
+  "poison-mushroom",
+  "reroll-block",
+  "magic-lamp",
+  "star-compass",
+  "guard-charm",
+  "boo-bell",
+]);
+// long, flat ones look small at "a metre across"
+const GLB_SCALE: Record<string, number> = { "magic-lamp": 1.4, "fast-mushroom": 1.1 };
+const glbUrl = (id: string) => `${import.meta.env.BASE_URL}models/items/${id}.glb`;
+const DRACO = `${import.meta.env.BASE_URL}draco/`;
+
+// Fetch them all ahead of time, so the first purchase isn't the placeholder.
+export function preloadItemModels() {
+  for (const id of GLB_ITEMS) useGLTF.preload(glbUrl(id), DRACO);
+}
+
+function GlbItem({ id }: { id: string }) {
+  const gltf = useGLTF(glbUrl(id), DRACO);
+  // a copy per drop (two can be on screen at once), centred and about a metre across
+  const object = useMemo(() => {
+    const o = gltf.scene.clone(true);
+    const box = new Box3().setFromObject(o);
+    const size = box.getSize(new Vector3());
+    const k = (GLB_SCALE[id] ?? 1) / Math.max(size.x, size.y, size.z);
+    o.scale.setScalar(k);
+    o.position.copy(box.getCenter(new Vector3()).multiplyScalar(-k));
+    return o;
+  }, [gltf, id]);
+  return <primitive object={object} />;
+}
+
+function HandBuilt({ model }: { model: string }) {
   if (model.startsWith("advantage:")) return <AdvantageCard image={model.slice("advantage:".length)} />;
   if (MUSHROOMS[model]) return <Mushroom id={model} />;
   switch (model) {
@@ -379,4 +416,15 @@ export function ItemModel({ model }: { model: string }) {
     default:
       return <Present />;
   }
+}
+
+// `model`: an item id, "advantage:<image>" for the tribe advantage, or "" for a
+// purchase this viewer can't see.
+export function ItemModel({ model }: { model: string }) {
+  if (!GLB_ITEMS.has(model)) return <HandBuilt model={model} />;
+  return (
+    <Suspense fallback={<HandBuilt model={model} />}>
+      <GlbItem id={model} />
+    </Suspense>
+  );
 }
