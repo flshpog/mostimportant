@@ -415,38 +415,56 @@ def house_meshes():
     return me, wm
 
 def boo_mesh():
-    """A Boo: round white ghost with a little tail, arms, big dark eyes and a grin."""
-    if "Kit_boo" in bpy.data.meshes:
-        return bpy.data.meshes["Kit_boo"]
+    """A Boo: a round white ghost with a little tail and stubby arms, and a face built
+    from separate pieces (two tall eyes, a wide mouth with fangs and a tongue) so it
+    stays crisp instead of being painted onto the sphere."""
+    if "Kit_boo2" in bpy.data.meshes:
+        return bpy.data.meshes["Kit_boo2"]
     bm = bmesh.new()
-    bmesh.ops.create_uvsphere(bm, u_segments=18, v_segments=12, radius=0.6)
-    # a tail: pull the lower back out into a point
-    for v in bm.verts:
+    parts = []  # (first vert index, colour) per piece, in build order
+
+    def piece(colour):
+        parts.append((len(bm.verts), colour))
+
+    def ellipsoid(r, at, segs=(16, 10)):
+        res = bmesh.ops.create_uvsphere(bm, u_segments=segs[0], v_segments=segs[1], radius=1.0)
+        bmesh.ops.scale(bm, vec=r, verts=res["verts"])
+        bmesh.ops.translate(bm, verts=res["verts"], vec=at)
+        return res
+
+    piece(srgb((0.98, 0.97, 1.0)))
+    body = ellipsoid((0.6, 0.6, 0.6), (0, 0, 0), (28, 18))
+    for v in body["verts"]:  # a tail: the lower back pulled out to a point
         back = max(0.0, v.co.y) / 0.6
         low = max(0.0, -v.co.z) / 0.6
-        v.co.y += back * low * 0.55
-        v.co.z -= back * low * 0.25
-    for side in (-1, 1):  # stubby arms
-        arm = bmesh.ops.create_uvsphere(bm, u_segments=8, v_segments=6, radius=0.17)
-        bmesh.ops.scale(bm, vec=(1.0, 0.8, 0.8), verts=arm["verts"])
-        bmesh.ops.translate(bm, verts=arm["verts"], vec=(side * 0.58, -0.12, -0.08))
-    me = bpy.data.meshes.new("Kit_boo")
+        v.co.y += back * low * 0.6
+        v.co.z -= back * low * 0.3
+    for side in (-1, 1):  # stubby arms, held out
+        ellipsoid((0.19, 0.15, 0.14), (side * 0.6, -0.1, -0.02), (10, 6))
+    piece(srgb((0.08, 0.05, 0.12)))  # eyes: tall ovals, sunk into the face
+    for side in (-1, 1):
+        ellipsoid((0.075, 0.05, 0.14), (side * 0.17, -0.55, 0.13), (12, 8))
+    piece(srgb((0.14, 0.04, 0.10)))  # a wide open mouth
+    ellipsoid((0.25, 0.05, 0.12), (0, -0.565, -0.14), (16, 8))
+    piece(srgb((0.95, 0.42, 0.58)))  # tongue
+    ellipsoid((0.11, 0.04, 0.05), (0, -0.585, -0.2), (10, 6))
+    piece(srgb((0.98, 0.97, 1.0)))  # two fangs
+    for side in (-1, 1):
+        f = bmesh.ops.create_cone(bm, cap_ends=True, segments=6, radius1=0.045, radius2=0.0, depth=0.09)
+        bmesh.ops.rotate(bm, verts=f["verts"], cent=(0, 0, 0), matrix=__import__("mathutils").Matrix.Rotation(math.pi, 3, "X"))
+        bmesh.ops.translate(bm, verts=f["verts"], vec=(side * 0.12, -0.6, -0.06))
+    me = bpy.data.meshes.new("Kit_boo2")
     bm.to_mesh(me)
     bm.free()
     for p in me.polygons:
         p.use_smooth = True
     me.materials.append(bpy.data.materials["Props"])
-    white, eye, mouth, tongue = srgb((0.97, 0.96, 1.0)), srgb((0.10, 0.06, 0.14)), srgb((0.20, 0.06, 0.12)), srgb((0.95, 0.42, 0.55))
+    starts = [i for i, _ in parts] + [10 ** 9]
     def shade(poly, vi):
-        c = me.polygons[poly.index].center
-        if c.y < -0.3:  # the face is at -y
-            for ex in (-0.2, 0.2):
-                if ((c.x - ex) / 0.11) ** 2 + ((c.z - 0.16) / 0.19) ** 2 < 1:
-                    return eye
-            # a wide grin, with a pink tongue in the middle
-            if abs(c.x) < 0.3 and -0.28 < c.z < -0.05 + 0.6 * c.x * c.x:
-                return tongue if c.z < -0.18 and abs(c.x) < 0.12 else mouth
-        return white
+        for k in range(len(parts)):
+            if starts[k] <= vi < starts[k + 1]:
+                return parts[k][1]
+        return parts[0][1]
     paint(me, shade)
     return me
 
@@ -556,15 +574,15 @@ def scatter_night(L, terrain, rng):
         ob.scale = (s, s, s)
         link(ob, "House")
     taken.append(best)
-    # Boos floating about, turned towards the middle of the board
+    # Boos floating about
     boo = boo_mesh()
     # they float, so only the tiles and the house need room, not the grass below
     boo_room = [q.copy() for q in L.pos.values()] + [best]
     for i, p in enumerate(free_spots(L, terrain, 9, 1.4, 3.0, boo_room, rng)):
         ob = bpy.data.objects.new(f"Boo {i}", boo)
         ob.location = (p.x, p.y, p.z + rng.uniform(1.4, 2.8))
-        face = L.centre - p
-        ob.rotation_euler = (rng.uniform(-0.15, 0.15), rng.uniform(-0.2, 0.2), math.atan2(face.x, -face.y) + rng.uniform(-0.6, 0.6))
+        # faces towards the front of the board, where the camera usually is
+        ob.rotation_euler = (rng.uniform(-0.15, 0.15), rng.uniform(-0.2, 0.2), rng.uniform(-0.65, 0.65))
         s = rng.uniform(0.75, 1.3)
         ob.scale = (s, s, s)
         link(ob, "Boos")
