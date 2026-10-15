@@ -36,7 +36,7 @@ function Login({ message }: { message: string | null }) {
   }, []);
   return (
     <div className="board-login">
-      <h1>Everest board</h1>
+      <h1>The Everest Party</h1>
       {message && <p className="error-text">{message}</p>}
       {health === "down" && <p className="muted">Can't reach the board server right now.</p>}
       {health && health !== "down" && (
