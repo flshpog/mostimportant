@@ -56,7 +56,7 @@ export function EventReveal({ show, onDone }: { show: RevealShow | null; onDone:
       <div className="event-panel">
         <div className="event-head">
           <BangIcon />
-          <span>{show.mine ? "Event space!" : `${show.name} hit an event!`}</span>
+          <span>{show.mine ? "Event space" : `${show.name} landed on an event`}</span>
         </div>
         <div className="event-cards">
           {ORDER.map((ev, i) => (

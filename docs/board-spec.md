@@ -156,7 +156,7 @@ interface Space {
 - typescript for the new board code (existing bot stays JS). storage is JSON files (sqlite only if JSON truly can't work).
 - the bot runs on an ubuntu 22.04 VPS, always on. ports 80/443 are already in use there, so the reverse-proxy config must be added alongside the existing setup without disturbing it (worked out in phase 4). the game server is at `board.fiovivor.org`. `fiovivor.org` DNS is on spaceship (the registrar), not cloudflare.
 - website source lives in this repo (`apps/web`) and the built files are copied into the `fiovivor.org` repo under `/board`.
-- dice: 1–10.
+- dice: 1-10.
 
 **moving between boards:** players keep their coins, stars and items whenever they move to another board. the only exception is going to redemption island, which resets everything (see above).
 

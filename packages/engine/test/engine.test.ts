@@ -624,11 +624,11 @@ describe("describeEvent", () => {
     const lines = ev.map((e) => describeEvent(e, (id) => id.toUpperCase())).filter(Boolean);
     expect(lines).toEqual([
       "ALICE rolled a 2.",
-      "ALICE reached the star! It costs 20 coins.",
-      "⭐ ALICE bought a star!",
-      "The star flew to a new spot.",
+      "ALICE reached the star. It costs 20 coins.",
+      "ALICE bought a star.",
+      "The star moved.",
       "ALICE landed on a red space.",
-      "ALICE lost 3 coins. Now 2.",
+      "ALICE lost 3 coins and has 2.",
       "It's BOB's turn.",
     ]);
   });

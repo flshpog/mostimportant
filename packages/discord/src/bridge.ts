@@ -203,7 +203,7 @@ export class BoardDiscord {
   private friendly(e: unknown): string {
     if (e instanceof EngineError || e instanceof ServiceError) return e.message;
     this.log("[board] unexpected error", e);
-    return "Something went wrong on the board. Try again in a moment, or ask a host.";
+    return "Something went wrong. Try again in a moment, or ask a host.";
   }
 
   // ---- reacting to the game ----
@@ -218,7 +218,7 @@ export class BoardDiscord {
     void this.enqueue(boardId, async () => {
       const ch = await this.feed(boardId);
       if (!ch) return;
-      await ch.send({ content: "⏪ The hosts rewound the board.", allowedMentions: NO_MENTIONS });
+      await ch.send({ content: "The hosts rewound the board.", allowedMentions: NO_MENTIONS });
       await this.syncPrompt(boardId, ch, state);
       await this.announceTurn(boardId, ch, state);
       this.schedulePing(boardId, state);
@@ -282,11 +282,11 @@ export class BoardDiscord {
     await sleep(frame);
     const raw = roll.halvedFrom ?? roll.total;
     let result = roll.choose
-      ? `rolled a ${bold(String(roll.dice[0]))} and a ${bold(String(roll.dice[1]))}!`
+      ? `rolled a ${bold(String(roll.dice[0]))} and a ${bold(String(roll.dice[1]))}.`
       : roll.dice.length > 1
-        ? `rolled ${roll.dice.join(" + ")} = ${bold(String(raw))}!`
-        : `rolled a ${bold(String(raw))}!`;
-    if (roll.halvedFrom !== undefined) result += ` But they're poisoned: halved to ${bold(String(roll.total))}.`;
+        ? `rolled ${roll.dice.join(" + ")} = ${bold(String(raw))}.`
+        : `rolled a ${bold(String(raw))}.`;
+    if (roll.halvedFrom !== undefined) result = result.replace(/\.$/, `, halved to ${bold(String(roll.total))} by poison.`);
     await msg.edit({ content: `🎲 ${who} ${result}` });
     await this.reveal(ch, [`🎲 ${who} ${result}`], lines, msg);
   }
@@ -309,30 +309,30 @@ export class BoardDiscord {
       await msg.edit({ content: `${prefix} ${result}` });
     };
     if (e.type === "EventDrawn") {
-      const prefix = `❗ ${name(e.playerId)} landed on an event space!`;
-      const msg = await ch.send({ content: `${prefix} 🎰 Spinning...`, allowedMentions: NO_MENTIONS });
-      const faces = Object.values(EVENT_NAMES).map((n) => `🎰 ${n}...`);
-      await spin(msg, prefix, faces, `It's ${bold(EVENT_NAMES[e.event])}!`);
+      const prefix = `${name(e.playerId)} landed on an event space.`;
+      const msg = await ch.send({ content: `${prefix} ...`, allowedMentions: NO_MENTIONS });
+      const faces = Object.values(EVENT_NAMES).map((n) => `${n}...`);
+      await spin(msg, prefix, faces, `It's ${bold(EVENT_NAMES[e.event])}.`);
     } else if (e.type === "CoinsStolen") {
       const lead = e.auto
-        ? `💰 ${name(e.playerId)} didn't pick in time, so ${name(e.targetId)} (the richest) gets robbed.`
-        : `💰 ${name(e.playerId)} is stealing from ${name(e.targetId)}!`;
-      const prefix = `${lead}\n🎡 Spinning the steal wheel...`;
+        ? `${name(e.playerId)} ran out of time, so they steal from ${name(e.targetId)}, who has the most coins.`
+        : `${name(e.playerId)} is stealing from ${name(e.targetId)}.`;
+      const prefix = `${lead}\nThe wheel spins...`;
       const msg = await ch.send({ content: prefix, allowedMentions: NO_MENTIONS });
       const faces = this.opts.loadConfig().events.coinSteal.percents.map((p) => bold(`${p}%`));
-      await spin(msg, prefix, faces, `it lands on ${bold(`${e.percent}%`)}!`);
+      await spin(msg, prefix, faces, `and lands on ${bold(`${e.percent}%`)}.`);
       await sleep(gap);
-      await msg.edit({ content: `${prefix} it lands on ${bold(`${e.percent}%`)}!\n${name(e.playerId)} takes ${bold(`${e.amount} coin${e.amount === 1 ? "" : "s"}`)} from ${name(e.targetId)}!` });
+      await msg.edit({ content: `${prefix} and lands on ${bold(`${e.percent}%`)}.\n${name(e.playerId)} takes ${bold(`${e.amount} coin${e.amount === 1 ? "" : "s"}`)} from ${name(e.targetId)}.` });
     } else if (e.type === "StarStolen") {
-      const first = `🌟 ${name(e.playerId)} pays ${bold(`${e.price} coins`)}...`;
+      const first = `${name(e.playerId)} pays ${bold(`${e.price} coins`)}...`;
       const msg = await ch.send({ content: first, allowedMentions: NO_MENTIONS });
       await sleep(gap);
-      await msg.edit({ content: `${first}\n...and snatches a star from ${name(e.targetId)}! ⭐` });
+      await msg.edit({ content: `${first}\nand takes a star from ${name(e.targetId)}.` });
     } else if (e.type === "PlayersSwapped") {
-      const first = `🔄 ${name(e.playerId)} and ${name(e.targetId)} float up into the sky...`;
+      const first = `${name(e.playerId)} picked ${name(e.targetId)}...`;
       const msg = await ch.send({ content: first, allowedMentions: NO_MENTIONS });
       await sleep(gap);
-      await msg.edit({ content: `${first}\n...and swap places!` });
+      await msg.edit({ content: `${first}\nand they swap places.` });
     }
   }
 
@@ -423,7 +423,7 @@ export class BoardDiscord {
   private async pingHostsAdvantage(boardId: string, playerId: string, price: number, state: BoardState) {
     const channelId = this.opts.hostPingChannelId;
     const adv = this.opts.loadConfig().shop.advantage?.perBoard[boardId];
-    const text = `🛍️ ${bold(this.names(state)(playerId))} (<@${playerId}>) bought ${bold(this.opts.service.summary(boardId).name)}'s tribe advantage, ${bold(adv?.name ?? "the tribe advantage")}, for ${price} coins. Please hand it over!`;
+    const text = `${bold(this.names(state)(playerId))} (<@${playerId}>) bought the tribe advantage on ${bold(this.opts.service.summary(boardId).name)}: ${bold(adv?.name ?? "the tribe advantage")}, ${price} coins. It needs handing over.`;
     if (!channelId) {
       await this.opts.logToHost?.(text);
       return;
@@ -561,7 +561,7 @@ export class BoardDiscord {
     if (interaction.channelId === home || interaction.channelId === service.summary(boardId).channelId) {
       await interaction.deleteReply().catch(() => undefined);
     } else {
-      await interaction.editReply(`🎲 Rolled! See <#${home}>.`);
+      await interaction.editReply(`Rolled. See <#${home}>.`);
     }
   }
 
@@ -595,10 +595,10 @@ export class BoardDiscord {
           const out = await service.shopBuy(uid, action.itemId, "discord");
           const bought = out.find((s) => s.event.type === "ShopPurchase" || s.event.type === "AdvantagePurchased")?.event;
           if (bought) {
-            const what = bought.type === "AdvantagePurchased" ? "the Tribe Advantage" : bold(this.itemName((bought as { itemId: string }).itemId));
+            const what = bought.type === "AdvantagePurchased" ? "the tribe advantage" : bold(this.itemName((bought as { itemId: string }).itemId));
             const after = service.state(action.boardId).state.players[uid];
-            const bag = bought.type === "ShopPurchase" && after ? ` It's in your bag (${after.items.length}/${this.opts.loadConfig().shop.bagSize}).` : " The hosts have been told and will hand it to you.";
-            await interaction.followUp({ content: `🛍️ Only you can see this: you bought ${what}!${bag}`, ephemeral: true });
+            const bag = bought.type === "ShopPurchase" && after ? ` It's in your bag (${after.items.length}/${this.opts.loadConfig().shop.bagSize}).` : " The hosts have been told and will give it to you.";
+            await interaction.followUp({ content: `You bought ${what}.${bag}`, ephemeral: true });
           }
         }
       }
@@ -625,7 +625,7 @@ export class BoardDiscord {
         : interaction.update({ content, components, files });
     if (currentPlayerId(state) !== uid || state.move) return reply("You can use items on your turn, before you roll.");
     const held = (state.players[uid]?.items ?? []).map((id) => itemDef(ctx, id)).filter((i) => i && (i.effect.kind === "guard" || i.effect.kind === "starDiscount"));
-    const heldNote = held.length ? `\n-# ${[...new Set(held.map((i) => i!.name))].join(" and ")} work${held.length === 1 ? "s" : ""} by ${held.length === 1 ? "itself" : "themselves"} while you carry ${held.length === 1 ? "it" : "them"}.` : "";
+    const heldNote = held.length ? `\n-# ${[...new Set(held.map((i) => i!.name))].join(" and ")} ${held.length === 1 ? "is" : "are"} used automatically when needed.` : "";
     if (action.kind === "items") {
       const usable = usableItems(ctx, state, uid);
       if (!usable.length) return reply(`You don't have anything to use right now.${heldNote}`);
@@ -635,8 +635,8 @@ export class BoardDiscord {
         const item = itemDef(ctx, id)!;
         return new ButtonBuilder().setCustomId(buttonId({ kind: "use", boardId, itemId: id, targetId: null })).setLabel(`${item.name}${n > 1 ? ` ×${n}` : ""}`).setStyle(ButtonStyle.Primary);
       });
-      const lines = [...counts.keys()].map((id) => `• ${bold(itemDef(ctx, id)!.name)} — ${itemDef(ctx, id)!.description ?? ""}`);
-      return reply(`🎒 Your items (one per turn, before you roll):\n${lines.join("\n")}${heldNote}`, [new ActionRowBuilder<ButtonBuilder>().addComponents(buttons.slice(0, 5))]);
+      const lines = [...counts.keys()].map((id) => `• ${bold(itemDef(ctx, id)!.name)}. ${itemDef(ctx, id)!.description ?? ""}`);
+      return reply(`Your items. You can use one per turn, before you roll.\n${lines.join("\n")}${heldNote}`, [new ActionRowBuilder<ButtonBuilder>().addComponents(buttons.slice(0, 5))]);
     }
     const item = itemDef(ctx, action.itemId);
     if (!item) return reply("That item doesn't exist anymore.");
@@ -656,9 +656,9 @@ export class BoardDiscord {
       if (nextStar) {
         const { state: now } = service.state(boardId);
         const img = renderSpotCloseup({ layout: ctx.layout, state: now, boardName: "", now: this.clock(), spaceId: nextStar });
-        return reply(`🧭 Only you can see this: the star will appear ${bold("here")} next, once someone buys it. Now roll!`, [], [new AttachmentBuilder(img, { name: "next-star.jpg" })]);
+        return reply(`The next time someone buys the star, it moves ${bold("here")}.`, [], [new AttachmentBuilder(img, { name: "next-star.jpg" })]);
       }
-      return reply(`✅ You used the ${bold(item.name)}. Now roll!`);
+      return reply(`You used your ${bold(item.name)}.`);
     } catch (e) {
       return reply(this.friendly(e));
     }

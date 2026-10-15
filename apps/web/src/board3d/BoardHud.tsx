@@ -211,8 +211,8 @@ export function BoardHud(props: {
     dock = card(
       "roll",
       <DiceIcon />,
-      "Choose your number!",
-      `Your ${itemDef(ctx, choice.item ?? "")?.name ?? "Custom Dice Block"} lets you pick exactly how far to go.`,
+      "Choose a number",
+      "You move exactly that many spaces.",
       <div className="number-grid">
         {choice.options.map((v) => (
           <button key={v} className="dock-button pick" onClick={() => actions.pick(v)}>
@@ -225,8 +225,8 @@ export function BoardHud(props: {
     dock = card(
       "fork",
       <ArrowIcon deg={90} />,
-      "Fork in the road!",
-      <>Pick a path · tap an arrow on the board or here · {state.move!.remaining} to go</>,
+      "Which way?",
+      <>Tap an arrow on the board or pick here. {state.move!.remaining} {state.move!.remaining === 1 ? "space" : "spaces"} to go.</>,
       choice.options.map((o, i) => {
         const d = directionOf(layout, choice.spaceId, o);
         return (
@@ -240,7 +240,7 @@ export function BoardHud(props: {
     dock = card(
       "star",
       <StarIcon />,
-      "You reached the Star!",
+      "You reached the star",
       <>You have {me?.coins ?? 0} coins</>,
       <>
         <button className="dock-button gold big" onClick={() => actions.star(true)}>
@@ -270,7 +270,7 @@ export function BoardHud(props: {
     dock = card(
       `shop ${variant ?? ""}`,
       <ShopIcon />,
-      variant ? `${season.shop.variants[variant]?.name ?? "Shop"}` : "Welcome to the Shop!",
+      variant ? `${season.shop.variants[variant]?.name ?? "Shop"}` : "Shop",
       <>
         You have {me?.coins ?? 0} coins · bag {me?.items.length ?? 0}/{season.shop.bagSize}
         {offer.bagFull ? " (full)" : ""}
@@ -301,13 +301,13 @@ export function BoardHud(props: {
     dock = card(
       "event",
       <BangIcon />,
-      choice.kind === "coinSteal" ? "Coin Steal!" : choice.kind === "starSteal" ? "Star Steal!" : "Swap Places!",
+      choice.kind === "coinSteal" ? "Coin Steal" : choice.kind === "starSteal" ? "Star Steal" : "Swap Places",
       choice.kind === "coinSteal" ? (
-        <>Pick a tribemate. You'll take a random 5-50% of their coins!</>
+        <>Pick a tribemate. You'll take 5 to 50% of their coins.</>
       ) : choice.kind === "starSteal" ? (
         <>Pay {choice.price} coins to take a star from someone?</>
       ) : (
-        <>Pick someone to trade spots with</>
+        <>Pick someone to trade places with.</>
       ),
       <>
         {targets.map((id) => {

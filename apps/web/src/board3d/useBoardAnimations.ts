@@ -59,6 +59,11 @@ export function useBoardAnimations(opts: {
     (events: AnyEvent[], state: BoardState, layout: Board, meId: string | null) => {
       const name = (id: string) => state.players[id]?.name ?? "Someone";
       const itemName = (id: string) => season.shop.items.find((i) => i.id === id)?.name ?? "an item";
+      // "a Mushroom", "an Ice Flower"
+      const an = (id: string) => {
+        const n = itemName(id);
+        return n === "an item" ? n : `${/^[aeiou]/i.test(n) ? "an" : "a"} ${n}`;
+      };
       const itemEffect = (id: string) => season.shop.items.find((i) => i.id === id)?.effect.kind;
       const who = (id: string, you: string, them: string) => (id === meId ? you : `${name(id)} ${them}`);
       const start = performance.now();
@@ -87,7 +92,7 @@ export function useBoardAnimations(opts: {
             mover = pid;
             // a Custom Dice Block rolls nothing: the die comes once a number is chosen
             if (e.choose) {
-              if (pid === meId) showBanner(cursor, { tone: "info", text: "Choose your number!" });
+              if (pid === meId) showBanner(cursor, { tone: "info", text: "Choose a number" });
               break;
             }
             {
@@ -175,14 +180,14 @@ export function useBoardAnimations(opts: {
             break;
           case "ItemUsed": {
             // it pops out of the pawn and bursts
-            const item = itemName(e.itemId as string);
+            const item = an(e.itemId as string);
             const target = e.targetId as string | undefined;
             camera(cursor, { kind: "follow", playerId: pid });
             later(cursor, () => flights.items.add({ kind: "use", playerId: pid, model: e.itemId as string }));
             animator.wait(pid, USE_MS);
             showBanner(cursor + 500, {
               tone: "info",
-              text: target ? who(pid, `You used ${item} on ${name(target)}!`, `used ${item} on ${name(target)}!`) : who(pid, `You used ${item}!`, `used ${item}!`),
+              text: target ? who(pid, `You used ${item} on ${name(target)}`, `used ${item} on ${name(target)}`) : who(pid, `You used ${item}`, `used ${item}`),
             });
             cursor += USE_MS;
             break;
@@ -198,10 +203,10 @@ export function useBoardAnimations(opts: {
             camera(cursor, { kind: "follow", playerId: pid });
             later(cursor, () => flights.items.add({ kind: "buy", playerId: pid, model }));
             animator.wait(pid, DROP.end);
-            const what = advantage ? `the Tribe Advantage${advantageName ? `: ${advantageName}` : ""}` : e.itemId ? itemName(e.itemId as string) : "";
+            const what = advantage ? (advantageName ?? "the tribe advantage") : e.itemId ? an(e.itemId as string) : "";
             showBanner(cursor + DROP.landed, {
               tone: advantage ? "star" : "info",
-              text: pid === meId ? `You bought ${what}!` : `${name(pid)} bought something!`,
+              text: pid === meId ? `You bought ${what}!` : `${name(pid)} bought something`,
             });
             cursor += DROP.end;
             break;
@@ -224,12 +229,12 @@ export function useBoardAnimations(opts: {
           }
           case "StealBlocked":
             camera(cursor, { kind: "follow", playerId: e.targetId as string });
-            showBanner(cursor + 400, { tone: "info", text: `${name(e.targetId as string)}'s ${itemName("guard-charm")} blocked it!` });
+            showBanner(cursor + 400, { tone: "info", text: `${name(e.targetId as string)}'s ${itemName("guard-charm")} blocked it` });
             cursor += 2200;
             cameraBack(cursor, pid);
             break;
           case "ItemSpent":
-            if (itemEffect(e.itemId as string) === "starDiscount") showBanner(cursor, { tone: "star", text: who(pid, "Your Magic Lamp took 10 off the star!", "used a Magic Lamp on the star!") });
+            if (itemEffect(e.itemId as string) === "starDiscount") showBanner(cursor, { tone: "star", text: who(pid, `Your ${itemName(e.itemId as string)} made the star cheaper`, `used ${an(e.itemId as string)} on the star`) });
             break;
           case "StarsChanged":
             if (e.reason !== "host" && e.reason !== "event" && e.delta !== 0) popup(pid, e.delta as number, "star");
@@ -265,7 +270,7 @@ export function useBoardAnimations(opts: {
             }
             break;
           case "ForkChoiceRequired":
-            if (pid === meId) showBanner(cursor, { tone: "info", text: "Fork in the road! Pick a path." });
+            if (pid === meId) showBanner(cursor, { tone: "info", text: "Pick a path" });
             break;
           case "EventDrawn": {
             // the three events as cards, settling on the one that came up

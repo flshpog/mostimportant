@@ -28,12 +28,12 @@
     "items": [
       { "id": "mushroom", "name": "Mushroom", "price": 10, "description": "Roll two dice and add them together.", "effect": { "kind": "dice", "count": 2, "min": 1, "max": 10 } },
       { "id": "golden-mushroom", "name": "Golden Mushroom", "price": 20, "description": "Roll three dice and add them together.", "effect": { "kind": "dice", "count": 3, "min": 1, "max": 10 } },
-      { "id": "slow-mushroom", "name": "Slow Mushroom", "price": 8, "description": "Roll a 1-5 die for a precise landing.", "effect": { "kind": "dice", "count": 1, "min": 1, "max": 5 } },
-      { "id": "fast-mushroom", "name": "Bullet Bill", "price": 8, "description": "Blast off with a 6-10 die. No low rolls.", "effect": { "kind": "dice", "count": 1, "min": 6, "max": 10 } },
-      { "id": "reroll-block", "name": "Custom Dice Block", "price": 6, "description": "Choose any number from 1 to 10 and move exactly that far.", "effect": { "kind": "custom", "min": 1, "max": 10 } },
-      { "id": "magic-lamp", "name": "Magic Lamp", "price": 6, "description": "Takes 10 coins off your next star. Works by itself while you carry it.", "effect": { "kind": "starDiscount", "amount": 10 } },
-      { "id": "star-compass", "name": "Crystal Ball", "price": 6, "description": "Shows you where the star will appear next. Only you see it.", "effect": { "kind": "compass" } },
-      { "id": "guard-charm", "name": "Blue Shell", "price": 10, "description": "Blocks the next steal against you: Coin Steal, Star Steal or a Boo Bell. Works by itself while you carry it.", "effect": { "kind": "guard" } },
+      { "id": "slow-mushroom", "name": "Slow Mushroom", "price": 8, "description": "Roll a 1-5 die.", "effect": { "kind": "dice", "count": 1, "min": 1, "max": 5 } },
+      { "id": "fast-mushroom", "name": "Bullet Bill", "price": 8, "description": "Roll a 6-10 die.", "effect": { "kind": "dice", "count": 1, "min": 6, "max": 10 } },
+      { "id": "reroll-block", "name": "Custom Dice Block", "price": 6, "description": "Choose any number from 1 to 10 instead of rolling.", "effect": { "kind": "custom", "min": 1, "max": 10 } },
+      { "id": "magic-lamp", "name": "Magic Lamp", "price": 6, "description": "Your next star costs 10 coins less. Used automatically.", "effect": { "kind": "starDiscount", "amount": 10 } },
+      { "id": "star-compass", "name": "Crystal Ball", "price": 6, "description": "Shows you where the star goes next. Nobody else sees it.", "effect": { "kind": "compass" } },
+      { "id": "guard-charm", "name": "Blue Shell", "price": 10, "description": "Blocks the next Coin Steal, Star Steal or Boo Bell against you. Used automatically.", "effect": { "kind": "guard" } },
       { "id": "poison-mushroom", "name": "Poison Mushroom", "price": 10, "description": "Halves a tribemate's next roll.", "effect": { "kind": "poison" } },
       { "id": "boo-bell", "name": "Boo Bell", "price": 9, "description": "Steals 7 coins from a tribemate.", "effect": { "kind": "steal", "coins": 7 } }
     ],

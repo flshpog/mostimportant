@@ -149,7 +149,7 @@ export function promptMessage(boardId: string, state: BoardState, layout: Board,
     );
     const which = boardImageUrl ? `[Which way?](${boardImageUrl})` : "Which way?";
     return {
-      content: `🔀 ${who}, you're at a fork with ${bold(String(m.remaining))} step${m.remaining === 1 ? "" : "s"} left. ${bold(which)}\n-# ${until}you'll go ${direction(layout, c.spaceId, c.options[0])
+      content: `${who}, you're at a fork with ${bold(String(m.remaining))} step${m.remaining === 1 ? "" : "s"} left. ${bold(which)}\n-# ${until}you'll go ${direction(layout, c.spaceId, c.options[0])
         .split(" ")
         .slice(1)
         .join(" ")
@@ -160,7 +160,7 @@ export function promptMessage(boardId: string, state: BoardState, layout: Board,
   }
   if (c.kind === "star") {
     return {
-      content: `⭐ ${who}, you reached the star! Buy it for ${bold(`${c.price} coins`)}? You have ${p.coins}.\n-# ${until}you'll pass on it.`,
+      content: `${who}, you reached the star. Buy it for ${bold(`${c.price} coins`)}? You have ${p.coins}.\n-# ${until}you'll pass on it.`,
       components: rows([
         new ButtonBuilder().setCustomId(buttonId({ kind: "star", boardId, buy: true })).setLabel(`Buy (${c.price} coins)`).setStyle(ButtonStyle.Success),
         new ButtonBuilder().setCustomId(buttonId({ kind: "star", boardId, buy: false })).setLabel("No thanks").setStyle(ButtonStyle.Secondary),
@@ -180,10 +180,10 @@ export function promptMessage(boardId: string, state: BoardState, layout: Board,
     }
     const text =
       c.kind === "coinSteal"
-        ? `💰 ${who}, ${bold("Coin Steal")}! Pick a tribemate. You'll take a random 5-50% of their coins.\n-# ${until}you'll steal from whoever has the most.`
+        ? `${who}, ${bold("Coin Steal")}. Pick a tribemate and take 5 to 50% of their coins.\n-# ${until}you'll steal from whoever has the most.`
         : c.kind === "starSteal"
-          ? `🌟 ${who}, ${bold("Star Steal")}! Pay ${bold(`${c.price} coins`)} to take a star from someone? You have ${p.coins}.\n-# ${until}you'll pass on it.`
-          : `🔄 ${who}, ${bold("Swap Places")}! Pick someone to trade spots with.\n-# ${until}you'll stay where you are.`;
+          ? `${who}, ${bold("Star Steal")}. Pay ${bold(`${c.price} coins`)} to take a star from someone? You have ${p.coins}.\n-# ${until}you'll pass on it.`
+          : `${who}, ${bold("Swap Places")}. Pick someone to trade spots with.\n-# ${until}you'll stay where you are.`;
     return { content: text, components: rows(buttons), allowedMentions: mention };
   }
   if (c.kind === "dicePick") {
@@ -193,7 +193,7 @@ export function promptMessage(boardId: string, state: BoardState, layout: Board,
     );
     const block = config.shop.items.find((i) => i.id === c.item)?.name ?? "Custom Dice Block";
     return {
-      content: `🎲 ${who}, your ${bold(block)} lets you choose! How far do you want to go?\n-# ${until}you'll go ${Math.max(...c.options)}.`,
+      content: `${who}, pick a number for your ${bold(block)}.\n-# ${until}you'll go ${Math.max(...c.options)}.`,
       components: rows(buttons),
       allowedMentions: mention,
     };
@@ -206,10 +206,10 @@ export function promptMessage(boardId: string, state: BoardState, layout: Board,
   // the coins for gets a button, and a full bag is turned away privately.
   const affordable = stock.items.filter((i) => i.price <= p.coins);
   const canBuy = new Set(affordable.map((i) => i.id));
-  const lines = stock.items.map((i) => `${canBuy.has(i.id) ? "•" : "◦"} ${bold(i.name)} · ${i.price} coins${i.description ? ` — ${i.description}` : ""}`);
+  const lines = stock.items.map((i) => `• ${bold(i.name)}, ${i.price} coins${canBuy.has(i.id) ? "" : " (can't afford)"}${i.description ? `. ${i.description}` : ""}`);
   if (stock.advantage) {
     lines.push(
-      `✦ ${bold(`Tribe Advantage: ${stock.advantage.name}`)} · ${stock.advantage.price} coins · one per tribe, doesn't take a bag slot`,
+      `• ${bold(stock.advantage.name)}, ${stock.advantage.price} coins. Your tribe advantage. It doesn't use a bag slot.`,
       ...(stock.advantage.description ? [`> ${stock.advantage.description}`] : []),
     );
   }
@@ -219,11 +219,11 @@ export function promptMessage(boardId: string, state: BoardState, layout: Board,
   if (offer.advantage && stock.advantage) {
     buttons.push(new ButtonBuilder().setCustomId(buttonId({ kind: "shop", boardId, itemId: ADVANTAGE_ID })).setLabel(`${stock.advantage.name} (${stock.advantage.price})`.slice(0, 80)).setStyle(ButtonStyle.Success));
   }
-  buttons.push(new ButtonBuilder().setCustomId(buttonId({ kind: "shop", boardId, itemId: null })).setLabel("Leave the shop").setStyle(ButtonStyle.Secondary));
+  buttons.push(new ButtonBuilder().setCustomId(buttonId({ kind: "shop", boardId, itemId: null })).setLabel("Leave").setStyle(ButtonStyle.Secondary));
   const variant = layout.spaces.find((s) => s.id === c.spaceId)?.shop;
   const shopName = variant ? config.shop.variants[variant]?.name ?? "shop" : "shop";
   return {
-    content: `🛍️ ${who}, welcome to the ${shopName.toLowerCase()}! You have ${bold(`${p.coins} coins`)}.\n${lines.join("\n")}\n-# ${until}you'll leave without buying.`,
+    content: `${who}, welcome to the ${shopName.toLowerCase()}. You have ${bold(`${p.coins} coins`)}.\n${lines.join("\n")}\n-# ${until}you'll leave without buying.`,
     components: rows(buttons),
     allowedMentions: mention,
   };
@@ -242,12 +242,12 @@ export function rollButton(boardId: string, withItems = false): ActionRowBuilder
 export function turnMessage(boardId: string, state: BoardState, playerId: string, now: number, withItems = false): OutgoingMessage {
   const t = state.turn;
   const who = `<@${playerId}>`;
-  const limit = t.deadline === null ? "There's no time limit on this one." : `You have until ${ts(t.deadline)} (${ts(t.deadline, "R")}).`;
+  const limit = t.deadline === null ? "No time limit." : `You have until ${ts(t.deadline)} (${ts(t.deadline, "R")}).`;
   const open = t.windowOpensAt === null || t.windowOpensAt <= now;
   return open
-    ? { content: `🎲 ${who}, it's your turn! ${limit}`, components: [rollButton(boardId, withItems)], allowedMentions: { users: [playerId] } }
+    ? { content: `${who}, it's your turn. ${limit}`, components: [rollButton(boardId, withItems)], allowedMentions: { users: [playerId] } }
     : {
-        content: `⏳ ${who} is up next. Your turn opens ${ts(t.windowOpensAt!)} (${ts(t.windowOpensAt!, "R")}). I'll ping you then.`,
+        content: `${who} is up next. Your turn opens ${ts(t.windowOpensAt!)} (${ts(t.windowOpensAt!, "R")}). I'll ping you then.`,
         components: [],
         allowedMentions: { users: [playerId] },
       };

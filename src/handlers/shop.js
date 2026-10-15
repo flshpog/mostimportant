@@ -158,7 +158,7 @@ function randomRotation(guildId) {
     const ids = [];
     for (const [category, count] of plan) {
         const pool = offerableItems(guildId, category);
-        // Fisher–Yates shuffle.
+        // Fisher-Yates shuffle.
         for (let i = pool.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
             [pool[i], pool[j]] = [pool[j], pool[i]];

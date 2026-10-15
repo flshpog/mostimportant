@@ -42,7 +42,7 @@ describe("message helpers", () => {
       () => "Peach",
       (i) => i,
     );
-    expect(lines).toEqual(["**Peach** landed on a blue space.", "**Peach** got 3 coins. Now 13."]);
+    expect(lines).toEqual(["**Peach** landed on a blue space.", "**Peach** got 3 coins and has 13."]);
   });
 
   it("command definitions are valid for Discord", () => {
@@ -81,12 +81,12 @@ describe("the bridge", () => {
     r.dice.push(1, 1, 1); // roll a 1 onto the s21 event space, draw coin steal, roll 50%
     await r.service.roll(PEACH, "web");
     await settle(r);
-    expect(r.channel.texts().some((t) => t.includes("landed on an event space! It's **Coin Steal**!"))).toBe(true);
+    expect(r.channel.texts().some((t) => t.includes("landed on an event space. It's **Coin Steal**."))).toBe(true);
     await r.service.eventTarget(PEACH, TOAD, "web");
     await settle(r);
-    const steal = r.channel.texts().find((t) => t.includes("Spinning the steal wheel"));
-    expect(steal).toContain("it lands on **50%**!");
-    expect(steal).toContain("**Peach** takes **5 coins** from **Toad**!");
+    const steal = r.channel.texts().find((t) => t.includes("The wheel spins"));
+    expect(steal).toContain("and lands on **50%**.");
+    expect(steal).toContain("**Peach** takes **5 coins** from **Toad**.");
   });
 
   it("keeps one board image and edits it in place", async () => {
@@ -103,7 +103,7 @@ describe("the bridge", () => {
     await settle(r);
     const turn = r.channel.live().find((m) => m.content.includes("it's your turn"))!;
     expect(turn.content).toContain(`<@${PEACH}>`);
-    expect(turn.content).toContain("no time limit");
+    expect(turn.content).toContain("No time limit.");
     expect(turn.buttons).toEqual([{ id: "board:roll:mario-stadium:go", label: "Roll" }]);
   });
 
@@ -114,8 +114,8 @@ describe("the bridge", () => {
     await settle(r);
     const dice = r.channel.live().find((m) => m.content.startsWith("🎲 **Peach**"))!;
     expect(dice.history[0]).toBe("🎲 **Peach** is rolling...");
-    expect(dice.content).toBe("🎲 **Peach** rolled a **2**!");
-    const prompt = r.channel.live().find((m) => m.content.startsWith("🔀"))!;
+    expect(dice.content).toBe("🎲 **Peach** rolled a **2**.");
+    const prompt = r.channel.live().find((m) => m.content.includes("you're at a fork"))!;
     expect(prompt.content).toContain(`<@${PEACH}>, you're at a fork with **2** steps left`);
     expect(prompt.buttons.map((b) => b.label)).toEqual(["⬆️ Up", "⬅️ Left"]);
     // the "your turn" Roll button is retired once the roll happens
@@ -127,7 +127,7 @@ describe("the bridge", () => {
     r.dice.push(2);
     await r.service.roll(PEACH, "web");
     await settle(r);
-    const prompt = r.channel.live().find((m) => m.content.startsWith("🔀"))!;
+    const prompt = r.channel.live().find((m) => m.content.includes("you're at a fork"))!;
 
     const toad = fakeInteraction(TOAD, { customId: prompt.buttons[0].id });
     await r.discord.handleButton(toad);
@@ -166,7 +166,7 @@ describe("the bridge", () => {
     await r.discord.handleRoll(i);
     await settle(r);
     expect(i.calls.map((c: { type: string }) => c.type)).toEqual(["deferReply", "deleteReply"]);
-    expect(r.channel.texts().some((t) => t.startsWith("🎲 **Peach** rolled a **1**!"))).toBe(true);
+    expect(r.channel.texts().some((t) => t.startsWith("🎲 **Peach** rolled a **1**."))).toBe(true);
   });
 
   it("host edits are silent in the channel", async () => {
@@ -183,10 +183,10 @@ describe("the bridge", () => {
     await r.service.undo("mario-stadium", { turn: true }, HOST);
     await settle(r);
     const texts = r.channel.texts();
-    expect(texts).toContain("⏪ The hosts rewound the board.");
-    expect(texts.at(-1)).toContain(`<@${PEACH}>, it's your turn!`);
+    expect(texts).toContain("The hosts rewound the board.");
+    expect(texts.at(-1)).toContain(`<@${PEACH}>, it's your turn.`);
     // the fork prompt from the undone roll lost its buttons
-    expect(r.channel.live().find((m) => m.content.startsWith("🔀"))!.buttons).toEqual([]);
+    expect(r.channel.live().find((m) => m.content.includes("you're at a fork"))!.buttons).toEqual([]);
   });
 
   it("/board trusts the host role on the command itself", async () => {
@@ -205,7 +205,7 @@ describe("the bridge", () => {
     const options = { getSubcommand: () => "coins", getUser: () => ({ id: PEACH, username: "peach" }), getInteger: () => 5, getString: () => null, getBoolean: () => null, getMember: () => null };
     const withRole = fakeInteraction("100000000000000077", { options, member: { roles: ["555555555555555555"] } });
     await d.handleHostCommand(withRole);
-    expect(withRole.calls[1].payload).toBe("✅ **Peach** lost 5 coins (host). Now 5."); // ...but the role on the command is enough
+    expect(withRole.calls[1].payload).toBe("✅ The hosts took 5 coins from **Peach**."); // ...but the role on the command is enough
     const without = fakeInteraction("100000000000000078", { options, member: { roles: [] } });
     await d.handleHostCommand(without);
     expect(without.calls[0].payload).toEqual({ content: "Only hosts can use /board.", ephemeral: true });
@@ -227,7 +227,7 @@ describe("the bridge", () => {
     const host = fakeInteraction(HOST, { options });
     await r.discord.handleHostCommand(host);
     expect(host.calls.map((c: { type: string }) => c.type)).toEqual(["deferReply", "editReply"]);
-    expect(host.calls[1].payload).toBe("✅ **Peach** got 15 coins (host). Now 25.");
+    expect(host.calls[1].payload).toBe("✅ The hosts gave **Peach** 15 coins.");
     expect(r.service.state("mario-stadium").state.players[PEACH].coins).toBe(25);
   });
 });
@@ -248,7 +248,7 @@ describe("turn pings on the real clock", () => {
       expect(r.channel.texts().some((t) => t.includes(`<@${TOAD}> is up next`))).toBe(false);
       await new Promise((res) => setTimeout(res, 400));
       await settle(r);
-      const ping = r.channel.live().find((m) => m.content.includes(`<@${TOAD}>, it's your turn!`));
+      const ping = r.channel.live().find((m) => m.content.includes(`<@${TOAD}>, it's your turn.`));
       expect(ping?.buttons).toEqual([{ id: "board:roll:mario-stadium:go", label: "Roll" }]);
     } finally {
       r.close();
@@ -280,8 +280,8 @@ describe("updates thread", () => {
     // thread: turn ping, dice, prompt
     const texts = thread.texts();
     expect(texts.some((t) => t.includes("it's your turn"))).toBe(true);
-    expect(texts.some((t) => t.startsWith("🎲 **Peach** rolled a **2**!"))).toBe(true);
-    expect(texts.some((t) => t.startsWith("🔀"))).toBe(true);
+    expect(texts.some((t) => t.startsWith("🎲 **Peach** rolled a **2**."))).toBe(true);
+    expect(texts.some((t) => t.includes("you're at a fork"))).toBe(true);
   });
 
   it("/roll typed inside the thread clears its private reply", async () => {

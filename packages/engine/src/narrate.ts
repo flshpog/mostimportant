@@ -11,31 +11,36 @@ export function describeEvent(
   item: (itemId: string) => string = (id) => id,
 ): string | null {
   const coins = (n: number) => `${Math.abs(n)} coin${Math.abs(n) === 1 ? "" : "s"}`;
+  // "a Mushroom", "an Ice Flower": item names are in the config, so pick the article
+  const an = (itemId: string) => {
+    const n = item(itemId);
+    return `${/^[aeiou]/i.test(n) ? "an" : "a"} ${n}`;
+  };
   switch (event.type) {
     case "BoardStarted":
-      return "The board is open! Let's play.";
+      return "The board is open.";
     case "BoardPaused":
       return "The hosts paused the board.";
     case "BoardResumed":
-      return "The board is back on.";
+      return "The board is unpaused.";
     case "TurnStarted":
       return `It's ${name(event.playerId)}'s turn.`;
     case "TurnSkipped":
-      return event.byHost ? `The hosts skipped ${name(event.playerId)}'s turn.` : `${name(event.playerId)} ran out of time and missed their turn.`;
+      return event.byHost ? `The hosts skipped ${name(event.playerId)}'s turn.` : `${name(event.playerId)} missed their turn.`;
     case "TurnEnded":
       return null;
     case "DiceRolled": {
-      if (event.choose) return `${name(event.playerId)} gets to choose their number with ${event.item ? item(event.item) : "a Custom Dice Block"}!`;
+      if (event.choose) return `${name(event.playerId)} is using ${event.item ? an(event.item) : "a Custom Dice Block"}.`;
       const raw = event.halvedFrom ?? event.total;
       const roll = event.dice.length > 1 ? `rolled ${event.dice.join(" + ")} = ${raw}` : `rolled a ${raw}`;
       return event.halvedFrom !== undefined
-        ? `${name(event.playerId)} ${roll}, but they're poisoned: halved to ${event.total}.`
+        ? `${name(event.playerId)} ${roll}, halved to ${event.total} by poison.`
         : `${name(event.playerId)} ${roll}.`;
     }
     case "DiePicked": {
-      const how = event.auto ? "didn't choose in time and goes with" : "chose";
+      const how = event.auto ? "ran out of time and goes" : "chose";
       return event.halvedFrom !== undefined
-        ? `${name(event.playerId)} ${how} ${event.value}, but they're poisoned: halved to ${event.total}.`
+        ? `${name(event.playerId)} ${how} ${event.value}, halved to ${event.total} by poison.`
         : `${name(event.playerId)} ${how} ${event.value}.`;
     }
     case "PlayerMoved":
@@ -44,60 +49,65 @@ export function describeEvent(
     case "ForkChoiceRequired":
       return `${name(event.playerId)} reached a fork.`;
     case "ForkChosen":
-      return event.auto ? `${name(event.playerId)} didn't pick a path in time, so they went the default way.` : null;
+      return event.auto ? `${name(event.playerId)} ran out of time and took the default path.` : null;
     case "LandedOnSpace":
       return `${name(event.playerId)} landed on ${event.spaceType === "start" ? "the start" : `a ${event.spaceType} space`}.`;
     case "CoinsChanged":
       if (event.reason === "star" || event.reason === "shop" || event.reason === "event" || event.reason === "item") return null;
       if (event.delta === 0) return event.reason === "red" ? `${name(event.playerId)} had no coins to lose.` : null;
-      return `${name(event.playerId)} ${event.delta > 0 ? "got" : "lost"} ${coins(event.delta)}${event.reason === "host" ? " (host)" : ""}. Now ${event.coins}.`;
+      if (event.reason === "host") return event.delta > 0 ? `The hosts gave ${name(event.playerId)} ${coins(event.delta)}.` : `The hosts took ${coins(event.delta)} from ${name(event.playerId)}.`;
+      return `${name(event.playerId)} ${event.delta > 0 ? "got" : "lost"} ${coins(event.delta)} and has ${event.coins}.`;
     case "StarsChanged":
       if (event.reason === "star" || event.reason === "event") return null;
-      return `${name(event.playerId)} ${event.delta >= 0 ? "got" : "lost"} ${Math.abs(event.delta)} star${Math.abs(event.delta) === 1 ? "" : "s"}${event.reason === "host" ? " (host)" : ""}.`;
+      {
+        const stars = `${Math.abs(event.delta)} star${Math.abs(event.delta) === 1 ? "" : "s"}`;
+        if (event.reason === "host") return event.delta >= 0 ? `The hosts gave ${name(event.playerId)} ${stars}.` : `The hosts took ${stars} from ${name(event.playerId)}.`;
+        return `${name(event.playerId)} ${event.delta >= 0 ? "got" : "lost"} ${stars}.`;
+      }
     case "StarOffered":
-      return `${name(event.playerId)} reached the star! It costs ${coins(event.price)}.`;
+      return `${name(event.playerId)} reached the star. It costs ${coins(event.price)}.`;
     case "StarUnaffordable":
-      return `${name(event.playerId)} passed the star but needs ${coins(event.price)}.`;
+      return `${name(event.playerId)} reached the star but can't afford it.`;
     case "StarPurchased":
-      return event.discount ? `⭐ ${name(event.playerId)} bought a star for ${coins(event.price)}!` : `⭐ ${name(event.playerId)} bought a star!`;
+      return event.discount ? `${name(event.playerId)} bought a star for ${coins(event.price)}.` : `${name(event.playerId)} bought a star.`;
     case "StarSkipped":
-      return event.auto ? `${name(event.playerId)} let the star go (timed out).` : `${name(event.playerId)} passed on the star.`;
+      return event.auto ? `${name(event.playerId)} ran out of time and passed on the star.` : `${name(event.playerId)} passed on the star.`;
     case "StarMoved":
-      return event.by === "host" ? "The hosts moved the star." : "The star flew to a new spot.";
+      return event.by === "host" ? "The hosts moved the star." : "The star moved.";
     case "ShopOpened":
       return `${name(event.playerId)} stopped at the shop.`;
     case "ShopUnaffordable":
-      return `${name(event.playerId)} passed the shop without stopping.`;
+      return `${name(event.playerId)} passed the shop.`;
     case "AdvantagePurchased":
-      return `${name(event.playerId)} bought the Tribe Advantage for ${coins(event.price)}!`;
+      return `${name(event.playerId)} bought the tribe advantage for ${coins(event.price)}.`;
     case "ItemUsed":
-      return event.targetId ? `${name(event.playerId)} used ${item(event.itemId)} on ${name(event.targetId)}!` : `${name(event.playerId)} used ${item(event.itemId)}!`;
+      return event.targetId ? `${name(event.playerId)} used ${an(event.itemId)} on ${name(event.targetId)}.` : `${name(event.playerId)} used ${an(event.itemId)}.`;
     case "ItemSpent":
-      return `${name(event.playerId)}'s ${item(event.itemId)} kicked in.`;
+      return `${name(event.playerId)} used their ${item(event.itemId)}.`;
     case "StealBlocked":
-      return `${name(event.targetId)}'s ${item("guard-charm")} blocked ${name(event.playerId)}'s steal!`;
+      return `${name(event.targetId)}'s ${item("guard-charm")} blocked ${name(event.playerId)}'s steal.`;
     case "BooBellRang":
-      return `${name(event.playerId)} took ${coins(event.amount)} from ${name(event.targetId)}!`;
+      return `${name(event.playerId)} took ${coins(event.amount)} from ${name(event.targetId)}.`;
     case "ShopPurchase":
       // itemId "" is a purchase this viewer isn't allowed to see (bags are private)
-      return event.itemId ? `${name(event.playerId)} bought ${item(event.itemId)} for ${coins(event.price)}.` : `${name(event.playerId)} bought something from the shop.`;
+      return event.itemId ? `${name(event.playerId)} bought ${an(event.itemId)} for ${coins(event.price)}.` : `${name(event.playerId)} bought something at the shop.`;
     case "ShopClosed":
       return null;
     case "EventDrawn":
-      return `❗ ${name(event.playerId)} hit an event: ${EVENT_NAMES[event.event]}!`;
+      return `${name(event.playerId)} landed on an event space. It's ${EVENT_NAMES[event.event]}.`;
     case "EventFizzled":
-      if (event.reason === "no_events") return `${name(event.playerId)} landed on an event space, but nothing happened.`;
-      if (event.reason === "no_stars") return "Nobody has a star to steal, so nothing happens.";
-      if (event.reason === "too_poor") return `${name(event.playerId)} needs ${coins(event.price ?? 0)} to steal a star, so nothing happens.`;
-      return "There's nobody to pick, so nothing happens.";
+      if (event.reason === "no_events") return `${name(event.playerId)} landed on an event space. Nothing happened.`;
+      if (event.reason === "no_stars") return "Nobody has a star to steal. Nothing happens.";
+      if (event.reason === "too_poor") return `${name(event.playerId)} can't afford to steal a star. Nothing happens.`;
+      return "There's nobody to pick. Nothing happens.";
     case "EventDeclined":
-      return event.auto ? `${name(event.playerId)} didn't pick in time, so nothing happens.` : `${name(event.playerId)} passed on the ${EVENT_NAMES[event.event].toLowerCase()}.`;
+      return event.auto ? `${name(event.playerId)} ran out of time. Nothing happens.` : `${name(event.playerId)} passed on the ${EVENT_NAMES[event.event]}.`;
     case "CoinsStolen":
-      return `💰 ${name(event.playerId)} stole ${event.percent}% of ${name(event.targetId)}'s coins: ${coins(event.amount)}!${event.auto ? " (picked automatically)" : ""}`;
+      return `${name(event.playerId)} stole ${coins(event.amount)} from ${name(event.targetId)} (${event.percent}% of their coins).`;
     case "StarStolen":
-      return `🌟 ${name(event.playerId)} paid ${coins(event.price)} and stole a star from ${name(event.targetId)}!`;
+      return `${name(event.playerId)} paid ${coins(event.price)} and stole a star from ${name(event.targetId)}.`;
     case "PlayersSwapped":
-      return `🔄 ${name(event.playerId)} swapped places with ${name(event.targetId)}!`;
+      return `${name(event.playerId)} swapped places with ${name(event.targetId)}.`;
     case "PlayerAdded":
       return `${name(event.playerId)} joined the board.`;
     case "PlayerRemoved":
@@ -105,9 +115,9 @@ export function describeEvent(
     case "PlayerTeleported":
       return `The hosts moved ${name(event.playerId)}.`;
     case "ItemGranted":
-      return `${name(event.playerId)} received ${event.itemId ? item(event.itemId) : "an item"}.`;
+      return `The hosts gave ${name(event.playerId)} ${event.itemId ? an(event.itemId) : "an item"}.`;
     case "ItemRemoved":
-      return `${name(event.playerId)} lost ${event.itemId ? item(event.itemId) : "an item"}.`;
+      return `The hosts took ${event.itemId ? an(event.itemId) : "an item"} from ${name(event.playerId)}.`;
     case "TurnOrderSet":
       return "The hosts changed the turn order.";
     case "Undone":

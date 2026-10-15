@@ -488,7 +488,7 @@ class Run {
         throw new EngineError("invalid_dice", `That item rolls ${item.count} dice from ${item.min} to ${item.max}.`);
       }
     } else if (item?.kind === "custom") {
-      if (dice.length) throw new EngineError("invalid_dice", "A Custom Dice Block doesn't roll: you choose the number.");
+      if (dice.length) throw new EngineError("invalid_dice", "This item has you choose a number instead of rolling.");
     } else {
       const { min, max } = this.ctx.rules.dice;
       if (!dice.length || dice.some((d) => !ok(d, min, max))) {
@@ -562,7 +562,7 @@ class Run {
     if (idx < 0 || !item) throw new EngineError("unknown_item", "You don't have that item.");
     const e = item.effect;
     if (e.kind === "guard" || e.kind === "starDiscount") {
-      throw new EngineError("wrong_choice", `${item.name} works by itself while you carry it.`);
+      throw new EngineError("wrong_choice", `${item.name} is used automatically.`);
     }
     let target: PlayerState | null = null;
     if (e.kind === "poison" || e.kind === "steal") {
@@ -740,7 +740,7 @@ class Run {
     const stock = shopStock(this.ctx, this.s, choice.stock);
     if (itemId === ADVANTAGE_ID) {
       if (!stock.advantage) throw new EngineError("unknown_item", "The tribe advantage isn't for sale here.");
-      if (p.coins < stock.advantage.price) throw new EngineError("not_enough_coins", `You need ${stock.advantage.price} coins for the Tribe Advantage.`);
+      if (p.coins < stock.advantage.price) throw new EngineError("not_enough_coins", `You need ${stock.advantage.price} coins for the tribe advantage.`);
       this.changeCoins(p, -stock.advantage.price, "shop");
       this.s.advantageSold = true;
       this.emit({ type: "AdvantagePurchased", playerId, price: stock.advantage.price });
