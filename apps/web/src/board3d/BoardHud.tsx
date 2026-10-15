@@ -4,6 +4,7 @@ import { currentPlayerId, type BoardState } from "@everest/engine";
 import type { LiveStatus } from "../lib/useLiveBoard";
 import type { CamMode } from "./Board3D";
 import { directionLabel } from "./coords";
+import { CoinIcon, DiceIcon, FollowIcon, MapIcon, OutlineStarIcon, PinIcon, StarIcon } from "./Icons";
 import { tokenColour } from "./Tokens";
 
 const NY = new Intl.DateTimeFormat("en-US", { timeZone: "America/New_York", weekday: "short", hour: "numeric", minute: "2-digit", timeZoneName: "short" });
@@ -48,94 +49,120 @@ export function BoardHud(props: {
   const itemName = (id: string) => season.shop.items.find((i) => i.id === id)?.name ?? id;
   const opens = state.turn.windowOpensAt;
   const me = state.players[meId];
+  const waiting = !state.move && opens !== null && opens > Date.now();
 
   const turnLine = !state.started ? (
-    <>The board hasn't started yet.</>
+    <span className="turn-text">The board hasn't started yet.</span>
   ) : state.paused ? (
-    <>⏸️ Paused by the hosts.</>
+    <span className="turn-text">Paused by the hosts.</span>
   ) : current ? (
     <>
-      {myTurn ? <b>Your turn!</b> : <><b>{nameOf(current)}</b>'s turn</>}
-      {!state.move && opens !== null && opens > Date.now() && <span className="muted"> · opens {NY.format(opens)}</span>}
+      <span className="dot" style={{ background: tokenColour(current) }} />
+      <span className="turn-text">
+        {myTurn ? <b>Your turn!</b> : <><b>{nameOf(current)}</b>'s turn</>}
+        {waiting && <span className="when">Opens {NY.format(opens!)}</span>}
+      </span>
     </>
   ) : null;
+
+  const prompt = (title: React.ReactNode, body: React.ReactNode) => (
+    <div className="choice-card">
+      <p className="choice-title">{title}</p>
+      <div className="choice-buttons">{body}</div>
+    </div>
+  );
 
   const buttons = (
     <>
       {myTurn && !state.move && (
-        <button className="button primary big" onClick={actions.roll}>
-          🎲 Roll
+        <button className="button primary big roll" onClick={actions.roll} disabled={waiting}>
+          <DiceIcon /> Roll
         </button>
       )}
-      {choice?.kind === "fork" && (
-        <div className="row">
-          {choice.options.map((o) => (
+      {choice?.kind === "fork" &&
+        prompt(
+          <>Which way? <span className="sub">{state.move!.remaining} to go</span></>,
+          choice.options.map((o) => (
             <button key={o} className="button" onClick={() => actions.fork(o)}>
               {directionLabel(layout, choice.spaceId, o)}
             </button>
-          ))}
-        </div>
-      )}
-      {choice?.kind === "star" && (
-        <div className="row">
-          <button className="button primary" onClick={() => actions.star(true)}>
-            ⭐ Buy ({choice.price})
-          </button>
-          <button className="button" onClick={() => actions.star(false)}>
-            No thanks
-          </button>
-        </div>
-      )}
-      {(choice?.kind === "coinSteal" || choice?.kind === "starSteal" || choice?.kind === "swap") && (
-        <div className="event-prompt">
-          <p className="event-title">
-            {choice.kind === "coinSteal" ? "💰 Coin Steal! Pick a tribemate." : choice.kind === "starSteal" ? `🌟 Star Steal! Pay ${choice.price} coins to take a star?` : "🔄 Swap Places! Pick someone to trade spots with."}
-          </p>
-          <div className="row">
+          )),
+        )}
+      {choice?.kind === "star" &&
+        prompt(
+          <>You reached the star!</>,
+          <>
+            <button className="button primary" onClick={() => actions.star(true)}>
+              Buy for {choice.price} <CoinIcon />
+            </button>
+            <button className="button ghost" onClick={() => actions.star(false)}>
+              No thanks
+            </button>
+          </>,
+        )}
+      {choice?.kind === "shop" &&
+        prompt(
+          <>Welcome to the shop</>,
+          <>
+            {season.shop.items
+              .filter((i) => i.price <= (me?.coins ?? 0))
+              .map((i) => (
+                <button key={i.id} className="button" onClick={() => actions.shop(i.id)}>
+                  {i.name} <span className="price">{i.price} <CoinIcon /></span>
+                </button>
+              ))}
+            <button className="button ghost" onClick={() => actions.shop(null)}>
+              Leave
+            </button>
+          </>,
+        )}
+      {(choice?.kind === "coinSteal" || choice?.kind === "starSteal" || choice?.kind === "swap") &&
+        prompt(
+          choice.kind === "coinSteal" ? (
+            <>Coin Steal! <span className="sub">Pick a tribemate</span></>
+          ) : choice.kind === "starSteal" ? (
+            <>Star Steal! <span className="sub">Pay {choice.price} coins to take a star?</span></>
+          ) : (
+            <>Swap Places! <span className="sub">Pick someone to trade spots with</span></>
+          ),
+          <>
             {choice.targets
               .filter((id) => state.players[id])
               .map((id) => {
                 const t = state.players[id];
                 return (
                   <button key={id} className="button" onClick={() => actions.event(id)}>
-                    {t.name} {choice.kind === "coinSteal" ? `(${t.coins} 🪙)` : choice.kind === "starSteal" ? `(${t.stars} ⭐)` : ""}
+                    <span className="dot" style={{ background: tokenColour(id) }} />
+                    {t.name}
+                    {choice.kind === "coinSteal" && <span className="price">{t.coins} <CoinIcon /></span>}
+                    {choice.kind === "starSteal" && <span className="price">{t.stars} <StarIcon /></span>}
                   </button>
                 );
               })}
             {choice.kind !== "coinSteal" && (
-              <button className="button" onClick={() => actions.event(null)}>
+              <button className="button ghost" onClick={() => actions.event(null)}>
                 No thanks
               </button>
             )}
-          </div>
-        </div>
-      )}
-      {choice?.kind === "shop" && (
-        <div className="row">
-          {season.shop.items
-            .filter((i) => i.price <= (me?.coins ?? 0))
-            .map((i) => (
-              <button key={i.id} className="button" onClick={() => actions.shop(i.id)}>
-                {i.name} ({i.price})
-              </button>
-            ))}
-          <button className="button" onClick={() => actions.shop(null)}>
-            Leave
-          </button>
-        </div>
-      )}
+          </>,
+        )}
     </>
   );
 
   const standings = (
     <ol className="standings">
-      {players.map((p) => (
-        <li key={p.id} className={p.id === meId ? "me" : ""}>
+      {players.map((p, i) => (
+        <li key={p.id} className={`${p.id === meId ? "me" : ""} ${p.id === current && state.started ? "up" : ""}`}>
           <button className="link-row" onClick={() => setMode({ kind: "follow", playerId: p.id })}>
+            <span className="rank">{i + 1}</span>
             <span className="dot" style={{ background: tokenColour(p.id) }} />
             <span className="name">{p.name}</span>
-            <span className="stat">⭐ {p.stars}</span>
-            <span className="stat">🪙 {p.coins}</span>
+            <span className="stat">
+              {p.stars} <StarIcon />
+            </span>
+            <span className="stat coins">
+              {p.coins} <CoinIcon />
+            </span>
           </button>
           {p.items.length > 0 && <div className="items">{p.items.map(itemName).join(", ")}</div>}
         </li>
@@ -147,12 +174,12 @@ export function BoardHud(props: {
   return (
     <>
       <header className="hud-top">
-        <div className="hud-title">
+        <div className="hud-title glass">
           <h1>{props.boardName}</h1>
           <span className={`live-dot ${props.status}`} title={`live: ${props.status}`} />
         </div>
         {props.boards.length > 1 && (
-          <select value={props.boardId} onChange={(e) => props.onBoard(e.target.value)} aria-label="Board">
+          <select className="glass" value={props.boardId} onChange={(e) => props.onBoard(e.target.value)} aria-label="Board">
             {props.boards.map((b) => (
               <option key={b.id} value={b.id}>
                 {b.name}
@@ -162,17 +189,30 @@ export function BoardHud(props: {
         )}
       </header>
 
-      <nav className="hud-cams" aria-label="Camera">
+      <nav className="hud-cams glass" aria-label="Camera">
         <button className={mode.kind === "overview" ? "active" : ""} onClick={() => setMode({ kind: "overview" })} title="Whole board">
-          🗺️<span className="label"> Overview</span>
+          <MapIcon />
+          <span className="label">Overview</span>
         </button>
         {me && (
           <button className={following === meId ? "active" : ""} onClick={() => setMode({ kind: "follow", playerId: meId })} title="Follow me">
-            📍<span className="label"> Me</span>
+            <PinIcon />
+            <span className="label">Me</span>
           </button>
         )}
-        <select value={following && following !== meId ? following : ""} onChange={(e) => e.target.value && setMode({ kind: "follow", playerId: e.target.value })} aria-label="Follow a player">
-          <option value="">👥 Follow...</option>
+        {state.star && (
+          <button className={mode.kind === "star" ? "active" : ""} onClick={() => setMode({ kind: "star" })} title="Go to the star">
+            <OutlineStarIcon />
+            <span className="label">Star</span>
+          </button>
+        )}
+        <select
+          className={following && following !== meId ? "active" : ""}
+          value={following && following !== meId ? following : ""}
+          onChange={(e) => e.target.value && setMode({ kind: "follow", playerId: e.target.value })}
+          aria-label="Follow a player"
+        >
+          <option value="">Follow…</option>
           {players
             .filter((p) => p.id !== meId)
             .map((p) => (
@@ -181,23 +221,31 @@ export function BoardHud(props: {
               </option>
             ))}
         </select>
-        {state.star && (
-          <button className={mode.kind === "star" ? "active" : ""} onClick={() => setMode({ kind: "star" })} title="Go to the star">
-            ⭐<span className="label"> Star</span>
-          </button>
-        )}
-        <button className={`auto ${props.followTurns ? "active" : ""}`} onClick={() => props.setFollowTurns(!props.followTurns)} title="Fly to whoever is moving">
-          🎬<span className="label"> {props.followTurns ? "Following the action" : "Follow the action"}</span>
+        <span className="sep" />
+        <button className={`auto ${props.followTurns ? "on" : ""}`} onClick={() => props.setFollowTurns(!props.followTurns)} title="Fly to whoever is moving">
+          <FollowIcon />
+          <span className="label">Auto camera</span>
+          <span className="switch" />
         </button>
       </nav>
 
-      <aside className={`hud-panel ${sheetOpen ? "open" : ""}`}>
+      <aside className={`hud-panel glass ${sheetOpen ? "open" : ""}`}>
         <button className="sheet-handle" onClick={() => setSheetOpen(!sheetOpen)} aria-expanded={sheetOpen}>
           <span className="grip" />
           <span>{sheetOpen ? "Hide standings" : "Standings"}</span>
         </button>
-        <section className="turn">
-          <p>{turnLine}</p>
+        <section className={`turn ${myTurn ? "mine" : ""}`}>
+          <div className="turn-line">{turnLine}</div>
+          {me && (
+            <div className="my-stats">
+              <span>
+                <StarIcon /> {me.stars}
+              </span>
+              <span>
+                <CoinIcon /> {me.coins}
+              </span>
+            </div>
+          )}
           {props.error && <p className="error-text">{props.error}</p>}
           {buttons}
         </section>
