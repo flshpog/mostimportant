@@ -271,6 +271,10 @@ export function useBoardAnimations(opts: {
               cursor += STAR_HOLD_MS;
             }
             break;
+          case "TurnStarted":
+            // once the last move has played out, over to whoever's up next
+            if (followTurns) camera(cursor + 900, { kind: "follow", playerId: pid });
+            break;
           case "ForkChoiceRequired":
             if (pid === meId) showBanner(cursor, { tone: "info", text: "Pick a path" });
             break;
