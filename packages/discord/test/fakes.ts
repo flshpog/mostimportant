@@ -146,6 +146,8 @@ export async function rig(opts: { realClock?: boolean; season?: Partial<SeasonCo
     clock: now,
     diceFrameMs: 0,
     imageDebounceMs: 0,
+    lineGapMs: 0,
+    beatMs: 0,
     // Only Mario Stadium's channel (and threads made in it) exist in these tests.
     getChannel: async (id) => (id === channel.id || channel.threadsCreated.some((t) => t.id === id) ? channels.get(id)! : null),
     updatesThread: { enabled: !!opts.thread, name: "🎲 {board} updates" },

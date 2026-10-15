@@ -229,7 +229,8 @@ describe("turn pings on the real clock", () => {
       await r.service.roll(PEACH, "web");
       await r.service.chooseFork(PEACH, "s79", "web");
       await settle(r);
-      expect(r.channel.texts().some((t) => t.includes(`<@${TOAD}> is up next`))).toBe(true);
+      // a turn that opens this soon gets no "up next" message, just the ping
+      expect(r.channel.texts().some((t) => t.includes(`<@${TOAD}> is up next`))).toBe(false);
       await new Promise((res) => setTimeout(res, 400));
       await settle(r);
       const ping = r.channel.live().find((m) => m.content.includes(`<@${TOAD}>, it's your turn!`));

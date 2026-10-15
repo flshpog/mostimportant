@@ -45,6 +45,13 @@ export interface BoardDiscordOptions {
   // Overridable so tests run fast.
   diceFrameMs?: number;
   imageDebounceMs?: number;
+  // Pacing, so a move reads as it happens instead of arriving in one burst: the gap
+  // between narration lines, and the pause before the next prompt or turn message.
+  lineGapMs?: number;
+  beatMs?: number;
+  // A turn that opens sooner than this gets no "you're up next" message; the
+  // "your turn" ping follows almost at once anyway.
+  upNextMinMs?: number;
   // Defaults to fetching the board's channel from the client.
   getChannel?: (channelId: string) => Promise<BoardChannel | null>;
   log?: (message: string, error?: unknown) => void;
@@ -215,17 +222,24 @@ export class BoardDiscord {
     if (!ch) return;
     // Player moves and timeouts are narrated; host edits are silent (the image and
     // prompts still update).
+    let spoke = false;
     if (!meta.host) {
       const lines = narrate(events, this.names(state), this.itemName);
       const roll = events.find((e): e is Extract<EngineEvent, { type: "DiceRolled" }> => e.type === "DiceRolled");
       if (roll) {
         await this.retireTurnMessage(ch, boardId);
         await this.diceAnimation(ch, roll, state, lines);
+        spoke = true;
+      } else if (lines.length) {
+        await this.reveal(ch, [], lines);
+        spoke = true;
       }
-      else if (lines.length) await ch.send({ content: lines.join("\n"), allowedMentions: NO_MENTIONS });
     }
+    const turnChanged = events.some((e) => e.type === "TurnStarted" || e.type === "BoardStarted");
+    // let the move sink in before asking for the next thing
+    if (spoke && (promptKey(state) !== (this.board(boardId).prompt?.key ?? null) || turnChanged)) await sleep(this.opts.beatMs ?? 1500);
     await this.syncPrompt(boardId, ch, state);
-    if (events.some((e) => e.type === "TurnStarted" || e.type === "BoardStarted")) await this.announceTurn(boardId, ch, state);
+    if (turnChanged) await this.announceTurn(boardId, ch, state);
     this.schedulePing(boardId, state);
     this.scheduleImage(boardId);
   }
@@ -243,7 +257,24 @@ export class BoardDiscord {
     }
     await sleep(frame);
     const result = roll.dice.length > 1 ? `rolled ${roll.dice.join(" + ")} = ${bold(String(roll.total))}` : `rolled a ${bold(String(roll.total))}!`;
-    await msg.edit({ content: [`🎲 ${who} ${result}`, ...lines].join("\n") });
+    await msg.edit({ content: `🎲 ${who} ${result}` });
+    await this.reveal(ch, [`🎲 ${who} ${result}`], lines, msg);
+  }
+
+  // Adds narration lines one at a time to a single message (editing `msg`, or a new
+  // one), so a move unfolds instead of arriving as one block.
+  private async reveal(ch: BoardChannel, shown: string[], lines: string[], msg?: Message) {
+    const gap = this.opts.lineGapMs ?? 1300;
+    const out = [...shown];
+    for (const line of lines) {
+      out.push(line);
+      if (msg) {
+        await sleep(gap);
+        await msg.edit({ content: out.join("\n") });
+      } else {
+        msg = await ch.send({ content: line, allowedMentions: NO_MENTIONS });
+      }
+    }
   }
 
   // Keeps exactly one live prompt per board: retire the old one's buttons, post the new.
@@ -276,6 +307,9 @@ export class BoardDiscord {
     await this.retireTurnMessage(ch, boardId);
     const pid = currentPlayerId(state);
     if (!state.started || state.paused || state.move || !pid) return;
+    const opens = state.turn.windowOpensAt;
+    // Opening any moment now: skip "you're up next" and let the ping be the message.
+    if (opens !== null && opens > this.clock() && opens - this.clock() < (this.opts.upNextMinMs ?? 120_000)) return;
     const msg = turnMessage(boardId, state, pid, this.clock());
     const sent = await ch.send(msg);
     saved.turnMessageId = sent.id;
