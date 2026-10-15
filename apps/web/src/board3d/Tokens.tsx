@@ -15,24 +15,32 @@ export function tokenColour(id: string) {
 const HOP_SECONDS = 0.34;
 const HOP_HEIGHT = 0.6;
 
+// One queued step for a token: a hop to a spot, or a pause (the dice, a cutscene).
+export type TokenStep = { to: Vector3 } | { wait: number };
+
 // Shared, mutable animation state (outside React so 60fps updates don't re-render).
 export class TokenAnimator {
   shown = new Map<string, Vector3>(); // where each token is drawn right now
-  queue = new Map<string, Vector3[]>(); // hops still to play
+  queue = new Map<string, TokenStep[]>(); // steps still to play, in order
   hop = new Map<string, { from: Vector3; to: Vector3; t: number }>();
-  // Tokens stand still until this time (performance.now()), e.g. while the dice tumble.
+  // A token in a pause stands still until this time (performance.now()).
   holdUntil = new Map<string, number>();
-  hold(id: string, ms: number) {
-    this.holdUntil.set(id, performance.now() + ms);
-  }
   held(id: string) {
     return (this.holdUntil.get(id) ?? 0) > performance.now();
   }
   enqueue(id: string, to: Vector3) {
-    this.queue.set(id, [...(this.queue.get(id) ?? []), to.clone()]);
+    this.queue.set(id, [...(this.queue.get(id) ?? []), { to: to.clone() }]);
+  }
+  wait(id: string, ms: number) {
+    this.queue.set(id, [...(this.queue.get(id) ?? []), { wait: ms }]);
+  }
+  clear(id: string) {
+    this.queue.delete(id);
+    this.hop.delete(id);
+    this.holdUntil.delete(id);
   }
   busy(id: string) {
-    return this.hop.has(id) || (this.queue.get(id)?.length ?? 0) > 0;
+    return this.hop.has(id) || this.held(id) || (this.queue.get(id)?.length ?? 0) > 0;
   }
 }
 
@@ -67,17 +75,20 @@ function Token(props: {
       animator.shown.set(id, shown);
     }
     let hop = animator.hop.get(id);
-    if (!hop && animator.held(id)) {
-      // waiting for the dice: stay put, even though the state already says where we end up
-      g.position.copy(shown);
-      return;
-    }
-    if (!hop) {
+    while (!hop && !animator.held(id)) {
       const next = animator.queue.get(id)?.shift();
-      if (next) {
-        hop = { from: shown.clone(), to: next, t: 0 };
+      if (!next) break;
+      if ("wait" in next) animator.holdUntil.set(id, performance.now() + next.wait);
+      else {
+        hop = { from: shown.clone(), to: next.to, t: 0 };
         animator.hop.set(id, hop);
       }
+    }
+    if (!hop && (animator.held(id) || animator.queue.get(id)?.length)) {
+      // paused (dice, star cutscene): stay put, even though the state already says
+      // where we end up
+      g.position.copy(shown);
+      return;
     }
     if (hop) {
       hop.t = Math.min(1, hop.t + dt / HOP_SECONDS);

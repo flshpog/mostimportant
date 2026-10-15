@@ -6,6 +6,7 @@ import { useLiveBoard, type FeedEvent } from "../lib/useLiveBoard";
 import { Board3D, type CamMode } from "./Board3D";
 import { TokenAnimator } from "./Tokens";
 import { BoardHud } from "./BoardHud";
+import { Banner } from "./Banner";
 import { DiceOverlay } from "./DiceRoll";
 import { useBoardAnimations } from "./useBoardAnimations";
 
@@ -72,7 +73,7 @@ export function BoardPage() {
   const animator = useRef(new TokenAnimator()).current;
   const stateRef = useRef<ReturnType<typeof useLiveBoard>["state"]>(null);
   const meRef = useRef<string | null>(null);
-  const { play, popups, dice, clearDice } = useBoardAnimations({ animator, season, followTurns, setMode });
+  const { play, popups, dice, clearDice, banner, clearBanner, starDirector } = useBoardAnimations({ animator, season, followTurns, setMode });
 
   useEffect(() => {
     if (!token) return;
@@ -123,6 +124,7 @@ export function BoardPage() {
     animator.shown.clear();
     animator.queue.clear();
     animator.hop.clear();
+    animator.holdUntil.clear();
   }, [boardId, animator]);
 
   const run = useCallback(async (fn: () => Promise<unknown>) => {
@@ -150,9 +152,10 @@ export function BoardPage() {
   return (
     <div className="board-page">
       <div className="board-canvas">
-        <Board3D layout={lay} state={state} meId={me.user.id} avatars={{ ...avatars, [me.user.id]: me.user.avatar }} animator={animator} popups={popups} mode={mode} setMode={setMode} />
+        <Board3D layout={lay} state={state} meId={me.user.id} avatars={{ ...avatars, [me.user.id]: me.user.avatar }} animator={animator} starDirector={starDirector} popups={popups} mode={mode} setMode={setMode} />
       </div>
       <DiceOverlay roll={dice} onDone={clearDice} />
+      <Banner banner={banner} onDone={clearBanner} />
       <BoardHud
         boardName={boards.find((b) => b.id === boardId)?.name ?? boardId}
         boards={boards}

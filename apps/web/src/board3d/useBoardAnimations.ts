@@ -1,82 +1,143 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { Board, SeasonConfig } from "@everest/board-data";
-import type { BoardState } from "@everest/engine";
+import { EVENT_NAMES, type BoardState, type EventChoiceKind } from "@everest/engine";
+import type { BannerShow } from "./Banner";
 import type { CamMode } from "./Board3D";
 import { spaceToWorld } from "./coords";
-import { DICE_SPIN_MS, type DiceShow } from "./DiceRoll";
+import { DICE_TOTAL_MS, type DiceShow } from "./DiceRoll";
+import { STAR_CAMERA_AT, STAR_LANDED_AT, StarDirector } from "./Star";
 import type { Popup, TokenAnimator } from "./Tokens";
 
 type AnyEvent = { type: string; [k: string]: unknown };
 
 const HOP_MS = 340;
-const DICE_HOLD_MS = DICE_SPIN_MS + 250;
+const POPUP_MS = 1900;
+// The mover waits until the star has landed and mostly slowed down.
+const STAR_HOLD_MS = STAR_LANDED_AT + 700;
 
-// Turns engine events into animation: the dice first, then hops for moves, then
-// pop-ups for coins and stars once the token has arrived. Shared by the live board
-// and the offline preview.
+// Turns engine events into a little show: the dice, the hops, pop-ups and banners as
+// the token gets there, and the star cutscene. Events arrive in batches (one action's
+// worth), so `cursor` tracks when, from now, each event will be on screen.
+// Shared by the live board and the offline preview.
 export function useBoardAnimations(opts: {
   animator: TokenAnimator;
   season: SeasonConfig;
   followTurns: boolean;
   setMode: (m: CamMode) => void;
 }) {
-  const { animator, season, followTurns, setMode } = opts;
+  const { animator, followTurns, setMode } = opts;
   const [popups, setPopups] = useState<Popup[]>([]);
   const [dice, setDice] = useState<DiceShow | null>(null);
+  const [banner, setBanner] = useState<BannerShow | null>(null);
+  const starDirector = useRef(new StarDirector()).current;
   const nextId = useRef(0);
+  const timers = useRef<number[]>([]);
+  useEffect(() => () => timers.current.forEach(clearTimeout), []);
+
+  const later = useCallback((ms: number, fn: () => void) => {
+    timers.current.push(window.setTimeout(fn, Math.max(0, ms)));
+  }, []);
 
   const play = useCallback(
     (events: AnyEvent[], state: BoardState, layout: Board, meId: string | null) => {
-      const add: Popup[] = [];
-      const popup = (playerId: string, delta: number, icon: "coin" | "star") =>
-        add.push({
+      const name = (id: string) => state.players[id]?.name ?? "Someone";
+      const who = (id: string, you: string, them: string) => (id === meId ? you : `${name(id)} ${them}`);
+      let cursor = 0;
+      let mover: string | null = null;
+      const popup = (playerId: string, delta: number, icon: "coin" | "star") => {
+        const p: Popup = {
           id: ++nextId.current,
           playerId,
           text: `${delta > 0 ? "+" : ""}${delta}`,
           icon,
           tone: delta < 0 ? "bad" : icon === "star" ? "star" : "good",
-        });
-      let rolled = false;
+        };
+        later(cursor, () => setPopups((ps) => [...ps, p]));
+        later(cursor + POPUP_MS, () => setPopups((ps) => ps.filter((x) => x !== p)));
+      };
+      const showBanner = (at: number, b: Omit<BannerShow, "key">) => later(at, () => setBanner({ ...b, key: ++nextId.current }));
+
       for (const e of events) {
-        if (e.type === "DiceRolled") {
-          const id = e.playerId as string;
-          rolled = true;
-          animator.hold(id, DICE_HOLD_MS);
-          setDice({
-            key: ++nextId.current,
-            playerId: id,
-            name: state.players[id]?.name ?? "Someone",
-            total: e.total as number,
-            mine: id === meId,
-            min: season.dice.min,
-            max: season.dice.max,
-          });
-          if (followTurns) setMode({ kind: "follow", playerId: id });
+        const pid = e.playerId as string;
+        switch (e.type) {
+          case "DiceRolled":
+            mover = pid;
+            setDice({ key: ++nextId.current, playerId: pid, name: name(pid), total: e.total as number, mine: pid === meId });
+            animator.wait(pid, DICE_TOTAL_MS);
+            if (followTurns) setMode({ kind: "follow", playerId: pid });
+            cursor += DICE_TOTAL_MS;
+            break;
+          case "PlayerMoved":
+            mover = pid;
+            animator.enqueue(pid, spaceToWorld(layout, e.to as string));
+            cursor += HOP_MS;
+            break;
+          case "PlayerTeleported":
+            animator.clear(pid);
+            animator.shown.set(pid, spaceToWorld(layout, e.to as string));
+            break;
+          case "PlayersSwapped":
+            // a single long hop each way, so the swap reads as a swap
+            animator.enqueue(pid, spaceToWorld(layout, e.playerTo as string));
+            animator.enqueue(e.targetId as string, spaceToWorld(layout, e.targetTo as string));
+            cursor += HOP_MS;
+            showBanner(cursor, { tone: "event", text: who(pid, `You swapped places with ${name(e.targetId as string)}!`, `swapped places with ${name(e.targetId as string)}!`) });
+            break;
+          case "CoinsChanged":
+            if (e.reason !== "host" && e.delta !== 0) popup(pid, e.delta as number, "coin");
+            break;
+          case "StarsChanged":
+            if (e.reason !== "host" && e.delta !== 0) popup(pid, e.delta as number, "star");
+            break;
+          case "StarOffered":
+            starDirector.raiseAt = performance.now() + cursor;
+            break;
+          case "StarPurchased": {
+            const from = spaceToWorld(layout, e.spaceId as string);
+            const start = cursor;
+            later(start, () => {
+              const to = starDirector.claim?.to ?? from;
+              starDirector.claim = { start: performance.now(), from, to };
+            });
+            showBanner(start + 250, { tone: "star", text: who(pid, "You got a Star!", "got a Star!") });
+            animator.wait(pid, STAR_HOLD_MS);
+            mover = pid;
+            break;
+          }
+          case "StarMoved":
+            if (e.by === "purchase") {
+              const to = spaceToWorld(layout, e.to as string);
+              const start = cursor;
+              later(start, () => {
+                if (starDirector.claim) starDirector.claim.to = to;
+              });
+              const back = mover;
+              later(start + STAR_CAMERA_AT, () => setMode({ kind: "star" }));
+              later(start + STAR_LANDED_AT + 500, () => {
+                if (followTurns && back) setMode({ kind: "follow", playerId: back });
+              });
+              cursor += STAR_HOLD_MS;
+            }
+            break;
+          case "EventDrawn":
+            showBanner(cursor, { tone: "event", text: `${EVENT_NAMES[e.event as EventChoiceKind]}!` });
+            break;
+          case "CoinsStolen":
+            showBanner(cursor, {
+              tone: "event",
+              text: who(pid, `You stole ${e.amount} coins from ${name(e.targetId as string)}!`, `stole ${e.amount} coins from ${name(e.targetId as string)}!`),
+            });
+            break;
+          case "StarStolen":
+            showBanner(cursor, { tone: "star", text: who(pid, `You stole a Star from ${name(e.targetId as string)}!`, `stole a Star from ${name(e.targetId as string)}!`) });
+            break;
         }
-        if (e.type === "PlayerMoved") animator.enqueue(e.playerId as string, spaceToWorld(layout, e.to as string));
-        if (e.type === "PlayerTeleported") {
-          animator.queue.delete(e.playerId as string);
-          animator.hop.delete(e.playerId as string);
-          animator.shown.set(e.playerId as string, spaceToWorld(layout, e.to as string));
-        }
-        if (e.type === "PlayersSwapped") {
-          // a single long hop each way, so the swap reads as a swap
-          animator.enqueue(e.playerId as string, spaceToWorld(layout, e.playerTo as string));
-          animator.enqueue(e.targetId as string, spaceToWorld(layout, e.targetTo as string));
-        }
-        if (e.type === "CoinsChanged" && e.reason !== "host" && e.delta !== 0) popup(e.playerId as string, e.delta as number, "coin");
-        if (e.type === "StarsChanged" && e.reason !== "host" && e.delta !== 0) popup(e.playerId as string, e.delta as number, "star");
-      }
-      if (add.length) {
-        const hops = events.filter((x) => x.type === "PlayerMoved").length;
-        const delay = (rolled ? DICE_HOLD_MS : 0) + hops * HOP_MS;
-        setTimeout(() => setPopups((p) => [...p, ...add]), delay);
-        setTimeout(() => setPopups((p) => p.filter((x) => !add.includes(x))), delay + 1700 + add.length * 220);
       }
     },
-    [animator, season, followTurns, setMode],
+    [animator, followTurns, setMode, starDirector, later],
   );
 
   const clearDice = useCallback(() => setDice(null), []);
-  return { play, popups, dice, clearDice };
+  const clearBanner = useCallback(() => setBanner(null), []);
+  return { play, popups, dice, clearDice, banner, clearBanner, starDirector };
 }

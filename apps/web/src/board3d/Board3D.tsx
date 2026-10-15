@@ -6,7 +6,7 @@ import type { Board } from "@everest/board-data";
 import type { BoardState } from "@everest/engine";
 import { allSpacePositions } from "./coords";
 import { occluders, Scenery, SceneryBoundary } from "./Scenery";
-import { Star } from "./Star";
+import { Star, type StarDirector } from "./Star";
 import { Tiles } from "./Tiles";
 import { Tokens, type Popup, type TokenAnimator } from "./Tokens";
 
@@ -43,6 +43,20 @@ const CANDIDATES = (() => {
   return out.sort((a, b) => a.cost - b.cost);
 })();
 
+// The camera spot nearest `desired` (same distance from `look`) with a clear view of
+// `subject`, or `desired` itself if nothing is in the way.
+function clearSpot(look: Vector3, subject: Vector3, desired: Vector3): Spherical {
+  const cur = new Spherical().setFromVector3(desired.clone().sub(look));
+  if (!blocked(desired, subject)) return cur;
+  for (const k of CANDIDATES) {
+    const s = new Spherical(cur.radius, Math.min(1.25, Math.max(0.08, cur.phi + k.dPhi)), cur.theta + k.dTheta);
+    if (!blocked(new Vector3().setFromSpherical(s).add(look), subject)) return s;
+  }
+  return new Spherical(cur.radius, 0.08, cur.theta);
+}
+const STAR_HEIGHT = new Vector3(0, 1.35, 0);
+const STAR_LOOK = new Vector3(0, 1.0, 0);
+
 const ease = (t: number) => (t < 0.5 ? 2 * t * t : 1 - (-2 * t + 2) ** 2 / 2);
 
 function CameraRig(props: { mode: CamMode; setMode: (m: CamMode) => void; animator: TokenAnimator; starPos: Vector3 | null }) {
@@ -64,13 +78,21 @@ function CameraRig(props: { mode: CamMode; setMode: (m: CamMode) => void; animat
     const c = ref.current;
     if (!c) return;
     if (mode.kind === "overview") void c.setLookAt(OVERVIEW.pos.x, OVERVIEW.pos.y, OVERVIEW.pos.z, OVERVIEW.target.x, OVERVIEW.target.y, OVERVIEW.target.z, true);
-    if (mode.kind === "star" && starPos) void c.setLookAt(starPos.x + 5, starPos.y + 8, starPos.z + 8, starPos.x, starPos.y + 0.8, starPos.z, true);
+    // Pick an unblocked angle before flying there, so the shot doesn't open on a tree.
+    if (mode.kind === "star" && starPos) {
+      const look = starPos.clone().add(STAR_LOOK);
+      const sph = clearSpot(look, starPos.clone().add(STAR_HEIGHT), starPos.clone().add(new Vector3(5, 8, 8)));
+      const cam = new Vector3().setFromSpherical(sph).add(look);
+      void c.setLookAt(cam.x, cam.y, cam.z, look.x, look.y, look.z, true);
+    }
     if (mode.kind === "follow") {
       const p = animator.shown.get(mode.playerId);
       if (p) {
         followTarget.current.copy(p);
-        const cam = p.clone().add(FOLLOW_OFFSET);
-        void c.setLookAt(cam.x, cam.y, cam.z, p.x, p.y + 0.6, p.z, true);
+        const look = p.clone().add(new Vector3(0, LOOK_LIFT, 0));
+        const sph = clearSpot(look, p.clone().add(HEAD), p.clone().add(FOLLOW_OFFSET));
+        const cam = new Vector3().setFromSpherical(sph).add(look);
+        void c.setLookAt(cam.x, cam.y, cam.z, look.x, look.y, look.z, true);
       }
     }
   }, [mode, starPos, animator]);
@@ -86,12 +108,26 @@ function CameraRig(props: { mode: CamMode; setMode: (m: CamMode) => void; animat
 
   useFrame((_, dt) => {
     const c = ref.current;
-    if (!c || mode.kind !== "follow") return;
-    const p = animator.shown.get(mode.playerId);
-    if (!p) return;
-    const before = followTarget.current.clone();
-    followTarget.current.lerp(p, 1 - Math.exp(-5 * dt));
-    const look = followTarget.current.clone().add(new Vector3(0, LOOK_LIFT, 0));
+    if (!c) return;
+    let look: Vector3;
+    let subject: Vector3;
+    if (mode.kind === "follow") {
+      const p = animator.shown.get(mode.playerId);
+      if (!p) return;
+      const before = followTarget.current.clone();
+      followTarget.current.lerp(p, 1 - Math.exp(-5 * dt));
+      look = followTarget.current.clone().add(new Vector3(0, LOOK_LIFT, 0));
+      subject = p.clone().add(HEAD);
+      if (!avoid.current && before.distanceTo(followTarget.current) >= 1e-4) {
+        const cam = new Vector3();
+        c.getPosition(cam);
+        const shift = followTarget.current.clone().sub(before);
+        void c.setLookAt(cam.x + shift.x, cam.y + shift.y, cam.z + shift.z, look.x, look.y, look.z, false);
+      }
+    } else if (mode.kind === "star" && starPos) {
+      look = starPos.clone().add(STAR_LOOK);
+      subject = starPos.clone().add(STAR_HEIGHT);
+    } else return;
 
     const a = avoid.current;
     if (a) {
@@ -111,30 +147,14 @@ function CameraRig(props: { mode: CamMode; setMode: (m: CamMode) => void; animat
       return;
     }
 
-    if (before.distanceTo(followTarget.current) >= 1e-4) {
-      const cam = new Vector3();
-      c.getPosition(cam);
-      const shift = followTarget.current.clone().sub(before);
-      void c.setLookAt(cam.x + shift.x, cam.y + shift.y, cam.z + shift.z, look.x, look.y, look.z, false);
-    }
-
     const now = performance.now();
     if (now < nextCheck.current || !occluders.boxes.length) return;
     nextCheck.current = now + 200;
     const cam = new Vector3();
     c.getPosition(cam);
-    const head = p.clone().add(HEAD);
-    if (!blocked(cam, head)) return;
-    const cur = new Spherical().setFromVector3(cam.clone().sub(look));
-    let to: Spherical | null = null;
-    for (const k of CANDIDATES) {
-      const s2 = new Spherical(cur.radius, Math.min(1.25, Math.max(0.08, cur.phi + k.dPhi)), cur.theta + k.dTheta);
-      if (!blocked(new Vector3().setFromSpherical(s2).add(look), head)) {
-        to = s2;
-        break;
-      }
-    }
-    avoid.current = { from: cur, to: to ?? new Spherical(cur.radius, 0.08, cur.theta), t: 0 };
+    if (!blocked(cam, subject)) return;
+    const from = new Spherical().setFromVector3(cam.clone().sub(look));
+    avoid.current = { from, to: clearSpot(look, subject, cam), t: 0 };
   });
 
   return <CameraControls ref={ref} makeDefault minDistance={4} maxDistance={70} maxPolarAngle={1.32} smoothTime={0.6} draggingSmoothTime={0.12} />;
@@ -146,6 +166,7 @@ export function Board3D(props: {
   meId: string | null;
   avatars: Record<string, string | null>;
   animator: TokenAnimator;
+  starDirector: StarDirector;
   popups: Popup[];
   mode: CamMode;
   setMode: (m: CamMode) => void;
@@ -191,7 +212,7 @@ export function Board3D(props: {
         </Suspense>
       </SceneryBoundary>
       <Tiles layout={layout} />
-      {starPos && <Star position={starPos.toArray() as [number, number, number]} />}
+      {starPos && <Star position={starPos} director={props.starDirector} offered={state.move?.choice?.kind === "star"} />}
       <Tokens state={state} spacePos={spacePos} animator={animator} meId={meId} avatars={avatars} popups={popups} />
       <CameraRig mode={mode} setMode={setMode} animator={animator} starPos={starPos} />
     </Canvas>
