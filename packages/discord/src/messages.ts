@@ -13,6 +13,8 @@ export type ButtonAction =
   | { kind: "event"; boardId: string; targetId: string | null };
 
 const LEAVE = "__leave";
+// Fork buttons, in order; render.ts colours each path's arrow to match.
+const FORK_BUTTON_STYLES = [ButtonStyle.Primary, ButtonStyle.Success, ButtonStyle.Danger, ButtonStyle.Secondary];
 const PASS = "__pass";
 
 export function buttonId(a: ButtonAction): string {
@@ -98,7 +100,8 @@ function rows(buttons: ButtonBuilder[]): ActionRowBuilder<ButtonBuilder>[] {
 }
 
 // The prompt for whatever the current player has to decide, or null.
-export function promptMessage(boardId: string, state: BoardState, layout: Board, config: SeasonConfig): OutgoingMessage | null {
+// `boardImageUrl` (the board picture's message link) turns "Which way?" into a link to it.
+export function promptMessage(boardId: string, state: BoardState, layout: Board, config: SeasonConfig, boardImageUrl?: string): OutgoingMessage | null {
   const m = state.move;
   const c = m?.choice;
   if (!m || !c || c.kind === "eventDraw") return null;
@@ -109,11 +112,16 @@ export function promptMessage(boardId: string, state: BoardState, layout: Board,
   const mention = { users: [p.id] };
 
   if (c.kind === "fork") {
-    const buttons = c.options.map((next) =>
-      new ButtonBuilder().setCustomId(buttonId({ kind: "fork", boardId, next })).setLabel(direction(layout, c.spaceId, next)).setStyle(ButtonStyle.Primary),
+    // Button colours in order match the arrows on the close-up picture (FORK_PATH_COLOURS).
+    const buttons = c.options.map((next, i) =>
+      new ButtonBuilder()
+        .setCustomId(buttonId({ kind: "fork", boardId, next }))
+        .setLabel(direction(layout, c.spaceId, next))
+        .setStyle(FORK_BUTTON_STYLES[i % FORK_BUTTON_STYLES.length]),
     );
+    const which = boardImageUrl ? `[Which way?](${boardImageUrl})` : "Which way?";
     return {
-      content: `🔀 ${who}, you're at a fork with ${bold(String(m.remaining))} step${m.remaining === 1 ? "" : "s"} left. Which way?\n-# ${until}you'll go ${direction(layout, c.spaceId, c.options[0])
+      content: `🔀 ${who}, you're at a fork with ${bold(String(m.remaining))} step${m.remaining === 1 ? "" : "s"} left. ${bold(which)}\n-# ${until}you'll go ${direction(layout, c.spaceId, c.options[0])
         .split(" ")
         .slice(1)
         .join(" ")

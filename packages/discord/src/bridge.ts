@@ -14,8 +14,8 @@ import { loadImage, type Image } from "@napi-rs/canvas";
 import type { SeasonConfig } from "@everest/board-data";
 import { currentPlayerId, describeEvent, EngineError, type BoardState, type EngineEvent } from "@everest/engine";
 import { ServiceError, type ActionMeta, type BoardService, type HostActionInput, type StoredEvent, type WireEvent } from "@everest/server";
-import { bold, narrate, parseButtonId, promptKey, promptMessage, rollButton, ts, turnMessage } from "./messages";
-import { prepareBackdrops, renderBoard } from "./render";
+import { bold, direction, narrate, parseButtonId, promptKey, promptMessage, rollButton, ts, turnMessage } from "./messages";
+import { prepareBackdrops, renderBoard, renderForkCloseup } from "./render";
 
 // What the bot needs to send. Text channels, threads and test fakes all fit.
 export interface BoardChannel {
@@ -59,6 +59,7 @@ export interface BoardDiscordOptions {
 
 interface SavedBoard {
   imageMessageId?: string;
+  imageMessageUrl?: string;
   threadId?: string;
   prompt?: { messageId: string; key: string };
   turnMessageId?: string;
@@ -288,12 +289,38 @@ export class BoardDiscord {
       this.persist();
     }
     if (key && !saved.prompt) {
-      const msg = promptMessage(boardId, state, this.opts.service.layout(boardId), this.opts.loadConfig());
+      const layout = this.opts.service.layout(boardId);
+      const msg = promptMessage(boardId, state, layout, this.opts.loadConfig(), saved.imageMessageUrl);
       if (!msg) return;
-      const sent = await ch.send(msg);
+      const files = await this.forkCloseup(boardId, state).catch((e) => {
+        this.log("[board] fork close-up failed; sending the prompt without it", e);
+        return [];
+      });
+      const sent = await ch.send({ ...msg, files });
       saved.prompt = { messageId: sent.id, key };
       this.persist();
     }
+  }
+
+  // At a fork, a zoomed-in picture of where the player is, with an arrow per path
+  // in its button's colour, so they can see what they're choosing between.
+  private async forkCloseup(boardId: string, state: BoardState): Promise<AttachmentBuilder[]> {
+    const c = state.move?.choice;
+    if (c?.kind !== "fork") return [];
+    const layout = this.opts.service.layout(boardId);
+    const avatars = new Map<string, Image | null>();
+    await Promise.all(state.turn.order.map(async (id) => avatars.set(id, await this.avatar(id))));
+    const img = renderForkCloseup({
+      layout,
+      state,
+      boardName: this.opts.service.summary(boardId).name,
+      avatars,
+      now: this.clock(),
+      fork: c.spaceId,
+      // the button label without its emoji arrow
+      options: c.options.map((next) => ({ next, label: direction(layout, c.spaceId, next).split(" ").slice(1).join(" ") })),
+    });
+    return [new AttachmentBuilder(img, { name: "fork.jpg" })];
   }
 
   // The last turn message's Roll button goes once it's been used or superseded.
@@ -381,11 +408,17 @@ export class BoardDiscord {
     const existing = await this.fetchMessage(ch, saved.imageMessageId);
     if (existing && !opts.repost) {
       await existing.edit({ content, files, attachments: [] } as MessageEditOptions);
+      if (existing.url && saved.imageMessageUrl !== existing.url) {
+        saved.imageMessageUrl = existing.url;
+        this.persist();
+      }
       return;
     }
     await existing?.delete().catch(() => undefined);
     const sent = await ch.send({ content, files, allowedMentions: NO_MENTIONS });
     saved.imageMessageId = sent.id;
+    // linked from fork prompts so players can open the full board
+    saved.imageMessageUrl = sent.url;
     this.persist();
   }
 

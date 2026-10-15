@@ -1,6 +1,6 @@
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import { createCanvas, GlobalFonts, loadImage, type Image, type SKRSContext2D } from "@napi-rs/canvas";
+import { createCanvas, GlobalFonts, loadImage, type Canvas, type Image, type SKRSContext2D } from "@napi-rs/canvas";
 import type { Board, SpaceType } from "@everest/board-data";
 import { currentPlayerId, type BoardState, type PlayerState } from "@everest/engine";
 
@@ -24,8 +24,11 @@ export interface RenderInput {
   flat?: boolean;
 }
 
+// Layout size of the board picture. It's drawn at RES x that, so it stays sharp when
+// Discord shows it large.
 const W = 1400;
 const H = 820;
+const RES = 2;
 const PANEL_X = 1030;
 const BOARD = { x: 30, y: 30, w: 980, h: 760 };
 const R = 13; // space radius
@@ -266,7 +269,7 @@ function drawAvatar(ctx: SKRSContext2D, p: PlayerState, c: Pt, r: number, img: I
   ctx.restore();
 }
 
-function drawTokens(ctx: SKRSContext2D, state: BoardState, at: (id: string) => Pt, avatars: Map<string, Image | null>) {
+function drawTokens(ctx: SKRSContext2D, state: BoardState, at: (id: string) => Pt, avatars: Map<string, Image | null>, size = 1) {
   const bySpace = new Map<string, PlayerState[]>();
   for (const id of state.turn.order) {
     const p = state.players[id];
@@ -279,10 +282,10 @@ function drawTokens(ctx: SKRSContext2D, state: BoardState, at: (id: string) => P
       // One token sits just above the space; a crowd fans out around it.
       const n = players.length;
       const ang = -Math.PI / 2 + (n === 1 ? 0 : ((i - (n - 1) / 2) * Math.PI) / Math.max(3, n));
-      const dist = n === 1 ? 20 : 26;
-      const pos = { x: c.x + Math.cos(ang) * dist, y: c.y + Math.sin(ang) * dist - 4 };
+      const dist = (n === 1 ? 20 : 26) * size;
+      const pos = { x: c.x + Math.cos(ang) * dist, y: c.y + Math.sin(ang) * dist - 4 * size };
       const isCurrent = p.id === current && state.started;
-      drawAvatar(ctx, p, pos, 15, avatars.get(p.id), isCurrent ? "#ffd43b" : "#ffffff", isCurrent ? 4 : 3);
+      drawAvatar(ctx, p, pos, 15 * size, avatars.get(p.id), isCurrent ? "#ffd43b" : "#ffffff", (isCurrent ? 4 : 3) * Math.sqrt(size));
     });
   }
 }
@@ -409,9 +412,12 @@ function drawPanel(ctx: SKRSContext2D, input: RenderInput, avatars: Map<string, 
 // each space landed in it. When one exists for a layout, it replaces the flat drawing.
 interface Backdrop {
   image: Image;
+  // in the image's own pixels
   width: number;
   height: number;
   spaces: Record<string, [number, number]>;
+  // image pixels per layout pixel (a 2000px render of a 1000px layout is 2)
+  pixelRatio: number;
 }
 const backdrops = new Map<string, Backdrop | null>();
 
@@ -427,7 +433,7 @@ export async function prepareBackdrops(layoutIds: string[]): Promise<void> {
     }
     const meta = JSON.parse(readFileSync(metaPath, "utf8"));
     const image = await loadImage(readFileSync(join(dir, meta.image)));
-    backdrops.set(id, { image, width: meta.width, height: meta.height, spaces: meta.spaces });
+    backdrops.set(id, { image, width: meta.width, height: meta.height, spaces: meta.spaces, pixelRatio: meta.pixelRatio ?? 1 });
   }
 }
 
@@ -447,8 +453,9 @@ function drawSky(ctx: SKRSContext2D) {
 // same image.
 export function renderBoard(input: RenderInput): Buffer {
   registerFonts();
-  const canvas = createCanvas(W, H);
+  const canvas = createCanvas(W * RES, H * RES);
   const ctx = canvas.getContext("2d");
+  ctx.scale(RES, RES);
   const avatars = input.avatars ?? new Map();
   const backdrop = input.flat ? null : backdropFor(input.layout.id);
   let at: (id: string) => Pt;
@@ -474,7 +481,173 @@ export function renderBoard(input: RenderInput): Buffer {
   if (input.state.star && input.layout.spaces.some((s) => s.id === input.state.star)) drawStar(ctx, at(input.state.star));
   drawTokens(ctx, input.state, at, avatars);
   drawPanel(ctx, input, avatars);
-  return canvas.toBuffer("image/jpeg", 88);
+  return canvas.toBuffer("image/jpeg", 86);
 }
 
-export const BOARD_IMAGE_SIZE = { width: W, height: H };
+export const BOARD_IMAGE_SIZE = { width: W * RES, height: H * RES };
+
+// ---- fork close-up ----
+
+// Fork paths, in the order of the buttons: Discord's blurple, green, red and grey
+// button colours, so each arrow on the picture matches its button.
+export const FORK_PATH_COLOURS = ["#5865f2", "#248046", "#da373c", "#4e5058"];
+
+// The board without the side panel, at the backdrop's own size: what a close-up
+// is cut from.
+// Coordinates are layout pixels; the canvas holds `ratio` image pixels per layout pixel.
+function drawScene(input: RenderInput, opts: { tokens?: boolean } = {}): { canvas: Canvas; at: (id: string) => Pt; ratio: number } {
+  const avatars = input.avatars ?? new Map();
+  const backdrop = input.flat ? null : backdropFor(input.layout.id);
+  let canvas: Canvas;
+  let at: (id: string) => Pt;
+  let ratio: number;
+  if (backdrop) {
+    ratio = backdrop.pixelRatio;
+    canvas = createCanvas(backdrop.width, backdrop.height);
+    const ctx = canvas.getContext("2d");
+    ctx.scale(ratio, ratio);
+    drawSky(ctx);
+    ctx.drawImage(backdrop.image, 0, 0, backdrop.width / ratio, backdrop.height / ratio);
+    at = (id) => {
+      const [x, y] = backdrop.spaces[id] ?? [0, 0];
+      return { x: x / ratio, y: y / ratio };
+    };
+  } else {
+    ratio = RES;
+    canvas = createCanvas(W * RES, H * RES);
+    const ctx = canvas.getContext("2d");
+    ctx.scale(RES, RES);
+    const project = projector(input.layout);
+    const byId = new Map(input.layout.spaces.map((s) => [s.id, s]));
+    at = (id) => project(byId.get(id)!.pos);
+    drawBackground(ctx);
+    drawPaths(ctx, input.layout, at);
+    drawSpaces(ctx, input.layout, at);
+  }
+  const ctx = canvas.getContext("2d");
+  if (input.state.star && input.layout.spaces.some((s) => s.id === input.state.star)) drawStar(ctx, at(input.state.star));
+  if (opts.tokens !== false) drawTokens(ctx, input.state, at, avatars);
+  return { canvas, at, ratio };
+}
+
+// The fork, then the chosen exit, then one more space straight on.
+function forkPath(layout: Board, fork: string, first: string): string[] {
+  const ids = [fork, first];
+  const next = layout.spaces.find((s) => s.id === first)?.next[0];
+  if (next) ids.push(next);
+  return ids;
+}
+
+// A zoomed-in picture of a fork: the player standing on it, and an arrow down each
+// path in its button's colour, labelled like the button. Sent with the fork prompt so
+// the player can see where they are before choosing.
+export function renderForkCloseup(input: RenderInput & { fork: string; options: { next: string; label: string }[] }): Buffer {
+  registerFonts();
+  // tokens go on last, over the arrows, so the player is never hidden
+  const { canvas: scene, at, ratio } = drawScene(input, { tokens: false });
+  const sceneW = scene.width / ratio;
+  const sceneH = scene.height / ratio;
+  const paths = input.options.map((o) => forkPath(input.layout, input.fork, o.next).map(at));
+  // Frame the fork and every path, padded, at a fixed 16:10, never zoomed in too far.
+  const all = paths.flat();
+  let minX = Math.min(...all.map((p) => p.x));
+  let maxX = Math.max(...all.map((p) => p.x));
+  let minY = Math.min(...all.map((p) => p.y));
+  let maxY = Math.max(...all.map((p) => p.y));
+  const pad = 70;
+  minX -= pad;
+  maxX += pad;
+  minY -= pad;
+  maxY += pad;
+  let w = Math.max(maxX - minX, 300);
+  let h = Math.max(maxY - minY, 300 / 1.6);
+  if (w / h > 1.6) h = w / 1.6;
+  else w = h * 1.6;
+  const cx = (minX + maxX) / 2;
+  const cy = (minY + maxY) / 2;
+  const x0 = Math.min(Math.max(0, cx - w / 2), Math.max(0, sceneW - w));
+  const y0 = Math.min(Math.max(0, cy - h / 2), Math.max(0, sceneH - h));
+  const OUT_W = 800;
+  const OUT_H = 500;
+  const k = OUT_W / w;
+  const out = createCanvas(OUT_W * RES, OUT_H * RES);
+  const ctx = out.getContext("2d");
+  ctx.scale(RES, RES);
+  ctx.drawImage(scene, x0 * ratio, y0 * ratio, w * ratio, h * ratio, 0, 0, OUT_W, OUT_H);
+  const toOut = (p: Pt): Pt => ({ x: (p.x - x0) * k, y: (p.y - y0) * k });
+
+  paths.forEach((path, i) => {
+    const colour = FORK_PATH_COLOURS[i % FORK_PATH_COLOURS.length];
+    const pts = path.map(toOut);
+    // start a little way out from the fork so the player's token stays visible
+    const d0 = { x: pts[1].x - pts[0].x, y: pts[1].y - pts[0].y };
+    const l0 = Math.hypot(d0.x, d0.y) || 1;
+    pts[0] = { x: pts[0].x + (d0.x / l0) * 26, y: pts[0].y + (d0.y / l0) * 26 };
+    // stop short of the last space so the head doesn't cover it
+    const n = pts.length;
+    const dn = { x: pts[n - 1].x - pts[n - 2].x, y: pts[n - 1].y - pts[n - 2].y };
+    const ln = Math.hypot(dn.x, dn.y) || 1;
+    const ux = dn.x / ln;
+    const uy = dn.y / ln;
+    const tip = { x: pts[n - 1].x - ux * 14, y: pts[n - 1].y - uy * 14 };
+    const neck = { x: tip.x - ux * 30, y: tip.y - uy * 30 };
+    pts[n - 1] = neck;
+    // a smooth line through the spaces (curves via the midpoints)
+    const line = () => {
+      ctx.beginPath();
+      ctx.moveTo(pts[0].x, pts[0].y);
+      for (let j = 1; j < pts.length - 1; j++) {
+        const mx = (pts[j].x + pts[j + 1].x) / 2;
+        const my = (pts[j].y + pts[j + 1].y) / 2;
+        ctx.quadraticCurveTo(pts[j].x, pts[j].y, mx, my);
+      }
+      ctx.lineTo(pts[pts.length - 1].x, pts[pts.length - 1].y);
+    };
+    const head = () => {
+      ctx.beginPath();
+      ctx.moveTo(tip.x, tip.y);
+      ctx.lineTo(neck.x - uy * 22, neck.y + ux * 22);
+      ctx.lineTo(neck.x + uy * 22, neck.y - ux * 22);
+      ctx.closePath();
+    };
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    ctx.strokeStyle = "#2b2340";
+    ctx.lineWidth = 20;
+    line();
+    ctx.stroke();
+    head();
+    ctx.lineWidth = 8;
+    ctx.stroke();
+    ctx.strokeStyle = colour;
+    ctx.lineWidth = 12;
+    line();
+    ctx.stroke();
+    ctx.fillStyle = colour;
+    head();
+    ctx.fill();
+
+    // the button's label just past the arrowhead
+    const label = input.options[i].label;
+    ctx.font = "26px NunitoXB";
+    const tw = ctx.measureText(label).width;
+    const bw = tw + 26;
+    const bh = 40;
+    let lx = tip.x + ux * 34 - bw / 2;
+    let ly = tip.y + uy * 34 - bh / 2;
+    lx = Math.min(Math.max(8, lx), OUT_W - bw - 8);
+    ly = Math.min(Math.max(8, ly), OUT_H - bh - 8);
+    roundRect(ctx, lx, ly, bw, bh, 10);
+    ctx.fillStyle = colour;
+    ctx.fill();
+    ctx.lineWidth = 3;
+    ctx.strokeStyle = "#2b2340";
+    ctx.stroke();
+    ctx.fillStyle = "#ffffff";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(label, lx + bw / 2, ly + bh / 2 + 1);
+  });
+  drawTokens(ctx, input.state, (id) => toOut(at(id)), input.avatars ?? new Map(), Math.min(2, k * 0.75));
+  return out.toBuffer("image/jpeg", 88);
+}
