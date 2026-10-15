@@ -99,7 +99,20 @@ const ART: Record<string, React.ReactNode> = {
   ),
 };
 
+// Real sprites, if the hosts have dropped any in: src/item-sprites/<item id>.png (or
+// .webp/.svg). Vite picks them up at build time; any item without one keeps its
+// drawing below.
+const SPRITES: Record<string, string> = Object.fromEntries(
+  Object.entries(import.meta.glob("../item-sprites/*.{png,webp,svg}", { eager: true, import: "default", query: "?url" }) as Record<string, string>).map(([path, url]) => [
+    path.replace(/^.*\/|\.[^.]+$/g, ""),
+    url,
+  ]),
+);
+export const itemSprite = (id: string): string | undefined => SPRITES[id];
+
 export function ItemArt({ id, size = 40, className }: { id: string; size?: number; className?: string }) {
+  const sprite = SPRITES[id];
+  if (sprite) return <img className={`item-art ${className ?? ""}`} src={sprite} width={size} height={size} alt="" style={{ objectFit: "contain" }} />;
   return (
     <svg className={`item-art ${className ?? ""}`} width={size} height={size} viewBox="0 0 64 64" aria-hidden="true">
       {ART[id] ?? <rect x="12" y="12" width="40" height="40" rx="8" fill="#fff8ec" stroke={INK} strokeWidth={W} />}
