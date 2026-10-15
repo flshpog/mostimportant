@@ -42,14 +42,7 @@ function batch(root: Object3D): Group {
 
 export function Scenery({ url }: { url: string }) {
   const gltf = useGLTF(url, `${import.meta.env.BASE_URL}draco/`);
-  const batched = useMemo(() => {
-    const probe = (window as unknown as { __probeWrite?: (m: string) => void }).__probeWrite;
-    probe?.("scenery loaded: " + gltf.scene.children.length + " nodes");
-    const g = batch(gltf.scene);
-    probe?.("batched into " + g.children.length + " draws");
-    (window as unknown as { __sceneryDebug: unknown }).__sceneryDebug = { children: g.children.length };
-    return g;
-  }, [gltf.scene]);
+  const batched = useMemo(() => batch(gltf.scene), [gltf.scene]);
   return <primitive object={batched} />;
 }
 
@@ -61,7 +54,6 @@ export class SceneryBoundary extends Component<{ children: ReactNode }, { error:
   }
   componentDidCatch(e: unknown) {
     console.error("[board3d] scenery failed to load:", e);
-    (window as unknown as { __sceneryDebug: unknown }).__sceneryDebug = { error: String(e instanceof Error ? e.message : e) };
   }
   render() {
     return this.state.error ? null : this.props.children;

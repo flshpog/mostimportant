@@ -80,8 +80,7 @@ export function Board3D(props: {
   const lite = props.quality === "lite";
   const spacePos = useMemo(() => allSpacePositions(layout), [layout]);
   const starPos = state.star ? spacePos.get(state.star) ?? null : null;
-  const modelPath = layout.world?.model ?? "";
-  const model = `${import.meta.env.BASE_URL}${window.location.hash.includes("raw") ? modelPath.replace(".glb", "-raw.glb") : modelPath}`;
+  const model = `${import.meta.env.BASE_URL}${layout.world?.model ?? ""}`;
   return (
     <Canvas
       shadows={!lite}
@@ -110,13 +109,11 @@ export function Board3D(props: {
         shadow-bias={-0.0006}
         shadow-normalBias={0.02}
       />
-      {!window.location.hash.includes("noscenery") && (
-        <SceneryBoundary>
-          <Suspense fallback={null}>
-            <Scenery url={model} />
-          </Suspense>
-        </SceneryBoundary>
-      )}
+      <SceneryBoundary>
+        <Suspense fallback={null}>
+          <Scenery url={model} />
+        </Suspense>
+      </SceneryBoundary>
       <Tiles layout={layout} />
       {starPos && <Star position={starPos.toArray() as [number, number, number]} />}
       <Tokens state={state} spacePos={spacePos} animator={animator} meId={meId} avatars={avatars} popups={popups} />
