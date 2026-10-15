@@ -18,6 +18,8 @@
     "Local testing: put any of these keys in config/board.local.json (gitignored) to override",
     "them on your machine only, e.g. a test server's guild_id/host_role_id and localhost URLs.",
     "Env overrides also work: BOARD_PORT, BOARD_PUBLIC_URL, BOARD_SITE_URL, BOARD_DATA_DIR.",
+    "test_channel_id - testing only, in board.local.json: every board posts in this one channel",
+    "  instead of its real tribe channel. Leave it out (or null) for the real season.",
     "Secrets go in .env, never here: DISCORD_CLIENT_SECRET, BOARD_SESSION_SECRET."
   ],
   "enabled": true,

@@ -33,6 +33,21 @@ function seasonConfigLoader(SeasonConfigSchema) {
     };
 }
 
+// Testing only: send every board to one channel (config/board.local.json
+// test_channel_id), so a test server doesn't need a copy of every tribe channel.
+function withTestChannel(loadConfig, channelId) {
+    if (!channelId) return loadConfig;
+    console.warn(`[board] TEST MODE: every board posts in channel ${channelId} (test_channel_id).`);
+    return () => {
+        const c = loadConfig();
+        return {
+            ...c,
+            boards: c.boards.map((b) => ({ ...b, channelId })),
+            redemptionIsland: { ...c.redemptionIsland, channelId },
+        };
+    };
+}
+
 // Host = has the host role in the main server. Cached briefly so a page load doesn't
 // hit Discord once per request.
 function hostChecker(client, config) {
@@ -72,7 +87,7 @@ async function start(client) {
     if (!clientSecret) console.warn('[board] DISCORD_CLIENT_SECRET is not set: the API runs, but website login is off.');
 
     const dataDir = path.resolve(ROOT, config.data_dir);
-    const loadConfig = seasonConfigLoader(SeasonConfigSchema);
+    const loadConfig = withTestChannel(seasonConfigLoader(SeasonConfigSchema), config.test_channel_id);
     const isHost = hostChecker(client, config);
     running = await startBoardServer({
         config,

@@ -40,9 +40,12 @@ would both answer commands.
      "public_url": "http://localhost:8787",
      "site_url": "http://localhost:5173/board/",
      "guild_id": "<test server id>",
-     "host_role_id": "<a role in the test server that counts as host>"
+     "host_role_id": "<a role in the test server that counts as host>",
+     "test_channel_id": "<one channel in the test server>"
    }
    ```
+   `test_channel_id` sends every board to that one channel, so the test server doesn't need
+   copies of the tribe channels. The bot prints a TEST MODE warning while it's set.
 5. **Bot token.** In your local `src/index.js`, set `token` to the test bot's token.
 6. Run `npm start` (bot + board server) and `npm run board:web` (website).
 7. Open `http://localhost:5173/board/#/console` and log in with Discord. Give yourself

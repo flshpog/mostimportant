@@ -14,6 +14,9 @@ export const ServerConfigSchema = z.object({
   host_user_ids: z.array(SnowflakeSchema),
   data_dir: z.string().min(1),
   session_days: z.number().positive(),
+  // Testing only: post every board (and Redemption Island) in this one channel
+  // instead of the channels in season-config.json. Set it in board.local.json.
+  test_channel_id: SnowflakeSchema.nullable().optional(),
 });
 export type ServerConfig = z.infer<typeof ServerConfigSchema>;
 
