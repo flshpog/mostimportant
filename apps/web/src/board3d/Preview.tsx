@@ -74,7 +74,7 @@ export function Preview() {
     // the next player's window opens at once
     if (s.started && !s.move) s = { ...s, turn: { ...s.turn, windowOpensAt: now } };
     const nameOf = (id: string) => s.players[id]?.name ?? "someone";
-    const lines = events.map((e) => describeEvent(e, nameOf)?.replace(/\p{Extended_Pictographic}️?\s*/gu, "")).filter((l): l is string => !!l);
+    const lines = events.map((e) => describeEvent(e, nameOf)?.replace(/\p{Extended_Pictographic}\p{Variation_Selector}?\s*/gu, "")).filter((l): l is string => !!l);
     setFeed((f) => [...lines.map((text) => ({ seq: ++seq.current, text })).reverse(), ...f].slice(0, 6));
     play(events as never, s, layout, currentPlayerId(state));
     setState(s);
