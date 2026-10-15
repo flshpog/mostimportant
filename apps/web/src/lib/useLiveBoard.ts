@@ -15,8 +15,12 @@ const HISTORY = 60;
 // Keeps one board's state live over the websocket. The server sends the board's
 // state with every batch of events, so the client never works out results itself.
 // Gaps in seq (missed messages) trigger a resubscribe from the last good seq.
-export function useLiveBoard(token: string | null, boardId: string | null) {
+// onLive gets only events that happen while connected (not history or catch-up after a
+// snapshot), so the 3D board can animate them; anything else just snaps into place.
+export function useLiveBoard(token: string | null, boardId: string | null, onLive?: (events: FeedEvent[]) => void) {
   const [state, setState] = useState<BoardState | null>(null);
+  const onLiveRef = useRef(onLive);
+  onLiveRef.current = onLive;
   const [feed, setFeed] = useState<FeedEvent[]>([]);
   const [status, setStatus] = useState<LiveStatus>("connecting");
   const seqRef = useRef<number | null>(null);
@@ -58,6 +62,7 @@ export function useLiveBoard(token: string | null, boardId: string | null) {
             return;
           }
           seqRef.current = data.seq ?? events[events.length - 1].seq;
+          onLiveRef.current?.(events);
           setState(data.state);
           setStatus("live");
           setFeed((f) => [...events.slice().reverse(), ...f].slice(0, 300));

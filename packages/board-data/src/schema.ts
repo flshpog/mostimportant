@@ -34,6 +34,12 @@ export const BoardSchema = z
     reference: z
       .object({ image: z.string(), width: z.number().positive(), height: z.number().positive() })
       .optional(),
+    // How the 3D scene maps to this layout: world = (pixel - c) * scale, in metres, with
+    // the image's y axis pointing away from the viewer. Shared by Blender and the website.
+    world: z
+      .object({ scale: z.number().positive(), cx: z.number(), cy: z.number(), tileY: z.number(), model: z.string() })
+      .strict()
+      .optional(),
     startSpace: SpaceIdSchema,
     bridges: z
       .array(z.object({ from: SpaceIdSchema, to: SpaceIdSchema, label: z.string() }).strict())

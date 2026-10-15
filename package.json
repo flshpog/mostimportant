@@ -38,5 +38,8 @@
           "everest"
      ],
      "author": "Your Name",
-     "license": "MIT"
+     "license": "MIT",
+     "overrides": {
+          "@types/three": "0.170.0"
+     }
 }

@@ -8,7 +8,9 @@ import { loadServerConfig, startBoardServer } from "../src";
 
 const ROOT = join(__dirname, "..", "..", "..");
 const SECRET = "dev-only-secret-not-for-production";
-const SITE = "http://localhost:5173/board/";
+// Run a second copy alongside another one with DEV_WEB_ORIGIN / BOARD_PORT.
+const ORIGIN = process.env.DEV_WEB_ORIGIN ?? "http://localhost:5173";
+const SITE = `${ORIGIN}/board/`;
 const HOST = { id: "900000000000000001", name: "Dev Host" };
 const PLAYERS = [
   { id: "100000000000000001", name: "Peach" },
@@ -22,14 +24,14 @@ async function main() {
   const config = {
     ...base,
     port: Number(process.env.BOARD_PORT ?? 8787),
-    public_url: "http://localhost:8787",
+    public_url: `http://localhost:${process.env.BOARD_PORT ?? 8787}`,
     site_url: SITE,
-    allowed_origins: ["http://localhost:5173"],
+    allowed_origins: [ORIGIN],
     host_user_ids: [HOST.id],
   };
   const srv = await startBoardServer({
     config,
-    dataDir: join(ROOT, "data", "board-dev"),
+    dataDir: join(ROOT, "data", process.env.DEV_DATA ?? "board-dev"),
     layouts: loadLayouts(),
     loadConfig: loadSeasonConfig,
     sessionSecret: SECRET,

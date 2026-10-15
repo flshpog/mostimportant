@@ -2,6 +2,7 @@
   "id": "main",
   "name": "DK's jungle (main board)",
   "reference": {"image": "docs/board-reference.png", "width": 1041, "height": 793},
+  "world": {"scale": 0.048, "cx": 502, "cy": 411, "tileY": 0.05, "model": "models/board-main.glb"},
   "startSpace": "s01",
   "bridges": [{"from": "s14", "to": "s24", "label": "top bridge (one-way, left)"}, {"from": "s54", "to": "s67", "label": "bottom bridge (one-way, right)"}],
   "spaces": [

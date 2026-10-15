@@ -2,6 +2,8 @@ import { StrictMode, useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { DebugOverlay } from "./debug/DebugOverlay";
 import { TestConsole } from "./console/TestConsole";
+import { BoardPage } from "./board3d/BoardPage";
+import { Preview } from "./board3d/Preview";
 import { setToken } from "./lib/api";
 import "./styles.css";
 
@@ -23,7 +25,7 @@ function handleAuthRedirect(route: string): string {
   const params = new URLSearchParams(route.split("?")[1] ?? "");
   const token = params.get("token");
   if (token) setToken(token);
-  const next = token ? "/console" : `/console?error=${params.get("error") ?? "login_failed"}`;
+  const next = token ? "/" : `/?error=${params.get("error") ?? "login_failed"}`;
   window.history.replaceState(null, "", `#${next}`);
   return next;
 }
@@ -32,14 +34,8 @@ function App() {
   const route = handleAuthRedirect(useHashRoute());
   if (route.startsWith("/debug")) return <DebugOverlay />;
   if (route.startsWith("/console")) return <TestConsole />;
-  return (
-    <main className="placeholder">
-      <h1>Everest board</h1>
-      <p>
-        The board isn't live yet. <a href="#/console">Test console</a> · <a href="#/debug">Layout debug view</a>.
-      </p>
-    </main>
-  );
+  if (route.startsWith("/preview")) return <Preview />;
+  return <BoardPage />;
 }
 
 createRoot(document.getElementById("root")!).render(
