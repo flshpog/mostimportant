@@ -3,6 +3,7 @@ import { useFrame } from "@react-three/fiber";
 import { Html } from "@react-three/drei";
 import { Vector3, type Group } from "three";
 import type { BoardState } from "@everest/engine";
+import { CoinIcon, StarIcon } from "./Icons";
 
 export const TOKEN_COLOURS = ["#ef476f", "#118ab2", "#06d6a0", "#ffb703", "#8338ec", "#fb5607", "#3a86ff", "#ff006e"];
 export function tokenColour(id: string) {
@@ -19,6 +20,14 @@ export class TokenAnimator {
   shown = new Map<string, Vector3>(); // where each token is drawn right now
   queue = new Map<string, Vector3[]>(); // hops still to play
   hop = new Map<string, { from: Vector3; to: Vector3; t: number }>();
+  // Tokens stand still until this time (performance.now()), e.g. while the dice tumble.
+  holdUntil = new Map<string, number>();
+  hold(id: string, ms: number) {
+    this.holdUntil.set(id, performance.now() + ms);
+  }
+  held(id: string) {
+    return (this.holdUntil.get(id) ?? 0) > performance.now();
+  }
   enqueue(id: string, to: Vector3) {
     this.queue.set(id, [...(this.queue.get(id) ?? []), to.clone()]);
   }
@@ -31,6 +40,7 @@ export interface Popup {
   id: number;
   playerId: string;
   text: string;
+  icon?: "coin" | "star";
   tone: "good" | "bad" | "star";
 }
 
@@ -57,6 +67,11 @@ function Token(props: {
       animator.shown.set(id, shown);
     }
     let hop = animator.hop.get(id);
+    if (!hop && animator.held(id)) {
+      // waiting for the dice: stay put, even though the state already says where we end up
+      g.position.copy(shown);
+      return;
+    }
     if (!hop) {
       const next = animator.queue.get(id)?.shift();
       if (next) {
@@ -112,9 +127,14 @@ function Token(props: {
           <b>{name}</b>
         </div>
       </Html>
-      {popups.map((p) => (
-        <Html key={p.id} position={[0, 2.0, 0]} center distanceFactor={14} style={{ pointerEvents: "none" }}>
-          <div className={`popup ${p.tone}`}>{p.text}</div>
+      {popups.map((p, i) => (
+        // several at once (a star buy is -20 coins and +1 star) stack upwards and stagger in
+        <Html key={p.id} position={[0, 2.0 + i * 0.75, 0]} center distanceFactor={14} style={{ pointerEvents: "none" }}>
+          <div className={`popup ${p.tone}`} style={{ animationDelay: `${i * 220}ms` }}>
+            {p.text}
+            {p.icon === "coin" && <CoinIcon />}
+            {p.icon === "star" && <StarIcon />}
+          </div>
         </Html>
       ))}
     </group>

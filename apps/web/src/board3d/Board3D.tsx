@@ -1,11 +1,11 @@
 import { Suspense, useEffect, useMemo, useRef } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
 import { CameraControls } from "@react-three/drei";
-import { Box3, Vector3 } from "three";
+import { Box3, Ray, Spherical, Vector3 } from "three";
 import type { Board } from "@everest/board-data";
 import type { BoardState } from "@everest/engine";
 import { allSpacePositions } from "./coords";
-import { Scenery, SceneryBoundary } from "./Scenery";
+import { occluders, Scenery, SceneryBoundary } from "./Scenery";
 import { Star } from "./Star";
 import { Tiles } from "./Tiles";
 import { Tokens, type Popup, type TokenAnimator } from "./Tokens";
@@ -14,6 +14,36 @@ export type CamMode = { kind: "overview" } | { kind: "follow"; playerId: string 
 
 const OVERVIEW = { pos: new Vector3(0, 31, 30), target: new Vector3(0, -1, 1.5) };
 const FOLLOW_OFFSET = new Vector3(0, 8.5, 9.5);
+const LOOK_LIFT = 0.6;
+// Where on the token we need a clear line of sight to (its head; the name tag is just above).
+const HEAD = new Vector3(0, 1.1, 0);
+
+// True if a scenery box sits between the camera and the point.
+function blocked(from: Vector3, to: Vector3): boolean {
+  const dir = to.clone().sub(from);
+  const dist = dir.length();
+  const ray = new Ray(from, dir.normalize());
+  const hit = new Vector3();
+  for (const box of occluders.boxes) {
+    if (box.containsPoint(to)) continue; // the token is standing right against it
+    if (ray.intersectBox(box, hit) && hit.distanceTo(from) < dist - 0.3) return true;
+  }
+  return false;
+}
+
+// Camera angles to try when the view is blocked, cheapest change first: a little
+// orbit around the token, tilting towards top-down, or both.
+const CANDIDATES = (() => {
+  const out: { dTheta: number; dPhi: number; cost: number }[] = [];
+  for (const dTheta of [0, 0.35, -0.35, 0.7, -0.7, 1.05, -1.05, 1.4, -1.4, 2.1, -2.1, Math.PI]) {
+    for (const dPhi of [0, -0.25, -0.5, -0.8]) {
+      if (dTheta || dPhi) out.push({ dTheta, dPhi, cost: Math.abs(dTheta) + 1.3 * Math.abs(dPhi) });
+    }
+  }
+  return out.sort((a, b) => a.cost - b.cost);
+})();
+
+const ease = (t: number) => (t < 0.5 ? 2 * t * t : 1 - (-2 * t + 2) ** 2 / 2);
 
 function CameraRig(props: { mode: CamMode; setMode: (m: CamMode) => void; animator: TokenAnimator; starPos: Vector3 | null }) {
   const { mode, setMode, animator, starPos } = props;
@@ -45,7 +75,15 @@ function CameraRig(props: { mode: CamMode; setMode: (m: CamMode) => void; animat
     }
   }, [mode, starPos, animator]);
 
-  // While following, glide along with the token as it hops.
+  // While following, glide along with the token as it hops, and if a tree or a shop
+  // gets between the camera and the token, swing round to the nearest clear angle.
+  const avoid = useRef<{ from: Spherical; to: Spherical; t: number } | null>(null);
+  const nextCheck = useRef(0);
+  useEffect(() => {
+    avoid.current = null;
+    nextCheck.current = performance.now() + 1000; // let the fly-in finish first
+  }, [mode]);
+
   useFrame((_, dt) => {
     const c = ref.current;
     if (!c || mode.kind !== "follow") return;
@@ -53,12 +91,50 @@ function CameraRig(props: { mode: CamMode; setMode: (m: CamMode) => void; animat
     if (!p) return;
     const before = followTarget.current.clone();
     followTarget.current.lerp(p, 1 - Math.exp(-5 * dt));
-    if (before.distanceTo(followTarget.current) < 1e-4) return;
-    const t = followTarget.current;
+    const look = followTarget.current.clone().add(new Vector3(0, LOOK_LIFT, 0));
+
+    const a = avoid.current;
+    if (a) {
+      a.t = Math.min(1, a.t + dt / 0.9);
+      const e = ease(a.t);
+      const sph = new Spherical(
+        a.from.radius + (a.to.radius - a.from.radius) * e,
+        a.from.phi + (a.to.phi - a.from.phi) * e,
+        a.from.theta + (a.to.theta - a.from.theta) * e,
+      );
+      const cam = new Vector3().setFromSpherical(sph).add(look);
+      void c.setLookAt(cam.x, cam.y, cam.z, look.x, look.y, look.z, false);
+      if (a.t >= 1) {
+        avoid.current = null;
+        nextCheck.current = performance.now() + 1200;
+      }
+      return;
+    }
+
+    if (before.distanceTo(followTarget.current) >= 1e-4) {
+      const cam = new Vector3();
+      c.getPosition(cam);
+      const shift = followTarget.current.clone().sub(before);
+      void c.setLookAt(cam.x + shift.x, cam.y + shift.y, cam.z + shift.z, look.x, look.y, look.z, false);
+    }
+
+    const now = performance.now();
+    if (now < nextCheck.current || !occluders.boxes.length) return;
+    nextCheck.current = now + 200;
     const cam = new Vector3();
     c.getPosition(cam);
-    const shift = t.clone().sub(before);
-    void c.setLookAt(cam.x + shift.x, cam.y + shift.y, cam.z + shift.z, t.x, t.y + 0.6, t.z, false);
+    const head = p.clone().add(HEAD);
+    if (!blocked(cam, head)) return;
+    const cur = new Spherical().setFromVector3(cam.clone().sub(look));
+    let to: Spherical | null = null;
+    for (const k of CANDIDATES) {
+      const s2 = new Spherical(cur.radius, Math.min(1.25, Math.max(0.08, cur.phi + k.dPhi)), cur.theta + k.dTheta);
+      if (!blocked(new Vector3().setFromSpherical(s2).add(look), head)) {
+        to = s2;
+        break;
+      }
+    }
+    avoid.current = { from: cur, to: to ?? new Spherical(cur.radius, 0.08, cur.theta), t: 0 };
   });
 
   return <CameraControls ref={ref} makeDefault minDistance={4} maxDistance={70} maxPolarAngle={1.32} smoothTime={0.6} draggingSmoothTime={0.12} />;

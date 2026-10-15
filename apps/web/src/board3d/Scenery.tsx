@@ -1,6 +1,35 @@
 import { Component, useMemo, type ReactNode } from "react";
 import { useGLTF } from "@react-three/drei";
-import { Group, InstancedMesh, Matrix4, Mesh, type BufferGeometry, type Material, type Object3D } from "three";
+import { Box3, Group, InstancedMesh, Matrix4, Mesh, Vector3, type BufferGeometry, type Material, type Object3D } from "three";
+
+// Boxes around everything tall enough to hide a token (trees, mushrooms, shops...), for
+// the camera to steer around. Filled in once the model loads.
+export const occluders: { boxes: Box3[] } = { boxes: [] };
+// three.js turns spaces in node names into underscores
+const OCCLUDER = /^(tree_|Mushroom[ _]|Shop[ _]|Signpost[ _]|Start[ _]|rock|bush)/;
+
+function findOccluders(root: Object3D): Box3[] {
+  root.updateMatrixWorld(true);
+  const out: Box3[] = [];
+  const size = new Vector3();
+  const centre = new Vector3();
+  root.traverse((o) => {
+    const m = o as Mesh;
+    if (!m.isMesh) return;
+    // the named object may be the mesh itself or a parent of its parts
+    let n: Object3D | null = m;
+    while (n && !OCCLUDER.test(n.name)) n = n.parent;
+    if (!n) return;
+    const box = new Box3().setFromObject(m);
+    box.getSize(size);
+    if (size.y < 0.7 || size.x * size.y * size.z < 0.08) return; // flowers, spots, pebbles
+    // boxes are fatter than the real shapes; trim the sides so near misses don't count
+    box.getCenter(centre);
+    box.setFromCenterAndSize(centre, size.set(size.x * 0.8, size.y, size.z * 0.8));
+    out.push(box);
+  });
+  return out;
+}
 
 // The Blender scene has ~700 objects but only ~45 distinct meshes (every tree is a copy
 // of one of four trees, and so on). Drawing each object separately is ~700 draw calls,
@@ -42,7 +71,11 @@ function batch(root: Object3D): Group {
 
 export function Scenery({ url }: { url: string }) {
   const gltf = useGLTF(url, `${import.meta.env.BASE_URL}draco/`);
-  const batched = useMemo(() => batch(gltf.scene), [gltf.scene]);
+  const batched = useMemo(() => {
+    occluders.boxes = findOccluders(gltf.scene);
+    if (import.meta.env.DEV) console.debug(`[board3d] ${occluders.boxes.length} camera occluders`);
+    return batch(gltf.scene);
+  }, [gltf.scene]);
   return <primitive object={batched} />;
 }
 
