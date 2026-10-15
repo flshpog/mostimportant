@@ -317,6 +317,7 @@ export class BoardDiscord {
       avatars,
       now: this.clock(),
       fork: c.spaceId,
+      steps: state.move!.remaining,
       // the button label without its emoji arrow
       options: c.options.map((next) => ({ next, label: direction(layout, c.spaceId, next).split(" ").slice(1).join(" ") })),
     });

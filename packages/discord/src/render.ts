@@ -530,124 +530,149 @@ function drawScene(input: RenderInput, opts: { tokens?: boolean } = {}): { canva
   return { canvas, at, ratio };
 }
 
-// The fork, then the chosen exit, then one more space straight on.
-function forkPath(layout: Board, fork: string, first: string): string[] {
-  const ids = [fork, first];
-  const next = layout.spaces.find((s) => s.id === first)?.next[0];
-  if (next) ids.push(next);
-  return ids;
+// Where each choice at a fork leads: the spaces you'd step through (up to the steps
+// left), where you'd land, or the next fork if you'd reach one first.
+export function forkRoute(layout: Board, first: string, steps: number): { ids: string[]; end: "land" | "fork" } {
+  const byId = new Map(layout.spaces.map((s) => [s.id, s]));
+  const ids: string[] = [];
+  let cur = first;
+  for (let i = 1; i <= Math.max(1, steps); i++) {
+    ids.push(cur);
+    if (i === steps) return { ids, end: "land" };
+    const sp = byId.get(cur);
+    if (!sp) break;
+    if (sp.next.length > 1) return { ids, end: "fork" };
+    cur = sp.next[0];
+  }
+  return { ids, end: "land" };
 }
 
-// A zoomed-in picture of a fork: the player standing on it, and an arrow down each
-// path in its button's colour, labelled like the button. Sent with the fork prompt so
-// the player can see where they are before choosing.
-export function renderForkCloseup(input: RenderInput & { fork: string; options: { next: string; label: string }[] }): Buffer {
+// A zoomed-in picture of a fork. Each path's spaces get a ring in its button's colour,
+// one per step, so the tiles stay visible; the space you'd land on (or the next fork)
+// gets a thick ring and a label. A short pointer from the player shows which way each
+// path leaves. Sent with the fork prompt so the player can see what they're choosing.
+export function renderForkCloseup(input: RenderInput & { fork: string; steps: number; options: { next: string; label: string }[] }): Buffer {
   registerFonts();
-  // tokens go on last, over the arrows, so the player is never hidden
+  // tokens go on last, over the markings, so the player is never hidden
   const { canvas: scene, at, ratio } = drawScene(input, { tokens: false });
   const sceneW = scene.width / ratio;
   const sceneH = scene.height / ratio;
-  const paths = input.options.map((o) => forkPath(input.layout, input.fork, o.next).map(at));
-  // Frame the fork and every path, padded, at a fixed 16:10, never zoomed in too far.
-  const all = paths.flat();
-  let minX = Math.min(...all.map((p) => p.x));
-  let maxX = Math.max(...all.map((p) => p.x));
-  let minY = Math.min(...all.map((p) => p.y));
-  let maxY = Math.max(...all.map((p) => p.y));
-  const pad = 70;
-  minX -= pad;
-  maxX += pad;
-  minY -= pad;
-  maxY += pad;
-  let w = Math.max(maxX - minX, 300);
-  let h = Math.max(maxY - minY, 300 / 1.6);
+  const routes = input.options.map((o) => forkRoute(input.layout, o.next, input.steps));
+  const fork = at(input.fork);
+
+  // Frame the fork and every route, padded, at 16:10, never zoomed in too far.
+  const all = [fork, ...routes.flatMap((r) => r.ids.map(at))];
+  const pad = 60;
+  const minX = Math.min(...all.map((p) => p.x)) - pad;
+  const maxX = Math.max(...all.map((p) => p.x)) + pad;
+  const minY = Math.min(...all.map((p) => p.y)) - pad - 30; // room for labels above
+  const maxY = Math.max(...all.map((p) => p.y)) + pad;
+  let w = Math.max(maxX - minX, 320);
+  let h = Math.max(maxY - minY, 320 / 1.6);
   if (w / h > 1.6) h = w / 1.6;
   else w = h * 1.6;
+  w = Math.min(w, sceneW);
+  h = Math.min(h, sceneH);
   const cx = (minX + maxX) / 2;
   const cy = (minY + maxY) / 2;
   const x0 = Math.min(Math.max(0, cx - w / 2), Math.max(0, sceneW - w));
   const y0 = Math.min(Math.max(0, cy - h / 2), Math.max(0, sceneH - h));
-  const OUT_W = 800;
-  const OUT_H = 500;
+  const OUT_W = 1000;
+  const OUT_H = Math.round(OUT_W * (h / w));
   const k = OUT_W / w;
   const out = createCanvas(OUT_W * RES, OUT_H * RES);
   const ctx = out.getContext("2d");
   ctx.scale(RES, RES);
   ctx.drawImage(scene, x0 * ratio, y0 * ratio, w * ratio, h * ratio, 0, 0, OUT_W, OUT_H);
   const toOut = (p: Pt): Pt => ({ x: (p.x - x0) * k, y: (p.y - y0) * k });
+  const INK = "#2b2340";
+  const tileR = 15 * k; // a tile's radius, in output pixels
 
-  paths.forEach((path, i) => {
-    const colour = FORK_PATH_COLOURS[i % FORK_PATH_COLOURS.length];
-    const pts = path.map(toOut);
-    // start a little way out from the fork so the player's token stays visible
-    const d0 = { x: pts[1].x - pts[0].x, y: pts[1].y - pts[0].y };
-    const l0 = Math.hypot(d0.x, d0.y) || 1;
-    pts[0] = { x: pts[0].x + (d0.x / l0) * 26, y: pts[0].y + (d0.y / l0) * 26 };
-    // stop short of the last space so the head doesn't cover it
-    const n = pts.length;
-    const dn = { x: pts[n - 1].x - pts[n - 2].x, y: pts[n - 1].y - pts[n - 2].y };
-    const ln = Math.hypot(dn.x, dn.y) || 1;
-    const ux = dn.x / ln;
-    const uy = dn.y / ln;
-    const tip = { x: pts[n - 1].x - ux * 14, y: pts[n - 1].y - uy * 14 };
-    const neck = { x: tip.x - ux * 30, y: tip.y - uy * 30 };
-    pts[n - 1] = neck;
-    // a smooth line through the spaces (curves via the midpoints)
-    const line = () => {
-      ctx.beginPath();
-      ctx.moveTo(pts[0].x, pts[0].y);
-      for (let j = 1; j < pts.length - 1; j++) {
-        const mx = (pts[j].x + pts[j + 1].x) / 2;
-        const my = (pts[j].y + pts[j + 1].y) / 2;
-        ctx.quadraticCurveTo(pts[j].x, pts[j].y, mx, my);
-      }
-      ctx.lineTo(pts[pts.length - 1].x, pts[pts.length - 1].y);
-    };
-    const head = () => {
-      ctx.beginPath();
-      ctx.moveTo(tip.x, tip.y);
-      ctx.lineTo(neck.x - uy * 22, neck.y + ux * 22);
-      ctx.lineTo(neck.x + uy * 22, neck.y - ux * 22);
-      ctx.closePath();
-    };
-    ctx.lineCap = "round";
-    ctx.lineJoin = "round";
-    ctx.strokeStyle = "#2b2340";
-    ctx.lineWidth = 20;
-    line();
+  const ring = (p: Pt, r: number, colour: string, width: number) => {
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
+    ctx.lineWidth = width + 3;
+    ctx.strokeStyle = INK;
     ctx.stroke();
-    head();
-    ctx.lineWidth = 8;
-    ctx.stroke();
+    ctx.lineWidth = width;
     ctx.strokeStyle = colour;
-    ctx.lineWidth = 12;
-    line();
     ctx.stroke();
-    ctx.fillStyle = colour;
-    head();
-    ctx.fill();
-
-    // the button's label just past the arrowhead
-    const label = input.options[i].label;
-    ctx.font = "26px NunitoXB";
-    const tw = ctx.measureText(label).width;
-    const bw = tw + 26;
-    const bh = 40;
-    let lx = tip.x + ux * 34 - bw / 2;
-    let ly = tip.y + uy * 34 - bh / 2;
-    lx = Math.min(Math.max(8, lx), OUT_W - bw - 8);
-    ly = Math.min(Math.max(8, ly), OUT_H - bh - 8);
-    roundRect(ctx, lx, ly, bw, bh, 10);
+  };
+  const pill = (text: string, colour: string, anchor: Pt, above: boolean) => {
+    ctx.font = "22px NunitoXB";
+    const bw = ctx.measureText(text).width + 22;
+    const bh = 34;
+    let lx = anchor.x - bw / 2;
+    let ly = above ? anchor.y - tileR - 16 - bh : anchor.y + tileR + 16;
+    lx = Math.min(Math.max(6, lx), OUT_W - bw - 6);
+    ly = Math.min(Math.max(6, ly), OUT_H - bh - 6);
+    roundRect(ctx, lx, ly, bw, bh, 9);
     ctx.fillStyle = colour;
     ctx.fill();
     ctx.lineWidth = 3;
-    ctx.strokeStyle = "#2b2340";
+    ctx.strokeStyle = INK;
     ctx.stroke();
     ctx.fillStyle = "#ffffff";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    ctx.fillText(label, lx + bw / 2, ly + bh / 2 + 1);
+    ctx.fillText(text, lx + bw / 2, ly + bh / 2 + 1);
+  };
+
+  const forkOut = toOut(fork);
+  routes.forEach((route, i) => {
+    const colour = FORK_PATH_COLOURS[i % FORK_PATH_COLOURS.length];
+    const pts = route.ids.map((id) => toOut(at(id)));
+    // a short pointer from the fork towards the first space of this path
+    const first = pts[0];
+    const dx = first.x - forkOut.x;
+    const dy = first.y - forkOut.y;
+    const len = Math.hypot(dx, dy) || 1;
+    const ux = dx / len;
+    const uy = dy / len;
+    const tail = { x: forkOut.x + ux * tileR * 1.15, y: forkOut.y + uy * tileR * 1.15 };
+    const tip = { x: first.x - ux * tileR * 1.25, y: first.y - uy * tileR * 1.25 };
+    if (Math.hypot(tip.x - tail.x, tip.y - tail.y) > 14) {
+      const neck = { x: tip.x - ux * 13, y: tip.y - uy * 13 };
+      const arrow = () => {
+        ctx.beginPath();
+        ctx.moveTo(tail.x, tail.y);
+        ctx.lineTo(neck.x, neck.y);
+      };
+      const head = () => {
+        ctx.beginPath();
+        ctx.moveTo(tip.x, tip.y);
+        ctx.lineTo(neck.x - uy * 11, neck.y + ux * 11);
+        ctx.lineTo(neck.x + uy * 11, neck.y - ux * 11);
+        ctx.closePath();
+      };
+      ctx.lineCap = "round";
+      ctx.lineJoin = "round";
+      ctx.strokeStyle = INK;
+      ctx.lineWidth = 12;
+      arrow();
+      ctx.stroke();
+      head();
+      ctx.lineWidth = 6;
+      ctx.stroke();
+      ctx.strokeStyle = colour;
+      ctx.lineWidth = 6;
+      arrow();
+      ctx.stroke();
+      ctx.fillStyle = colour;
+      head();
+      ctx.fill();
+    }
+    // a thin ring on every step, a thick one where the move ends
+    pts.forEach((p, j) => {
+      const last = j === pts.length - 1;
+      ring(p, tileR + 3 + i * 3, colour, last ? 6 : 2.5);
+    });
+    const end = pts[pts.length - 1];
+    const steps = route.ids.length;
+    const label = route.end === "fork" ? `${input.options[i].label} · fork in ${steps}` : `${input.options[i].label} · lands here`;
+    // put the label on the side away from the fork, so it doesn't sit on the player
+    pill(label, colour, end, end.y <= forkOut.y);
   });
-  drawTokens(ctx, input.state, (id) => toOut(at(id)), input.avatars ?? new Map(), Math.min(2, k * 0.75));
+  drawTokens(ctx, input.state, (id) => toOut(at(id)), input.avatars ?? new Map(), Math.min(1.5, k * 0.55));
   return out.toBuffer("image/jpeg", 88);
 }
