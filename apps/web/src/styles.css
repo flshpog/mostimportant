@@ -460,6 +460,8 @@ button.link {
 .board-loading,
 .board-login {
   min-height: 100vh;
+  width: 100%;
+  box-sizing: border-box;
   display: grid;
   place-content: center;
   justify-items: center;
@@ -722,20 +724,116 @@ button.link {
     opacity: 0;
   }
 }
+/* desktop: the sheet handle is only for phones */
+.sheet-handle {
+  display: none;
+}
+.hud-title h1 {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ---- phones and narrow windows ---- */
 @media (max-width: 720px) {
-  .hud-panel {
-    top: auto;
-    bottom: 64px;
-    right: 8px;
+  .hud-top {
+    top: 8px;
     left: 8px;
-    width: auto;
-    max-height: 38vh;
+    right: 8px;
   }
-  .hud-feed {
+  .hud-title {
+    flex: 1;
+    min-width: 0;
+    padding: 6px 12px;
+  }
+  .hud-title h1 {
+    font-size: 16px;
+    min-width: 0;
+  }
+  .hud-top select {
+    max-width: 40%;
+    padding: 6px 8px;
+  }
+  /* camera buttons: a compact icon row under the title */
+  .hud-cams {
+    top: 56px;
+    bottom: auto;
+    left: 8px;
+    right: 8px;
+    transform: none;
+    justify-content: flex-start;
+    flex-wrap: nowrap;
+    gap: 6px;
+    max-width: none;
+  }
+  .hud-cams .label {
     display: none;
   }
-  .hud-top {
+  .hud-cams button,
+  .hud-cams select {
+    padding: 6px 10px;
+    font-size: 15px;
+  }
+  .hud-cams select {
+    min-width: 0;
+    flex: 0 1 auto;
+    max-width: 44%;
+  }
+  /* the panel becomes a bottom sheet: turn + buttons always, standings on tap */
+  .hud-panel {
+    top: auto;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    width: auto;
+    max-height: 62vh;
+    border-radius: 18px 18px 0 0;
+    padding: 4px 14px calc(12px + env(safe-area-inset-bottom));
+  }
+  .sheet-handle {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    width: 100%;
+    background: none;
+    border: 0;
+    padding: 4px 0 6px;
+    font: inherit;
+    font-size: 12px;
+    color: #8a7f9c;
+    cursor: pointer;
+  }
+  .sheet-handle .grip {
+    width: 40px;
+    height: 4px;
+    border-radius: 2px;
+    background: #d8cfbf;
+  }
+  .hud-panel .turn {
+    border-top: 0;
+    margin-top: 0;
+    padding-top: 0;
+  }
+  .hud-panel .standings-section {
+    display: none;
+  }
+  .hud-panel.open .standings-section {
+    display: block;
+  }
+  .hud-panel .button.big {
+    width: 100%;
+  }
+  /* feed: just the latest line, under the camera row */
+  .hud-feed {
+    display: flex;
+    top: 100px;
+    bottom: auto;
     left: 8px;
-    top: 8px;
+    right: 8px;
+    flex-direction: column;
+  }
+  .hud-feed li:nth-child(n + 2) {
+    display: none;
   }
 }

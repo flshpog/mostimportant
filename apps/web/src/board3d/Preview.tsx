@@ -3,6 +3,7 @@ import { loadLayouts, loadSeasonConfig } from "@everest/board-data";
 import { apply, createBoardState } from "@everest/engine";
 import { Board3D, type CamMode } from "./Board3D";
 import { TokenAnimator } from "./Tokens";
+import { BoardHud } from "./BoardHud";
 
 // #/preview: the 3D board with a few made-up players and no server, for checking the
 // scene on any device without logging in.
@@ -28,18 +29,34 @@ export function Preview() {
   }, [layout]);
   const animator = useRef(new TokenAnimator()).current;
   const [mode, setMode] = useState<CamMode>({ kind: "overview" });
+  const [followTurns, setFollowTurns] = useState(true);
   return (
     <div className="board-page">
       <div className="board-canvas">
         <Board3D layout={layout} state={state} meId="p1" avatars={{}} animator={animator} popups={[]} mode={mode} setMode={setMode} quality={window.location.hash.includes("lite") ? "lite" : "full"} />
       </div>
-      <nav className="hud-cams">
-        <button className={mode.kind === "overview" ? "active" : ""} onClick={() => setMode({ kind: "overview" })}>
-          🗺️ Overview
-        </button>
-        <button onClick={() => setMode({ kind: "follow", playerId: "p1" })}>📍 Peach</button>
-        <button onClick={() => setMode({ kind: "star" })}>⭐ Star</button>
-      </nav>
+      <BoardHud
+        boardName="Mario Stadium"
+        boards={[{ id: "preview", name: "Mario Stadium" }]}
+        boardId="preview"
+        onBoard={() => undefined}
+        status="live"
+        state={state}
+        layout={layout}
+        season={loadSeasonConfig()}
+        meId="p1"
+        mode={mode}
+        setMode={setMode}
+        followTurns={followTurns}
+        setFollowTurns={setFollowTurns}
+        error={null}
+        feed={[
+          { seq: 3, text: "Toad landed on a blue space." },
+          { seq: 2, text: "Toad got 3 coins. Now 13." },
+          { seq: 1, text: "It's Peach's turn." },
+        ]}
+        actions={{ roll: () => undefined, fork: () => undefined, star: () => undefined, shop: () => undefined }}
+      />
     </div>
   );
 }
