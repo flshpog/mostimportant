@@ -9,6 +9,8 @@ export function buildRollCommand() {
 // Board choices come from season-config.json when the bot starts.
 function boardChoices(config: SeasonConfig) {
   const choices = config.boards.map((b) => ({ name: b.name, value: b.id }));
+  // the merge board, once it has a channel (it doesn't exist before that)
+  if (config.merge?.channelId) choices.push({ name: config.merge.name, value: config.merge.id });
   if (config.redemptionIsland.layout) choices.push({ name: "Redemption Island", value: REDEMPTION_ISLAND_ID });
   return choices;
 }
