@@ -724,7 +724,7 @@ describe("the shop and items", () => {
     g.roll("alice", 5);
   });
 
-  it("a Reroll Block offers two numbers to pick from; a timeout takes the higher", () => {
+  it("a Custom Dice Block offers two numbers to pick from; a timeout takes the higher", () => {
     let g = atShop();
     g.p("alice").items = ["reroll-block"];
     use(g, "reroll-block");
@@ -757,7 +757,7 @@ describe("the shop and items", () => {
     expect(g.p("bob").poisoned).toBe(false);
   });
 
-  it("a Boo Bell takes up to 7 coins; a Guard Charm blocks it and is used up", () => {
+  it("a Boo Bell takes up to 7 coins; a Blue Shell blocks it and is used up", () => {
     const g = atShop(10);
     g.p("alice").items = ["boo-bell", "boo-bell"];
     g.p("bob").coins = 5;
@@ -772,7 +772,7 @@ describe("the shop and items", () => {
     expect(g.p("cara")).toMatchObject({ coins: 10, items: [] });
   });
 
-  it("a Guard Charm also blocks event steals, and a blocked star steal isn't paid for", () => {
+  it("a Blue Shell also blocks event steals, and a blocked star steal isn't paid for", () => {
     const g = started(ctxFor(lineLayout, { shop: season.shop }));
     g.setup("alice", "s05", 50);
     g.p("bob").stars = 1;
@@ -797,7 +797,7 @@ describe("the shop and items", () => {
     expect(g.p("alice").items).toEqual([]);
   });
 
-  it("a Star Compass fixes where the star goes next, until it's bought", () => {
+  it("a Crystal Ball fixes where the star goes next, until it's bought", () => {
     const g = started(ctxFor(lineLayout, { shop: season.shop }), ["alice", "bob"], "s02");
     g.setup("alice", "s01", 40);
     g.p("alice").items = ["star-compass", "star-compass"];

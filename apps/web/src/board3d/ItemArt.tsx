@@ -38,25 +38,30 @@ const ART: Record<string, React.ReactNode> = {
       </text>
     </>
   ),
+  // Bullet Bill
   "fast-mushroom": (
     <>
-      <path d="M2 22h8M0 30h7M3 38h6" stroke={INK} strokeWidth="2.6" strokeLinecap="round" />
-      <Mushroom cap="#f97316" spots="#ffe1c2" />
-      <text x="32" y="25" textAnchor="middle" fontSize="10" fontWeight="900" fontFamily="Nunito, sans-serif" fill={INK}>
-        6-10
-      </text>
+      <path d="M2 24h7M0 32h6M2 40h7" stroke={INK} strokeWidth="2.6" strokeLinecap="round" />
+      <path d="M14 18h22c10 0 18 6 18 14s-8 14-18 14H14z" fill="#2b2b33" stroke={INK} strokeWidth={W} strokeLinejoin="round" />
+      <rect x="10" y="16" width="7" height="32" rx="2" fill="#4a4a55" stroke={INK} strokeWidth="2.6" />
+      <ellipse cx="38" cy="28" rx="5" ry="6" fill="#fff" stroke={INK} strokeWidth="2" />
+      <circle cx="39.5" cy="28.5" r="2.2" fill={INK} />
+      <path d="M33 21l9 3" stroke="#fff" strokeWidth="2.4" strokeLinecap="round" />
+      <ellipse cx="28" cy="44" rx="5" ry="3.5" fill="#fff" stroke={INK} strokeWidth="2.2" />
     </>
   ),
   "poison-mushroom": <Mushroom cap="#8e4ec6" spots="#3b1d5c" frown />,
+  // Custom Dice Block
   "reroll-block": (
     <>
-      <rect x="9" y="9" width="46" height="46" rx="8" fill="#f2c230" stroke={INK} strokeWidth={W} />
+      <rect x="9" y="9" width="46" height="46" rx="8" fill="#5bc0eb" stroke={INK} strokeWidth={W} />
       <circle cx="15.5" cy="15.5" r="2" fill={INK} />
       <circle cx="48.5" cy="15.5" r="2" fill={INK} />
       <circle cx="15.5" cy="48.5" r="2" fill={INK} />
       <circle cx="48.5" cy="48.5" r="2" fill={INK} />
-      <path d="M22 28a11 11 0 0118.5-5M42 36a11 11 0 01-18.5 5" fill="none" stroke={INK} strokeWidth="3.4" strokeLinecap="round" />
-      <path d="M41 16.5l.5 7-7 .3M23 47.5l-.5-7 7-.3" fill="none" stroke={INK} strokeWidth="3.4" strokeLinecap="round" strokeLinejoin="round" />
+      <text x="32" y="42" textAnchor="middle" fontSize="27" fontWeight="900" fontFamily="Nunito, sans-serif" fill="#fff" stroke={INK} strokeWidth="2.2" paintOrder="stroke">
+        ?
+      </text>
     </>
   ),
   "magic-lamp": (
@@ -70,21 +75,24 @@ const ART: Record<string, React.ReactNode> = {
       <path d="M50 8l1.4 3.6 3.6 1.4-3.6 1.4L50 18l-1.4-3.6L45 13l3.6-1.4z" fill="#fff3b0" stroke={INK} strokeWidth="1.6" strokeLinejoin="round" />
     </>
   ),
+  // Crystal Ball
   "star-compass": (
     <>
-      <circle cx="32" cy="34" r="22" fill="#fff8ec" stroke={INK} strokeWidth={W} />
-      <circle cx="32" cy="34" r="16" fill="none" stroke="#d9cdb6" strokeWidth="2" />
-      <rect x="28" y="6" width="8" height="7" rx="2" fill="#c98a00" stroke={INK} strokeWidth="2.4" />
-      <path d="M32 18l4.5 16H27.5z" fill="#e5484d" stroke={INK} strokeWidth="2.2" strokeLinejoin="round" />
-      <path d="M32 50l-4.5-16h9z" fill="#9aa3b5" stroke={INK} strokeWidth="2.2" strokeLinejoin="round" />
-      <path d="M32 28.5l1.6 3.4 3.7.5-2.7 2.6.7 3.7-3.3-1.8-3.3 1.8.7-3.7-2.7-2.6 3.7-.5z" fill="#ffd21f" stroke={INK} strokeWidth="1.4" strokeLinejoin="round" />
+      <path d="M17 50h30l-4 7H21z" fill="#c98a00" stroke={INK} strokeWidth={W} strokeLinejoin="round" />
+      <circle cx="32" cy="30" r="20" fill="#b9a6ff" stroke={INK} strokeWidth={W} />
+      <circle cx="32" cy="30" r="13" fill="#d9ceff" />
+      <path d="M32 21l2.6 5.3 5.8.8-4.2 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8-4.2-4.1 5.8-.8z" fill="#ffd21f" stroke={INK} strokeWidth="2" strokeLinejoin="round" />
+      <path d="M21 22a13 13 0 017-6" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" />
     </>
   ),
+  // Blue Shell
   "guard-charm": (
     <>
-      <path d="M32 6l20 7v15c0 13-8.5 23-20 29-11.5-6-20-16-20-29V13z" fill="#34a853" stroke={INK} strokeWidth={W} strokeLinejoin="round" />
-      <path d="M32 13l13 4.6v10.6c0 9-5.6 16-13 20.5-7.4-4.5-13-11.5-13-20.5V17.6z" fill="#7fd99a" />
-      <path d="M32 22l2.6 5.3 5.8.8-4.2 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8-4.2-4.1 5.8-.8z" fill="#fff" stroke={INK} strokeWidth="2" strokeLinejoin="round" />
+      <path d="M8 40c0-14 11-26 24-26s24 12 24 26z" fill="#2f6fe0" stroke={INK} strokeWidth={W} strokeLinejoin="round" />
+      <path d="M20 22l-4-9 9 4M44 22l4-9-9 4M32 15V5" fill="#f4f1e8" stroke={INK} strokeWidth="2.6" strokeLinejoin="round" strokeLinecap="round" />
+      <path d="M32 18l8 6-3 10H27l-3-10z" fill="#5a93f0" stroke={INK} strokeWidth="2.2" strokeLinejoin="round" />
+      <rect x="5" y="39" width="54" height="9" rx="4.5" fill="#f4f1e8" stroke={INK} strokeWidth={W} />
+      <path d="M50 34c6-4 10-2 10 2-4 0-7 1-10 3z" fill="#fff" stroke={INK} strokeWidth="2" strokeLinejoin="round" />
     </>
   ),
   "boo-bell": (
@@ -126,6 +134,6 @@ export const ITEM_DICE_COLOURS: Record<string, string> = {
   mushroom: "#e5484d",
   "golden-mushroom": "#f5b100",
   "slow-mushroom": "#4fa3e0",
-  "fast-mushroom": "#f97316",
+  "fast-mushroom": "#3a3a46",
   "reroll-block": "#f2c230",
 };

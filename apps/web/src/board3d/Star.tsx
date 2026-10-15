@@ -127,7 +127,7 @@ export function Star({ position, director, offered }: { position: Vector3; direc
   );
 }
 
-// Where the star will appear next, shown only to whoever used a Star Compass: a
+// Where the star will appear next, shown only to whoever used a Crystal Ball: a
 // see-through star, turning slowly.
 export function GhostStar({ position }: { position: Vector3 }) {
   const ref = useRef<Group>(null);

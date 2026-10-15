@@ -161,7 +161,7 @@ describe("playing", () => {
     expect(r.body.events[0].event).toMatchObject({ type: "DiceRolled", dice: [2, 3], total: 5, item: "mushroom" });
   });
 
-  it("the Star Compass answer goes only to its user, and the star really goes there", async () => {
+  it("the Crystal Ball answer goes only to its user, and the star really goes there", async () => {
     await h.api("/api/host/boards/mario-stadium/actions", { method: "POST", as: HOST, body: { action: { type: "grantItem", playerId: ALICE, itemId: "star-compass" } } });
     const used = await h.api("/api/play/item", { method: "POST", as: ALICE, body: { itemId: "star-compass" } });
     expect(typeof used.body.nextStar).toBe("string");

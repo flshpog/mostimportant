@@ -603,7 +603,7 @@ export class BoardDiscord {
   }
 
   // The Items button: a private menu of the player's usable items, then (for Poison and
-  // the Boo Bell) who to use it on. A Star Compass answers privately with a picture.
+  // the Boo Bell) who to use it on. A Crystal Ball answers privately with a picture.
   private async handleItems(
     interaction: ButtonInteraction,
     action: { kind: "items" } | { kind: "use"; itemId: string; targetId: string | null },

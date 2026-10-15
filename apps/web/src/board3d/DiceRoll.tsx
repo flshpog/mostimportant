@@ -13,7 +13,7 @@ export interface DiceShow {
   // every die rolled (a Mushroom rolls two or three), in the item's colour if any
   dice?: number[];
   colour?: string;
-  // a Reroll Block: two numbers to pick from, no total yet
+  // a Custom Dice Block: two numbers to pick from, no total yet
   choose?: boolean;
   // a poisoned roll, halved from this
   halvedFrom?: number;

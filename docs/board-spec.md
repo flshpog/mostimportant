@@ -103,11 +103,11 @@ interface Space {
 **coins and items**
 - coins are only for the board: they buy stars and shop items. they are **not** S2 bells and are not used anywhere else in the survivor game.
 - shop (owner decisions 2026-10-15): ten items, all numbers in `season-config.json` (`shop.items[].effect`):
-  - Mushroom (10): two dice added. Golden Mushroom (20): three dice. Slow Mushroom (8): a 1-5 die. Fast Mushroom (8): a 6-10 die. Reroll Block (6): two different numbers, pick one (a timeout takes the higher).
-  - Magic Lamp (6): takes 10 off your next star, by itself while carried. Star Compass (6): shows only you where the star appears next (the server fixes that spot ahead of time and never sends it to other players).
-  - Guard Charm (10): blocks the next steal against you (coin steal, star steal or Boo Bell), by itself while carried; a blocked star steal isn't paid for.
+  - Mushroom (10): two dice added. Golden Mushroom (20): three dice. Slow Mushroom (8): a 1-5 die. Bullet Bill (8): a 6-10 die. Custom Dice Block (6): two different numbers, pick one (a timeout takes the higher).
+  - Magic Lamp (6): takes 10 off your next star, by itself while carried. Crystal Ball (6): shows only you where the star appears next (the server fixes that spot ahead of time and never sends it to other players).
+  - Blue Shell (10): blocks the next steal against you (coin steal, star steal or Boo Bell), by itself while carried; a blocked star steal isn't paid for.
   - Poison Mushroom (10): halves a tribemate's next roll (rounded down, at least 1). Boo Bell (9): takes 7 coins from a tribemate (all they have if fewer).
-- two shop variants, two of each per board: **purple** (s43 bottom-left, s84 middle: Mushroom, Slow Mushroom, Reroll Block, Magic Lamp, Guard Charm) and **pink** (s14 top-right, s74 bottom-right: Golden Mushroom, Fast Mushroom, Star Compass, Poison Mushroom, Boo Bell).
+- two shop variants, two of each per board: **purple** (s43 bottom-left, s84 middle: Mushroom, Slow Mushroom, Custom Dice Block, Magic Lamp, Blue Shell) and **pink** (s14 top-right, s74 bottom-right: Golden Mushroom, Bullet Bill, Crystal Ball, Poison Mushroom, Boo Bell).
 - the bag holds 3 items; one item per turn, used before rolling.
 - **tribe advantage:** every shop on a board also sells that tribe's advantage, centred, 40 coins, once per board: Mario Stadium Launch Star, Luigi's Mansion Poltergust 5000, WarioWare Garlic, Waluigi Pinball Bob-omb. Players see only its picture and "Tribe Advantage". Buying it takes the coins and is narrated, but it doesn't go in the bag: the host role is pinged in channel 1414321682839109813 (`config/board.json` `host_ping_channel_id`) to hand it over. Pictures live in `apps/web/public/advantages/`.
 

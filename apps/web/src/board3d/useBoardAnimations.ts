@@ -197,7 +197,7 @@ export function useBoardAnimations(opts: {
           }
           case "StealBlocked":
             camera(cursor, { kind: "follow", playerId: e.targetId as string });
-            showBanner(cursor + 400, { tone: "info", text: `${name(e.targetId as string)}'s Guard Charm blocked it!` });
+            showBanner(cursor + 400, { tone: "info", text: `${name(e.targetId as string)}'s ${itemName("guard-charm")} blocked it!` });
             cursor += 2200;
             cameraBack(cursor, pid);
             break;

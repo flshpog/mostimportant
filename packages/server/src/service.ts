@@ -354,7 +354,7 @@ export class BoardService extends EventEmitter {
   roll(userId: string, source: ActionSource = "web"): Promise<StoredEvent[]> {
     return this.enqueue(() => {
       const rt = this.boardOfPlayer(userId);
-      // one die, or whatever a dice item calls for (a Reroll Block's two must differ)
+      // one die, or whatever a dice item calls for (a Custom Dice Block's two must differ)
       const spec = rollSpec(this.ctx(rt), rt.state, userId);
       const dice: number[] = [];
       while (dice.length < spec.count) {
@@ -376,7 +376,7 @@ export class BoardService extends EventEmitter {
       const rt = this.boardOfPlayer(userId);
       const candidates = starCandidates(this.ctx(rt), rt.state);
       if (!candidates.length) throw new EngineError("invalid_star_space", "There's nowhere for the star to move to.");
-      // where a Star Compass said it would go, if that's still a valid spot
+      // where a Crystal Ball said it would go, if that's still a valid spot
       const next = rt.state.nextStar;
       const newStarSpace = next && candidates.includes(next) ? next : pick(this.rng, candidates);
       return this.applyLocked(rt, { type: "buyStar", playerId: userId, newStarSpace, now: this.clock() }, { by: userId, source, host: false });
@@ -395,7 +395,7 @@ export class BoardService extends EventEmitter {
     return this.playerAction(userId, source, (now) => ({ type: "shopSkip", playerId: userId, now }));
   }
 
-  // Uses an item before rolling. For a Star Compass, the result is where the star
+  // Uses an item before rolling. For a Crystal Ball, the result is where the star
   // goes next, returned to this player only (it never goes in the event log).
   useItem(userId: string, itemId: string, targetId: string | null, source: ActionSource = "web"): Promise<{ events: StoredEvent[]; nextStar?: string }> {
     return this.enqueue(() => {

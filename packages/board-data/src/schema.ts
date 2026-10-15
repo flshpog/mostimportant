@@ -78,13 +78,13 @@ const Die = z.number().int().positive();
 export const ItemEffectSchema = z.discriminatedUnion("kind", [
   // Roll `count` dice from min to max and add them (Mushrooms).
   z.object({ kind: z.literal("dice"), count: z.number().int().positive(), min: Die, max: Die }).strict(),
-  // Roll two different numbers and pick one (Reroll Block).
+  // Roll two different numbers and pick one (Custom Dice Block).
   z.object({ kind: z.literal("reroll"), min: Die, max: Die }).strict(),
   // Held: takes `amount` off the next star you buy, then it's used up (Magic Lamp).
   z.object({ kind: z.literal("starDiscount"), amount: z.number().int().positive() }).strict(),
-  // Shows you where the star goes next (Star Compass).
+  // Shows you where the star goes next (Crystal Ball).
   z.object({ kind: z.literal("compass") }).strict(),
-  // Held: blocks the next steal against you, then it's used up (Guard Charm).
+  // Held: blocks the next steal against you, then it's used up (Blue Shell).
   z.object({ kind: z.literal("guard") }).strict(),
   // Halves a tribemate's next roll (Poison Mushroom).
   z.object({ kind: z.literal("poison") }).strict(),

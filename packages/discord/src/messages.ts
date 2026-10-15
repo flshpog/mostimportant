@@ -11,7 +11,7 @@ export type ButtonAction =
   | { kind: "star"; boardId: string; buy: boolean }
   | { kind: "shop"; boardId: string; itemId: string | null }
   | { kind: "event"; boardId: string; targetId: string | null }
-  // Reroll Block: take one of the two numbers.
+  // Custom Dice Block: take one of the two numbers.
   | { kind: "pick"; boardId: string; value: number }
   // Open your items (a private menu), then use one (on a target, for some).
   | { kind: "items"; boardId: string }
@@ -191,7 +191,7 @@ export function promptMessage(boardId: string, state: BoardState, layout: Board,
       new ButtonBuilder().setCustomId(buttonId({ kind: "pick", boardId, value })).setLabel(`Take ${value}`).setStyle(ButtonStyle.Primary),
     );
     return {
-      content: `🎲 ${who}, your Reroll Block rolled ${c.options.map((v) => bold(String(v))).join(" and ")}. Which one?\n-# ${until}you'll take the higher one.`,
+      content: `🎲 ${who}, your ${config.shop.items.find((i) => i.effect.kind === "reroll")?.name ?? "dice"} rolled ${c.options.map((v) => bold(String(v))).join(" and ")}. Which one?\n-# ${until}you'll take the higher one.`,
       components: rows(buttons),
       allowedMentions: mention,
     };

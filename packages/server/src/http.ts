@@ -286,7 +286,7 @@ export function createHttpHandler(deps: HttpDeps) {
         const user = requireUser(req);
         const { itemId, targetId } = await readJson(req);
         if (typeof itemId !== "string") throw new HttpError(400, "bad_request", "Say which item to use.");
-        // a Star Compass's answer comes back only in this response
+        // a Crystal Ball's answer comes back only in this response
         send(res, 200, await service.useItem(user.sub, itemId, typeof targetId === "string" ? targetId : null));
       },
     ],

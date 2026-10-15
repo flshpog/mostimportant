@@ -15,7 +15,7 @@ import { GhostStar, Star, type StarDirector } from "./Star";
 import { Tiles } from "./Tiles";
 import { Tokens, type Popup, type TokenAnimator } from "./Tokens";
 
-// "star" with `at` looks at a space instead (where a Star Compass says it's going).
+// "star" with `at` looks at a space instead (where a Crystal Ball says it's going).
 export type CamMode = { kind: "overview" } | { kind: "follow"; playerId: string } | { kind: "star"; at?: string } | { kind: "free" };
 
 const OVERVIEW = { pos: new Vector3(0, 31, 30), target: new Vector3(0, -1, 1.5) };
@@ -174,7 +174,7 @@ export function Board3D(props: {
   animator: TokenAnimator;
   starDirector: StarDirector;
   flights: FlightDirector;
-  // A Star Compass result: where the star goes next (only this player's view).
+  // A Crystal Ball result: where the star goes next (only this player's view).
   ghostStar?: string | null;
   // Picking a path by clicking its arrow on the board.
   onFork?: (next: string) => void;

@@ -75,7 +75,7 @@ export function describeEvent(
     case "ItemSpent":
       return `${name(event.playerId)}'s ${item(event.itemId)} kicked in.`;
     case "StealBlocked":
-      return `${name(event.targetId)}'s Guard Charm blocked ${name(event.playerId)}'s steal!`;
+      return `${name(event.targetId)}'s ${item("guard-charm")} blocked ${name(event.playerId)}'s steal!`;
     case "BooBellRang":
       return `${name(event.playerId)} took ${coins(event.amount)} from ${name(event.targetId)}!`;
     case "ShopPurchase":

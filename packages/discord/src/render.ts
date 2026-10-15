@@ -704,7 +704,7 @@ export function renderForkCloseup(input: RenderInput & { fork: string; options: 
   return out.toBuffer("image/jpeg", 88);
 }
 
-// A close-up of one space with the star drawn on it: what a Star Compass shows its
+// A close-up of one space with the star drawn on it: what a Crystal Ball shows its
 // user (privately) about where the star goes next.
 export function renderSpotCloseup(input: RenderInput & { spaceId: string }): Buffer {
   registerFonts();

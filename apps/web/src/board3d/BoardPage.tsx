@@ -74,7 +74,7 @@ export function BoardPage() {
   const animator = useRef(new TokenAnimator()).current;
   const stateRef = useRef<ReturnType<typeof useLiveBoard>["state"]>(null);
   const meRef = useRef<string | null>(null);
-  // where a Star Compass said the star goes next; cleared once the star moves
+  // where a Crystal Ball said the star goes next; cleared once the star moves
   const [compass, setCompass] = useState<string | null>(null);
   const { play, popups, dice, clearDice, banner, clearBanner, starDirector, flights, settled, reveal, clearReveal, wheel, clearWheel, hold } = useBoardAnimations({ animator, season, followTurns, setMode });
 
@@ -188,7 +188,7 @@ export function BoardPage() {
           item: (itemId, targetId) =>
             run(async () => {
               const r = await api<{ nextStar?: string }>("/api/play/item", { body: targetId ? { itemId, targetId } : { itemId } });
-              // a Star Compass: show where the star goes next, to this player only
+              // a Crystal Ball: show where the star goes next, to this player only
               if (r.nextStar) {
                 setCompass(r.nextStar);
                 setMode({ kind: "star", at: r.nextStar });

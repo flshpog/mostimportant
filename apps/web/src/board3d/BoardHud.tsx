@@ -210,7 +210,7 @@ export function BoardHud(props: {
       "roll",
       <DiceIcon />,
       "Pick your roll!",
-      "Your Reroll Block rolled two numbers. Which one do you take?",
+      `Your ${season.shop.items.find((i) => i.effect.kind === "reroll")?.name ?? "dice"} rolled two numbers. Which one do you take?`,
       choice.options.map((v) => (
         <button key={v} className="dock-button pick big" onClick={() => actions.pick(v)}>
           {v}

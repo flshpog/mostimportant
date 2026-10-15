@@ -39,7 +39,7 @@ export function Preview() {
       players: [
         // a mid-game spread, so every event has something to work with: Peach can
         // afford a star or a star steal, and Toad and Yoshi have stars to take
-        { id: "p1", name: "Peach", coins: 60, stars: 1, items: ["star-compass", "boo-bell"] },
+        { id: "p1", name: "Peach", coins: 60, stars: 1, items: ["star-compass", "guard-charm"] },
         { id: "p2", name: "Toad", coins: 35, stars: 2 },
         { id: "p3", name: "Yoshi", coins: 18, stars: 1 },
         { id: "p4", name: "Daisy", coins: 44 },
@@ -99,6 +99,9 @@ export function Preview() {
         // like the server: a couple of distinct items at random
         const pool = season.shop.items.map((x) => x.id);
         const items: string[] = [];
+        // ?stock=a,b forces what's on offer (item ids)
+        const forced = window.location.hash.match(/stock=([\w,-]+)/)?.[1].split(",").filter((x) => pool.includes(x));
+        if (forced?.length) items.push(...forced);
         while (items.length < Math.min(season.shop.stockSize, pool.length)) items.push(pick(pool.filter((x) => !items.includes(x))));
         s = step(s, { type: "stockShop", playerId: pid, items, now });
       } else {
@@ -110,7 +113,7 @@ export function Preview() {
     // the next player's window opens at once
     if (s.started && !s.move) s = { ...s, turn: { ...s.turn, windowOpensAt: now } };
     const nameOf = (id: string) => s.players[id]?.name ?? "someone";
-    const lines = events.map((e) => describeEvent(e, nameOf)?.replace(/\p{Extended_Pictographic}\p{Variation_Selector}?\s*/gu, "")).filter((l): l is string => !!l);
+    const lines = events.map((e) => describeEvent(e, nameOf, (id) => season.shop.items.find((i) => i.id === id)?.name ?? id)?.replace(/\p{Extended_Pictographic}\p{Variation_Selector}?\s*/gu, "")).filter((l): l is string => !!l);
     setFeed((f) => [...lines.map((text) => ({ seq: ++seq.current, text })).reverse(), ...f].slice(0, 6));
     play(events as never, s, layout, currentPlayerId(state));
     setState(s);
@@ -145,7 +148,7 @@ export function Preview() {
     act((s, now) => {
       const pid = currentPlayerId(s);
       if (!pid) return null;
-      // a Star Compass: the preview picks the next star spot like the server would
+      // a Crystal Ball: the preview picks the next star spot like the server would
       const spots = starCandidates(ctx, s);
       const nextStarSpace = s.nextStar ?? spots[Math.floor(Math.random() * spots.length)];
       if (itemDef(ctx, itemId)?.effect.kind === "compass") {

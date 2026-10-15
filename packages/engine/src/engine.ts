@@ -184,7 +184,7 @@ export function affordableItems(ctx: EngineContext, coins: number): string[] {
 }
 
 // The dice a player's next roll uses: a dice item if they used one this turn,
-// otherwise one normal die. `distinct`: the dice must differ (Reroll Block).
+// otherwise one normal die. `distinct`: the dice must differ (Custom Dice Block).
 export function rollSpec(ctx: EngineContext, state: BoardState, playerId: string): { count: number; min: number; max: number; distinct: boolean } {
   const pr = state.pendingRoll;
   const e = pr && pr.playerId === playerId ? itemDef(ctx, pr.itemId)?.effect : undefined;
@@ -194,7 +194,7 @@ export function rollSpec(ctx: EngineContext, state: BoardState, playerId: string
 }
 
 // The board as players may see it: everything but where the star goes next, which
-// only a Star Compass reveals (to its user).
+// only a Crystal Ball reveals (to its user).
 export function publicState(state: BoardState): BoardState {
   if (state.nextStar === undefined) return state;
   const { nextStar: _hidden, ...rest } = state;
@@ -259,7 +259,7 @@ export function shopOffer(ctx: EngineContext, state: BoardState, stockIds: strin
   };
 }
 
-// Items a player can use from the Item button (held ones like the Guard Charm work by
+// Items a player can use from the Item button (held ones like the Blue Shell work by
 // themselves and aren't listed).
 export function usableItems(ctx: EngineContext, state: BoardState, playerId: string): ShopItem[] {
   const p = state.players[playerId];
@@ -488,7 +488,7 @@ class Run {
       }
     } else if (item?.kind === "reroll") {
       if (dice.length !== 2 || dice[0] === dice[1] || dice.some((d) => !ok(d, item.min, item.max))) {
-        throw new EngineError("invalid_dice", "A Reroll Block rolls two different numbers.");
+        throw new EngineError("invalid_dice", "A Custom Dice Block rolls two different numbers.");
       }
     } else {
       const { min, max } = this.ctx.rules.dice;
@@ -714,7 +714,7 @@ class Run {
     this.emit({ type: "StarPurchased", playerId, spaceId: choice.spaceId, price, ...(discount ? { discount } : {}) });
     const from = this.s.star;
     this.s.star = newStarSpace;
-    // a Star Compass looks ahead again from here
+    // a Crystal Ball looks ahead again from here
     this.s.nextStar = null;
     this.emit({ type: "StarMoved", from, to: newStarSpace, by: "purchase" });
     m.choice = null;
@@ -838,7 +838,7 @@ class Run {
     const p = this.player(m.playerId);
     const t = this.player(targetId);
     if ((c.kind === "coinSteal" || c.kind === "starSteal") && this.spend(t, "guard")) {
-      // a Guard Charm stops it; a star steal isn't paid for
+      // a Blue Shell stops it; a star steal isn't paid for
       this.emit({ type: "StealBlocked", playerId: p.id, targetId, by: c.kind });
     } else if (c.kind === "coinSteal") {
       const amount = Math.floor((t.coins * c.percent) / 100);

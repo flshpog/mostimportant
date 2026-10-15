@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { RoundedBox } from "@react-three/drei";
-import { CanvasTexture, DoubleSide, ExtrudeGeometry, LatheGeometry, Quaternion, Shape, SRGBColorSpace, TextureLoader, Vector2, Vector3 } from "three";
+import { CanvasTexture, DoubleSide, LatheGeometry, Quaternion, SRGBColorSpace, TextureLoader, Vector2, Vector3 } from "three";
 import { starGeometry } from "./Star";
 
 // Little 3D versions of the shop items, about a metre across, centred on the origin.
@@ -22,7 +22,6 @@ const MUSHROOMS: Record<string, { cap: string; spots: string; glow?: string; met
   mushroom: { cap: "#e5484d", spots: "#ffffff" },
   "golden-mushroom": { cap: "#f5b100", spots: "#fff6c9", glow: "#a86f00", metal: 0.55 },
   "slow-mushroom": { cap: "#4fa3e0", spots: "#ffffff" },
-  "fast-mushroom": { cap: "#f97316", spots: "#fff3c4" },
   "poison-mushroom": { cap: "#8e4ec6", spots: "#3b1360" },
 };
 
@@ -76,16 +75,17 @@ function Mushroom({ id }: { id: string }) {
   );
 }
 
+// Custom Dice Block: a blue block with a question mark
 function RerollBlock() {
   const face = useMemo(
     () =>
       canvasTexture((ctx, s) => {
-        ctx.fillStyle = "#f2c230";
+        ctx.fillStyle = "#5bc0eb";
         ctx.fillRect(0, 0, s, s);
-        ctx.strokeStyle = "#b07a00";
+        ctx.strokeStyle = "#1f6f99";
         ctx.lineWidth = s * 0.05;
         ctx.strokeRect(s * 0.06, s * 0.06, s * 0.88, s * 0.88);
-        ctx.fillStyle = "#b07a00";
+        ctx.fillStyle = "#1f6f99";
         for (const [x, y] of [
           [0.17, 0.17],
           [0.83, 0.17],
@@ -109,8 +109,112 @@ function RerollBlock() {
   );
   return (
     <RoundedBox args={[0.82, 0.82, 0.82]} radius={0.09} smoothness={3}>
-      <meshStandardMaterial map={face} roughness={0.5} emissive="#f2c230" emissiveIntensity={0.12} />
+      <meshStandardMaterial map={face} roughness={0.5} emissive="#5bc0eb" emissiveIntensity={0.12} />
     </RoundedBox>
+  );
+}
+
+// Bullet Bill: a black bullet with angry eyes and little white fists
+function BulletBill() {
+  const black = { color: "#2b2b33", roughness: 0.35, metalness: 0.3, emissive: "#14141a", emissiveIntensity: 0.4 } as const;
+  return (
+    <group rotation={[0, 0, 0]}>
+      <mesh rotation={[0, 0, -Math.PI / 2]} position={[0.05, 0, 0]}>
+        <capsuleGeometry args={[0.34, 0.5, 8, 24]} />
+        <meshStandardMaterial {...black} />
+      </mesh>
+      <mesh rotation={[0, 0, Math.PI / 2]} position={[-0.42, 0, 0]}>
+        <cylinderGeometry args={[0.38, 0.38, 0.12, 28]} />
+        <meshStandardMaterial color="#4a4a55" roughness={0.4} metalness={0.4} />
+      </mesh>
+      {[1, -1].map((side) => (
+        <group key={side}>
+          <mesh position={[0.32, 0.1, side * 0.22]} scale={[0.6, 1, 0.4]}>
+            <sphereGeometry args={[0.12, 14, 10]} />
+            <meshStandardMaterial color="#ffffff" />
+          </mesh>
+          <mesh position={[0.37, 0.09, side * 0.25]}>
+            <sphereGeometry args={[0.045, 10, 8]} />
+            <meshBasicMaterial color={INK} />
+          </mesh>
+          <mesh position={[0, -0.25, side * 0.36]}>
+            <sphereGeometry args={[0.1, 12, 10]} />
+            <meshStandardMaterial color="#ffffff" />
+          </mesh>
+        </group>
+      ))}
+    </group>
+  );
+}
+
+// Crystal Ball: a glowing glass ball on a gold stand, a star inside
+function CrystalBall() {
+  const star = useMemo(starGeometry, []);
+  return (
+    <group position={[0, 0.08, 0]}>
+      <mesh>
+        <sphereGeometry args={[0.42, 36, 24]} />
+        <meshPhysicalMaterial color="#c9b8ff" emissive="#7c5cff" emissiveIntensity={0.35} roughness={0.05} transmission={0.6} thickness={0.5} transparent opacity={0.75} />
+      </mesh>
+      <mesh geometry={star} scale={0.3}>
+        <meshStandardMaterial color="#ffd21f" emissive="#ffb300" emissiveIntensity={0.8} />
+      </mesh>
+      <mesh position={[0, -0.45, 0]}>
+        <cylinderGeometry args={[0.22, 0.32, 0.18, 28]} />
+        <meshStandardMaterial {...GOLD} />
+      </mesh>
+      <mesh position={[0, -0.37, 0]}>
+        <torusGeometry args={[0.2, 0.04, 8, 28]} />
+        <meshStandardMaterial {...GOLD} />
+      </mesh>
+    </group>
+  );
+}
+
+// Blue Shell: the spiny shell, blue on top with white spikes and rim, and wings
+function BlueShell() {
+  const spikes = useMemo(
+    () =>
+      [
+        [0, 1],
+        [0, 0.55],
+        [Math.PI / 2, 0.55],
+        [Math.PI, 0.55],
+        [-Math.PI / 2, 0.55],
+      ].map(([theta, phi]) => {
+        const dir = new Vector3(Math.sin(phi) * Math.sin(theta), Math.cos(phi), Math.sin(phi) * Math.cos(theta));
+        if (phi === 1) dir.set(0, 1, 0);
+        return { pos: dir.clone().multiplyScalar(0.45).setY(dir.y * 0.4 + 0.02), q: new Quaternion().setFromUnitVectors(new Vector3(0, 1, 0), dir) };
+      }),
+    [],
+  );
+  return (
+    <group position={[0, -0.05, 0]}>
+      <mesh scale={[1, 0.8, 1]}>
+        <sphereGeometry args={[0.5, 32, 16, 0, Math.PI * 2, 0, Math.PI / 2]} />
+        <meshStandardMaterial color="#2f6fe0" emissive="#1d4ed8" emissiveIntensity={0.3} roughness={0.35} />
+      </mesh>
+      <mesh position={[0, -0.02, 0]} rotation={[Math.PI / 2, 0, 0]}>
+        <torusGeometry args={[0.5, 0.09, 12, 36]} />
+        <meshStandardMaterial color="#f4f1e8" roughness={0.5} />
+      </mesh>
+      <mesh rotation={[Math.PI / 2, 0, 0]} position={[0, -0.04, 0]}>
+        <circleGeometry args={[0.5, 32]} />
+        <meshStandardMaterial color="#f2d9a0" />
+      </mesh>
+      {spikes.map((s, i) => (
+        <mesh key={i} position={s.pos} quaternion={s.q}>
+          <coneGeometry args={[0.09, 0.26, 12]} />
+          <meshStandardMaterial color="#f4f1e8" roughness={0.4} />
+        </mesh>
+      ))}
+      {[1, -1].map((side) => (
+        <mesh key={side} position={[side * 0.55, 0.25, 0]} rotation={[0, 0, side * -0.5]} scale={[1, 0.55, 0.2]}>
+          <sphereGeometry args={[0.22, 14, 10]} />
+          <meshStandardMaterial color="#ffffff" emissive="#ffffff" emissiveIntensity={0.2} />
+        </mesh>
+      ))}
+    </group>
   );
 }
 
@@ -150,97 +254,6 @@ function MagicLamp() {
         <sphereGeometry args={[0.08, 12, 8]} />
         <meshStandardMaterial color="#c9b8ff" emissive="#8e4ec6" emissiveIntensity={0.6} transparent opacity={0.8} />
       </mesh>
-    </group>
-  );
-}
-
-function StarCompass() {
-  const face = useMemo(
-    () =>
-      canvasTexture((ctx, s) => {
-        const c = s / 2;
-        ctx.fillStyle = "#fffaf0";
-        ctx.fillRect(0, 0, s, s);
-        ctx.strokeStyle = "#c9b48a";
-        ctx.lineWidth = s * 0.02;
-        for (let i = 0; i < 8; i++) {
-          const a = (i * Math.PI) / 4;
-          ctx.beginPath();
-          ctx.moveTo(c + Math.cos(a) * s * 0.3, c + Math.sin(a) * s * 0.3);
-          ctx.lineTo(c + Math.cos(a) * s * 0.4, c + Math.sin(a) * s * 0.4);
-          ctx.stroke();
-        }
-        // the needle: red to the north, blue to the south
-        const needle = (dir: number, colour: string) => {
-          ctx.fillStyle = colour;
-          ctx.beginPath();
-          ctx.moveTo(c, c + dir * s * 0.36);
-          ctx.lineTo(c - s * 0.07, c);
-          ctx.lineTo(c + s * 0.07, c);
-          ctx.closePath();
-          ctx.fill();
-        };
-        needle(-1, "#e5484d");
-        needle(1, "#3b82f6");
-        ctx.fillStyle = "#f5b100";
-        ctx.beginPath();
-        ctx.arc(c, c, s * 0.05, 0, Math.PI * 2);
-        ctx.fill();
-      }),
-    [],
-  );
-  const star = useMemo(starGeometry, []);
-  return (
-    <group>
-      <mesh rotation={[Math.PI / 2, 0, 0]}>
-        <cylinderGeometry args={[0.46, 0.46, 0.13, 40]} />
-        <meshStandardMaterial {...GOLD} />
-      </mesh>
-      {[0, Math.PI].map((r) => (
-        <mesh key={r} rotation={[0, r, 0]} position={[0, 0, r ? -0.068 : 0.068]}>
-          <circleGeometry args={[0.38, 40]} />
-          <meshStandardMaterial map={face} roughness={0.6} />
-        </mesh>
-      ))}
-      <mesh position={[0, 0.55, 0]}>
-        <torusGeometry args={[0.09, 0.03, 8, 20]} />
-        <meshStandardMaterial {...GOLD} />
-      </mesh>
-      <mesh geometry={star} position={[0, 0.82, 0]} scale={0.32}>
-        <meshStandardMaterial color="#ffd21f" emissive="#ffb300" emissiveIntensity={0.6} />
-      </mesh>
-    </group>
-  );
-}
-
-function shieldShape(w: number, h: number) {
-  const s = new Shape();
-  s.moveTo(-w, h);
-  s.lineTo(w, h);
-  s.lineTo(w, 0);
-  s.quadraticCurveTo(w, -h * 0.75, 0, -h * 1.2);
-  s.quadraticCurveTo(-w, -h * 0.75, -w, 0);
-  s.closePath();
-  return s;
-}
-
-function GuardCharm() {
-  const rim = useMemo(() => new ExtrudeGeometry(shieldShape(0.44, 0.44), { depth: 0.12, bevelEnabled: true, bevelThickness: 0.04, bevelSize: 0.04, bevelSegments: 2 }).center(), []);
-  const body = useMemo(() => new ExtrudeGeometry(shieldShape(0.35, 0.36), { depth: 0.2, bevelEnabled: true, bevelThickness: 0.03, bevelSize: 0.03, bevelSegments: 2 }).center(), []);
-  const star = useMemo(starGeometry, []);
-  return (
-    <group>
-      <mesh geometry={rim}>
-        <meshStandardMaterial {...GOLD} />
-      </mesh>
-      <mesh geometry={body} position={[0, 0.02, 0]}>
-        <meshStandardMaterial color="#3b82f6" emissive="#1d4ed8" emissiveIntensity={0.3} roughness={0.35} />
-      </mesh>
-      {[1, -1].map((side) => (
-        <mesh key={side} geometry={star} position={[0, 0.05, side * 0.14]} scale={[0.42, 0.42, 0.3]}>
-          <meshStandardMaterial color="#ffd21f" emissive="#ffb300" emissiveIntensity={0.5} />
-        </mesh>
-      ))}
     </group>
   );
 }
@@ -351,14 +364,16 @@ export function ItemModel({ model }: { model: string }) {
   if (model.startsWith("advantage:")) return <AdvantageCard image={model.slice("advantage:".length)} />;
   if (MUSHROOMS[model]) return <Mushroom id={model} />;
   switch (model) {
+    case "fast-mushroom":
+      return <BulletBill />;
     case "reroll-block":
       return <RerollBlock />;
     case "magic-lamp":
       return <MagicLamp />;
     case "star-compass":
-      return <StarCompass />;
+      return <CrystalBall />;
     case "guard-charm":
-      return <GuardCharm />;
+      return <BlueShell />;
     case "boo-bell":
       return <BooBell />;
     default:

@@ -33,7 +33,7 @@ export type Choice =
   | { kind: "coinSteal"; spaceId: string; targets: string[]; percent: number; expiresAt: number }
   | { kind: "starSteal"; spaceId: string; targets: string[]; price: number; expiresAt: number }
   | { kind: "swap"; spaceId: string; targets: string[]; expiresAt: number }
-  // Reroll Block: pick one of two rolled numbers.
+  // Custom Dice Block: pick one of two rolled numbers.
   | { kind: "dicePick"; spaceId: string; options: number[]; expiresAt: number };
 
 export type ChoiceKind = Choice["kind"];
@@ -71,7 +71,7 @@ export interface BoardState {
   move: MoveState | null;
   // The tribe advantage in this board's shops has been bought.
   advantageSold?: boolean;
-  // Where the star goes when it's next bought, once a Star Compass has asked
+  // Where the star goes when it's next bought, once a Crystal Ball has asked
   // (chosen by the server ahead of time). The server never sends it to players.
   nextStar?: string | null;
   // The current player has used an item this turn (one per turn).
@@ -89,7 +89,7 @@ export type EngineEvent =
   | { type: "TurnStarted"; playerId: string; windowOpensAt: number; deadline: number | null }
   | { type: "TurnSkipped"; playerId: string; byHost?: boolean }
   | { type: "TurnEnded"; playerId: string }
-  // `item`: the dice item used. `choose`: a Reroll Block, the player picks one of
+  // `item`: the dice item used. `choose`: a Custom Dice Block, the player picks one of
   // `dice` next. `halvedFrom`: a poisoned roll, halved from this total.
   | { type: "DiceRolled"; playerId: string; dice: number[]; total: number; item?: string; choose?: boolean; halvedFrom?: number }
   | { type: "DiePicked"; playerId: string; value: number; total: number; halvedFrom?: number; auto: boolean }
@@ -109,7 +109,7 @@ export type EngineEvent =
   | { type: "ShopUnaffordable"; playerId: string; spaceId: string; bagFull?: boolean }
   | { type: "AdvantagePurchased"; playerId: string; price: number }
   | { type: "ItemUsed"; playerId: string; itemId: string; targetId?: string }
-  // A held item doing its job by itself (Guard Charm, Magic Lamp), and gone.
+  // A held item doing its job by itself (Blue Shell, Magic Lamp), and gone.
   | { type: "ItemSpent"; playerId: string; itemId: string }
   | { type: "StealBlocked"; playerId: string; targetId: string; by: "coinSteal" | "starSteal" | "item" }
   | { type: "BooBellRang"; playerId: string; targetId: string; amount: number }
@@ -145,7 +145,7 @@ export type Action =
   | { type: "skipStar"; playerId: string; now: number }
   | { type: "shopBuy"; playerId: string; itemId: string; now: number }
   | { type: "shopSkip"; playerId: string; now: number }
-  // Use an item before rolling. The server fills in nextStarSpace for a Star Compass.
+  // Use an item before rolling. The server fills in nextStarSpace for a Crystal Ball.
   | { type: "useItem"; playerId: string; itemId: string; targetId?: string | null; nextStarSpace?: string; now: number }
   | { type: "pickDie"; playerId: string; value: number; now: number }
   // Server-only: settles a shopDraw with the items this shop offers this visit.
