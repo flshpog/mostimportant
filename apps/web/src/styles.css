@@ -1212,105 +1212,17 @@ button.link {
     transform: scale(0.85);
   }
 }
-.dice-stage {
-  position: relative;
-  width: 132px;
-  height: 132px;
-  perspective: 900px;
-}
-.dice {
-  --s: 132px;
+.dice-canvas {
   position: absolute;
   inset: 0;
-  transform-style: preserve-3d;
-  will-change: transform;
-}
-.dice-face {
-  position: absolute;
-  inset: 0;
-  display: grid;
-  place-items: center;
-  border-radius: 22px;
-  background: radial-gradient(circle at 30% 25%, rgba(255, 255, 255, 0.45), rgba(255, 255, 255, 0) 55%), var(--die);
-  box-shadow: inset 0 0 0 4px rgba(255, 255, 255, 0.35), inset 0 -10px 18px rgba(0, 0, 0, 0.22);
-  backface-visibility: hidden;
-}
-/* --d: how far each face sits from the centre */
-.dice-face {
-  --d: calc(var(--s) / 2);
-}
-.dice-core {
-  /* a closed box: inset on every side by exactly how far it sits inside the faces */
-  --d: calc(var(--s) / 2 - 7px);
-  position: absolute;
-  inset: 7px;
-  background: linear-gradient(rgba(0, 0, 0, 0.18), rgba(0, 0, 0, 0.18)), var(--die);
-}
-.dice-face.front,
-.dice-core.front {
-  transform: translateZ(var(--d));
-}
-.dice-face.back,
-.dice-core.back {
-  transform: rotateY(180deg) translateZ(var(--d));
-}
-.dice-face.right,
-.dice-core.right {
-  transform: rotateY(90deg) translateZ(var(--d));
-}
-.dice-face.left,
-.dice-core.left {
-  transform: rotateY(-90deg) translateZ(var(--d));
-}
-.dice-face.top,
-.dice-core.top {
-  transform: rotateX(90deg) translateZ(var(--d));
-}
-.dice-face.bottom,
-.dice-core.bottom {
-  transform: rotateX(-90deg) translateZ(var(--d));
-}
-.dice-mark {
-  grid-area: 1 / 1;
-  width: 56px;
-  height: 56px;
-  color: rgba(255, 255, 255, 0.45);
-  transition: opacity 0.3s ease, transform 0.3s ease;
-}
-.dice-number {
-  grid-area: 1 / 1;
-  color: #fff;
-  font: 900 78px/1 "Nunito", system-ui, sans-serif;
-  text-shadow: 0 3px 0 rgba(0, 0, 0, 0.22);
-  opacity: 0;
-  transform: scale(0.4);
-  transition: opacity 0.35s ease, transform 0.45s cubic-bezier(0.3, 1.7, 0.5, 1);
-}
-.dice-overlay.revealed .dice-number,
-.dice-overlay.leaving .dice-number {
-  opacity: 1;
-  transform: scale(1);
-}
-.dice-overlay.revealed .dice-face.front .dice-mark,
-.dice-overlay.leaving .dice-face.front .dice-mark {
-  opacity: 0;
-  transform: scale(0.5);
-}
-.dice-shadow {
-  position: absolute;
-  left: 50%;
-  bottom: -34px;
-  width: 140px;
-  height: 26px;
-  margin-left: -70px;
-  border-radius: 50%;
-  background: rgba(10, 20, 40, 0.38);
-  filter: blur(8px);
-  opacity: 0;
 }
 .dice-burst {
   position: absolute;
-  inset: -40px;
+  left: 50%;
+  top: 50%;
+  width: 34vh;
+  height: 34vh;
+  margin: -17vh 0 0 -17vh;
   border-radius: 50%;
   border: 6px solid var(--die);
   opacity: 0;
@@ -1327,7 +1239,10 @@ button.link {
   }
 }
 .dice-caption {
-  margin-top: 48px;
+  position: absolute;
+  top: calc(50% + 15vh);
+  left: 50%;
+  transform: translateX(-50%);
   padding: 8px 20px;
   border-radius: 999px;
   background: rgba(255, 252, 246, 0.92);
@@ -1346,7 +1261,7 @@ button.link {
 }
 @keyframes caption-pop {
   from {
-    transform: scale(0.8);
+    transform: translateX(-50%) scale(0.8);
   }
 }
 
