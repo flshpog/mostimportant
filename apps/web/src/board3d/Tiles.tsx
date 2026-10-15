@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { Color, CylinderGeometry, InstancedMesh, Matrix4, MeshStandardMaterial } from "three";
-import type { Board, SpaceType } from "@everest/board-data";
+import { loadSeasonConfig, type Board, type SpaceType } from "@everest/board-data";
 import { spaceToWorld } from "./coords";
 
 // Same look as the Blender tiles: a cream base with a coloured, slightly domed top.
@@ -29,7 +29,9 @@ export function Tiles({ layout }: { layout: Board }) {
       m.setPosition(p);
       base.setMatrixAt(i, m);
       top.setMatrixAt(i, m);
-      top.setColorAt(i, new Color(TILE_COLOURS[s.type]));
+      // shops take their variant's colour (purple, pink)
+      const variant = s.shop ? loadSeasonConfig().shop.variants[s.shop]?.colour : undefined;
+      top.setColorAt(i, new Color(variant ?? TILE_COLOURS[s.type]));
     });
     for (const mesh of [base, top]) {
       mesh.castShadow = true;

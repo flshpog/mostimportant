@@ -514,7 +514,7 @@ export class BoardDiscord {
     const summary = this.opts.service.summary(boardId);
     const avatars = new Map<string, Image | null>();
     await Promise.all(state.turn.order.map(async (id) => avatars.set(id, await this.avatar(id))));
-    const img = renderBoard({ layout: this.opts.service.layout(boardId), state, boardName: summary.name, avatars, now: this.clock() });
+    const img = renderBoard({ layout: this.opts.service.layout(boardId), state, boardName: summary.name, avatars, now: this.clock(), shopVariants: this.opts.loadConfig().shop.variants });
     const files = [new AttachmentBuilder(img, { name: `${boardId}.jpg` })];
     const saved = this.board(boardId);
     if (this.opts.updatesThread?.enabled) await this.feed(boardId); // make sure the thread exists to link to

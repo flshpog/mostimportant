@@ -22,6 +22,8 @@ export interface RenderInput {
   now: number;
   // Force the flat 2D drawing even when a Blender backdrop exists.
   flat?: boolean;
+  // Shop variants (season-config shop.variants), for the legend's shop colours.
+  shopVariants?: Record<string, { name: string; colour: string }>;
 }
 
 // Layout size of the board picture. It's drawn at RES x that, so it stays sharp when
@@ -384,20 +386,24 @@ function drawPanel(ctx: SKRSContext2D, input: RenderInput, avatars: Map<string, 
   });
 
   // legend
-  const legend: [SpaceType, string][] = [
-    ["blue", "+3 coins"],
-    ["red", "-3 coins"],
-    ["green", "nothing"],
-    ["shop", "shop"],
-    ["event", "event"],
+  // one row per shop colour on this board (purple shop, pink shop)
+  const variants = [...new Set(input.layout.spaces.map((s) => s.shop).filter((v): v is string => !!v))]
+    .map((v) => input.shopVariants?.[v])
+    .filter((v): v is { name: string; colour: string } => !!v);
+  const legend: [string, string][] = [
+    [SPACE_FILL.blue, "+3 coins"],
+    [SPACE_FILL.red, "-3 coins"],
+    [SPACE_FILL.green, "nothing"],
+    ...(variants.length ? variants.map((v): [string, string] => [v.colour, v.name.toLowerCase()]) : [[SPACE_FILL.shop, "shop"] as [string, string]]),
+    [SPACE_FILL.event, "event"],
   ];
   let ly = H - 64 - legend.length * 26;
   ctx.font = "14px NunitoXB";
   ctx.fillStyle = "#a397b8";
   ctx.fillText("SPACES", pad, ly - 8);
   ctx.font = "16px NunitoB";
-  for (const [t, label] of legend) {
-    ctx.fillStyle = SPACE_FILL[t];
+  for (const [fill, label] of legend) {
+    ctx.fillStyle = fill;
     ctx.beginPath();
     ctx.arc(pad + 8, ly + 10, 8, 0, Math.PI * 2);
     ctx.fill();
