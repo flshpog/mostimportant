@@ -1,0 +1,29 @@
+{
+  "_comment": [
+    "Totem Grab (Redemption #5). Every number and every string the bot posts lives here.",
+    "real_totems: how many real totems spawn across duration_hours.",
+    "fake_totems: extra fake events on top of the real ones. Same warning, then one of fake_appear_messages.",
+    "Replying to a fake with anything that reads like a claim wipes that player's score to 0.",
+    "appear_delay_seconds: gap between the warning and the totem appearing, picked at random.",
+    "min_gap_minutes: minimum time between two warnings, so events never overlap."
+  ],
+  "duration_hours": 24,
+  "real_totems": 37,
+  "fake_totems": 6,
+  "appear_delay_seconds": { "min": 30, "max": 300 },
+  "min_gap_minutes": 10,
+  "warning_message": "*A **totem** is spawning...*",
+  "appear_message": "__A **totem** has appeared!__",
+  "claim_phrase": "**I CLAIM THE TOTEM!**",
+  "claim_reaction": "✅",
+  "fake_appear_messages": [
+    "__A **totem** has apeared!__",
+    "__A **totem** has appeared__",
+    "__A **totem** has appeared.__",
+    "__A **totum** has appeared!__",
+    "__A totem has appeared!__",
+    "A **totem** has appeared!",
+    "__An **totem** has appeared!__",
+    "__A **totem** has appeared!!__"
+  ]
+}

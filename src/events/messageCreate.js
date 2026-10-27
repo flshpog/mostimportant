@@ -39,6 +39,12 @@ module.exports = {
                 console.error('Fishing Frenzy catch error:', err));
         }
 
+        // Totem Grab claims (no-op unless a game is active in this channel).
+        if (message.guild) {
+            require('../handlers/totemGrab').handleMessage(message).catch(err =>
+                console.error('Totem Grab claim error:', err));
+        }
+
         // Love Day !loveday / !unlock handling (silent no-op outside a registered pair).
         if (message.guild) {
             require('../handlers/loveDay').handleMessage(message).catch(err =>
