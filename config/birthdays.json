@@ -1,0 +1,25 @@
+{
+  "_comment": [
+    "Birthday announcements. Read fresh every check, so edits apply without a restart.",
+    "",
+    "When the date changes in `timezone`, each person whose birthday it is gets a post in",
+    "`channel_id`, a thread on that post for wishes, and `role_id` until the day ends.",
+    "",
+    "message / thread_name: {user} is the mention, {name} is their server display name.",
+    "thread_archive_minutes: Discord allows 60, 1440, 4320 or 10080.",
+    "birthdays: one entry per person. `month` is 1-12. A Feb 29 birthday is celebrated on",
+    "  Feb 28 in non-leap years. `_name` is just a label for whoever edits this file.",
+    "Set role_id to null to skip the role."
+  ],
+  "enabled": true,
+  "timezone": "America/New_York",
+  "channel_id": "1546592018174574702",
+  "role_id": "1564450246300270602",
+  "message": "🎂 Happy Birthday to {user}!",
+  "thread_name": "Happy Birthday {name}",
+  "thread_archive_minutes": 1440,
+  "check_interval_seconds": 60,
+  "birthdays": [
+    { "_name": "server owner", "user_id": "586877333248540676", "month": 10, "day": 27 }
+  ]
+}

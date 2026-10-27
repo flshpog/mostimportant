@@ -5,6 +5,7 @@ const { resumeAll: resumeFishingFrenzy } = require('../handlers/fishingFrenzy');
 const { resumeAll: resumeGauntletFrenzy } = require('../handlers/gauntletFrenzy');
 const { start: startVcTranscription } = require('../handlers/vcTranscription');
 const { start: startBoardServer } = require('../handlers/boardServer');
+const { startBirthdays } = require('../handlers/birthdays');
 
 const GUILD_ID = '1414321682025545822';
 
@@ -61,6 +62,7 @@ module.exports = {
         });
 
         startPeriodicCheck(client);
+        startBirthdays(client);
         resumeBugFrenzy(client);
         resumeFishingFrenzy(client);
         resumeGauntletFrenzy(client);
