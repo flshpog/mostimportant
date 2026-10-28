@@ -1,6 +1,7 @@
 # editing the board in blender: a cheat sheet
 
-Open `art/board.blend`. Save often (Ctrl+S). If something goes wrong, Ctrl+Z undoes it,
+Open `art/board.blend` for the main board. Yoshi's Island (the merge board) is
+`art/board-yoshi.blend` and the underworld is `art/board-underworld.blend`. Save often (Ctrl+S). If something goes wrong, Ctrl+Z undoes it,
 and the last committed version is always in git.
 
 ## getting around

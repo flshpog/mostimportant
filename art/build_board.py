@@ -9,6 +9,9 @@ It clears the main board out of the open file, builds the new island, exports th
 website model (apps/web/public/models/board-<id>.glb), renders the Discord backdrop
 (packages/discord/assets/backdrop-<id>.png/.json) and saves art/board-<id>.blend.
 board.blend itself is never overwritten.
+
+Yoshi's Island (the merge board) has its own builder now: art/build_yoshi.py. Building
+"merge" with this script would replace it with the old plain island.
 """
 import bpy, bmesh, json, math, os, random
 from mathutils import Vector, noise

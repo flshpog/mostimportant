@@ -56,11 +56,11 @@ describe("boards and visibility", () => {
 
   it("the merge board only exists once it has a channel", async () => {
     await h.close();
-    h = await startHarness({ merge: { id: "merge", name: "Yoshi's Island", layout: "merge", channelId: "1560049999999999999", starStart: "s38" } });
+    h = await startHarness({ merge: { id: "merge", name: "Yoshi's Island", layout: "merge", channelId: "1560049999999999999", starStart: "s28" } });
     const r = await h.api("/api/boards", { as: HOST });
     expect(r.body.boards.map((b: { id: string }) => b.id)).toContain("merge");
     const merge = await h.api("/api/boards/merge", { as: HOST });
-    expect(merge.body.state.star).toBe("s38");
+    expect(merge.body.state.star).toBe("s28");
   });
 
   it("a player sees only their own board", async () => {

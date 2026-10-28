@@ -21,7 +21,7 @@ const rules = { ...season, turns: { ...season.turns, cooldownHours: 0 } };
 // those boards instead of the tribe board.
 const PREVIEW_BOARDS: Record<string, { boardId: string; name: string; star: string | null; starts: [string, string, string, string] }> = {
   main: { boardId: "mario-stadium", name: "Preview", star: "s62", starts: ["s45", "s45", "s88", "s12"] },
-  merge: { boardId: "merge", name: "Yoshi's Island", star: "s38", starts: ["s05", "s05", "s24", "s50"] },
+  merge: { boardId: "merge", name: "Yoshi's Island", star: "s28", starts: ["s05", "s05", "s24", "s50"] },
   underworld: { boardId: "redemption-island", name: "The Underworld", star: null, starts: ["s03", "s03", "s12", "s22"] },
 };
 const bagParam = window.location.hash.match(/items=([\w,-]+)/)?.[1].split(",") ?? null;
