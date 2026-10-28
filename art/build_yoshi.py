@@ -376,6 +376,12 @@ class Land:
         away = smoothstep(1.15, 2.6, pd) if flatten else 1.0
         egg_ring = smoothstep(2.4, 3.4, np.hypot(X - EGG[0], Yg - EGG[1]))
         z = z + hz * inland * away * egg_ring
+        # level pads for the shops
+        for s in self.spaces:
+            if "plot" in s:
+                px, py = s["plot"]
+                pad = smoothstep(2.9, 2.1, np.hypot(X - px, Yg - py))
+                z = z + (0.0 - z) * pad
         is_cliff = which == self.names.index("cliff")
         # the pond under the waterfall and the stream down to the lagoon
         sd = self.seg_dist(X, Yg, self.stream)
@@ -1325,6 +1331,8 @@ class Placer:
         self.terrain = terrain
         self.mesa = mesa
         self.taken = [(s["p"][0], s["p"][1], 0.9) for s in land.spaces]
+        # shop plots: nothing else goes near a shop
+        self.taken += [(s["plot"][0], s["plot"][1], 2.3) for s in land.spaces if "plot" in s]
         self.spaces = [Vector((s["p"][0], s["p"][1], 0.3)) for s in land.spaces]
 
     def hit(self, x, y):
@@ -1454,21 +1462,11 @@ def build_props(land, terrain, spans, conf, rng, mesa=None):
         dd = L.direction(sid)
         side = Vector((-dd.y, dd.x, 0))
         if s["type"] == "shop":
-            best = None
-            for sgn in (1, -1):
-                for off in (2.6, 3.0, 3.4):
-                    spot = q + side * sgn * off
-                    if pl.ok(spot.x, spot.y, 1.5, path=0.6, occl=(1.5, 0.0, 3.0)):
-                        best = spot
-                        break
-                if best:
-                    break
-            if best is None:
-                best = q + side * (2.8 if side.y > 0 else -2.8)
-            o = (best - q).normalized()
+            # the plot yoshi_layout picked: flat, clear of the paths, door facing the space
+            plot = next(t["plot"] for t in land.spaces if t["id"] == sid)
+            u = (q - Vector((plot[0], plot[1], 0))).normalized()
             kitname = "Kit_shop_pink" if s.get("shop") == "pink" else "Kit_shop"
-            put(kitname, f"Shop {sid}", (best.x, best.y, (pl.ground(best.x, best.y) or 0) - 0.02), math.atan2(-o.x, o.y) + math.pi, 1.0, "Shops")
-            pl.take(best.x, best.y, 1.9)
+            put(kitname, f"Shop {sid}", (plot[0], plot[1], -0.02), math.atan2(u.x, -u.y), 1.0, "Shops")
         if len(s["next"]) > 1:
             for sgn in (1, -1):
                 spot = q + side * sgn * 1.45
@@ -1785,7 +1783,7 @@ def sailboat_kit():
 
 def build_dock(pl, land, rng):
     isl = Y.ISLANDS["dock"]
-    a = -0.55   # out to the east, towards the open sea
+    a = -0.2    # out to the east, towards the open sea, clear of the shop
     r = Y.island_radius(isl, a)
     u = Vector((math.cos(a), math.sin(a), 0))
     s = Vector((-u.y, u.x, 0))

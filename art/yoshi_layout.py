@@ -53,7 +53,11 @@ EXITS = [([(-10.2, 3.6)], (-14.6, 8.6)), ([(-10.2, -4.4)], (-14.6, -8.3))]
 # Space types: each route cycles a pattern, then the specials go where they fit the
 # islands (shops by the dock and in the jungle, events on the islets and by the egg).
 PATTERN = "brbgbrbbrgbbrbgb"
-SHOPS = {(13.4, -9.4): "purple", (-14.8, 8.0): "pink"}
+# Shops: which island gets which. The space is picked by where the island has a clear,
+# flat plot for the shop building beside the path (see shop_plot).
+SHOPS = {"dock": "purple", "jungle": "pink"}
+SHOP_RADIUS = 1.7          # the shop building's footprint (its mushroom cap)
+CAMERA = (0.0, -30.0, 31.0)  # the website's overview camera
 EVENTS = [(18.9, -0.4), (-18.9, -0.4), (0.0, -2.35), (0.0, 13.6)]
 
 def wobble(seed, theta):
@@ -174,7 +178,59 @@ def build_graph():
     return spaces, ring_ids, egg_ids, curves
 
 
-def assign_types(spaces, ring_ids, egg_ids):
+def hides_a_space(spaces, x, y, r, z0, z1):
+    """True if a cylinder at (x, y) stands between any space and the overview camera."""
+    for s in spaces:
+        sx, sy = s["p"]
+        tx, ty, tz = CAMERA[0] - sx, CAMERA[1] - sy, CAMERA[2] - 0.3
+        flat = math.hypot(tx, ty)
+        ux, uy, up = tx / flat, ty / flat, tz / flat
+        h0, h1 = max(0.0, (z0 - 0.3) / up), max(0.0, (z1 - 0.3) / up)
+        ax, ay = sx + ux * h0, sy + uy * h0
+        bx, by = sx + ux * h1, sy + uy * h1
+        dx, dy = bx - ax, by - ay
+        L2 = dx * dx + dy * dy
+        t = 0.0 if L2 < 1e-9 else max(0.0, min(1.0, ((x - ax) * dx + (y - ay) * dy) / L2))
+        if math.hypot(ax + dx * t - x, ay + dy * t - y) < r + 0.3:
+            return True
+    return False
+
+
+def shop_plot(spaces, curves, i, island):
+    """The best spot for a shop building next to space i, or None: on solid ground,
+    clear of every path, not hiding any space, preferably behind the path."""
+    pts = [p for c in curves.values() for p in Y_dense(c)]
+    sx, sy = spaces[i]["p"]
+    best = None
+    for k in range(36):
+        a = math.tau * k / 36
+        for r in (2.7, 3.0, 3.4):
+            x, y = sx + math.cos(a) * r, sy + math.sin(a) * r
+            d, name = land_sdf(x, y)
+            if name != island or d > -SHOP_RADIUS - 0.2:
+                continue
+            pd = min(math.dist((x, y), p) for p in pts)
+            if pd < SHOP_RADIUS + 0.85:
+                continue
+            if any(math.dist((x, y), t["p"]) < SHOP_RADIUS + 0.75 for t in spaces):
+                continue
+            if hides_a_space(spaces, x, y, SHOP_RADIUS, 0.0, 3.1):
+                continue
+            score = (y - sy) * 0.6 - abs(r - 2.9) * 2 + min(pd - 2.5, 1.0) + min(-d - 2.0, 1.0)
+            if best is None or score > best[0]:
+                best = (score, (x, y))
+    return best
+
+
+def Y_dense(curve, step=0.25):
+    out = []
+    for a, b in zip(curve, curve[1:]):
+        n = max(1, int(math.dist(a, b) / step))
+        out += [(a[0] + (b[0] - a[0]) * t / n, a[1] + (b[1] - a[1]) * t / n) for t in range(n)]
+    return out
+
+
+def assign_types(spaces, ring_ids, egg_ids, curves=None):
     types = {}
     k = 0
     for route in ["ring", "egg", "entry0", "entry1", "exit0", "exit1"]:
@@ -194,7 +250,26 @@ def assign_types(spaces, ring_ids, egg_ids):
     def nearest(pt):
         return min(range(len(spaces)), key=lambda i: math.dist(spaces[i]["p"], pt))
 
-    shops = {nearest(pt): v for pt, v in SHOPS.items()}
+    # a shop goes on the ring space of its island with the best plot for the building,
+    # away from forks and merges so it never sits between two paths
+    busy = set()
+    for i, s in enumerate(spaces):
+        if len(s["next"]) > 1 or i in merges:
+            busy |= {i, *s["next"]}
+            busy |= {j for j, t in enumerate(spaces) if i in t["next"]}
+    shops = {}
+    for island, variant in SHOPS.items():
+        options = []
+        for i in ring_ids[1:]:
+            if i in busy or land_sdf(*spaces[i]["p"])[1] != island:
+                continue
+            plot = shop_plot(spaces, curves, i, island)
+            if plot:
+                options.append((plot[0], i, plot[1]))
+        assert options, f"no room for a shop on {island}"
+        _, i, plot = max(options)
+        shops[i] = variant
+        spaces[i]["plot"] = plot
     for pt in EVENTS:
         types[nearest(pt)] = "event"
     for i in shops:
@@ -208,7 +283,7 @@ def to_pos(p):
 
 def layout():
     spaces, ring_ids, egg_ids, curves = build_graph()
-    types, shops = assign_types(spaces, ring_ids, egg_ids)
+    types, shops = assign_types(spaces, ring_ids, egg_ids, curves)
     # ids follow the ring first, then the shortcuts, so s01 is the start
     ids = {i: f"s{k + 1:02d}" for k, i in enumerate(range(len(spaces)))}
     out = []
