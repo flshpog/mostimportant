@@ -14,6 +14,16 @@ Third-party assets used by the Season 3 board.
   CC BY 4.0. Changes: split into four single eggs (green, blue, pink, yellow), each
   resized and set upright, textures shrunk to 256px. Source file: `art/yoshi-eggs.blend`.
 
+- **Apples** (hanging on the Yoshi's Island fruit trees, and fallen under them):
+  "Super Mario - Berry" by **kingston.shamily** on Sketchfab,
+  https://sketchfab.com/3d-models/38f609e7ed434f898c4428cbf35c721c , licensed
+  CC BY 4.0. Changes: resized, pivot moved to the stem. Source file: `art/yoshi-fruit.blend`.
+- **Watermelons** (hanging on the Yoshi's Island melon trees): from "Low Poly Fruit
+  Pack" by **RoVenRa** on Sketchfab,
+  https://sketchfab.com/3d-models/fb44ad2e03674924a70578bb290f4704 , licensed
+  CC BY 4.0. Changes: taken out of the pack, stood upright, texture shrunk to 512px,
+  only the colour map kept. Source file: `art/yoshi-fruit.blend`.
+
 ## Item models (`apps/web/public/models/items/`, source file `art/items.blend`)
 
 Shown when an item is bought or used on the website.

@@ -895,9 +895,43 @@ def palm(variant):
     return kit(f"Kit_palm_{variant}", build), h, lean
 
 
+FAN_FRUIT = {"apple": "Kit_fruit_apple", "melon": "Kit_fruit_melon"}
+# where the fruit hangs on each tree: kind -> [(fruit, local matrix)]
+FRUIT_SLOTS = {}
+
+
+def fan_fruit():
+    """The apple ("Super Mario - Berry" by kingston.shamily) and the watermelon (from
+    "Low Poly Fruit Pack" by RoVenRa), both CC BY 4.0 on Sketchfab, credit in
+    docs/CREDITS.md. Appended from art/yoshi-fruit.blend; None if that file is missing."""
+    path = os.path.join(REPO, "art", "yoshi-fruit.blend")
+    if not os.path.exists(path):
+        return None
+    missing = [n for n in FAN_FRUIT.values() if n not in bpy.data.meshes]
+    if missing:
+        with bpy.data.libraries.load(path, link=False) as (src, dst):
+            dst.meshes = missing
+    return {k: bpy.data.meshes[n] for k, n in FAN_FRUIT.items()}
+
+
+def canopy_exit(blobs, start, d, pad=0.0):
+    """Where a ray from inside the canopy comes out of the last leafy blob."""
+    t = 0.0
+    while t < 4:
+        q = start + d * t
+        if all((q - Vector(c)).length > r * 1.07 + pad for c, r in blobs):
+            return q
+        t += 0.02
+    return start + d * t
+
+
 def fruit_tree(kind):
-    """A round fruit tree: apples dotted over the canopy, or melons hanging under it."""
+    """A round fruit tree: apples hanging all over the canopy, or melons hanging from
+    under its edge. With the fan-made fruit the fruit are separate objects (see
+    FRUIT_SLOTS and put_tree); without it they're built into the tree."""
     rng = random.Random(70 + kind)
+    fan = fan_fruit()
+    slots = FRUIT_SLOTS[kind] = []
 
     def build(mb):
         mb.add(cyl(10, 0.2, 0.13, 1.5, 3), colour=TRUNK_A)
@@ -907,27 +941,63 @@ def fruit_tree(kind):
         blobs.append(((0, 0, 2.85), 0.75))
         for c, r in blobs:
             mb.add(blob(rng.random() * 10, 14, 9, 0.08), T(c, scale=r), lambda p: mix(LEAF, LEAF_LIGHT, 0.35 + 0.55 * max(0, p[2])))
+        centre = Vector((0, 0, 2.15))
         if kind == 0:
-            # apples on the outside of the canopy
-            for k in range(16):
-                a = rng.uniform(0, TAU)
-                el = rng.uniform(-0.5, 0.7)
-                c, r = blobs[0]
-                p = Vector((math.cos(a) * math.cos(el), math.sin(a) * math.cos(el), math.sin(el))) * (r * 1.06 + 0.3) + Vector(c)
-                p.z = max(p.z, 1.6)
-                mb.add(sphere(10, 7), T(p, scale=0.15), (0.95, 0.20, 0.22))
-                mb.add(cyl(4, 0.015, 0.015, 0.08), T(p + Vector((0, 0, 0.13))), (0.35, 0.25, 0.1))
-                mb.add(sphere(6, 4), T(p + Vector((0.05, 0, 0.2)), scale=(0.07, 0.035, 0.02)), LEAF)
+            # apples all round the sides and underside of the canopy, spread evenly
+            # (golden-angle spiral) so none bunch up and none sit on top
+            n = 18
+            for k in range(n):
+                a = k * 2.39996 + rng.uniform(-0.15, 0.15)
+                el = -0.55 + 0.82 * (k + 0.5) / n + rng.uniform(-0.06, 0.06)
+                d = Vector((math.cos(a) * math.cos(el), math.sin(a) * math.cos(el), math.sin(el)))
+                # the stem tucks into the leaves; the apple hangs just clear of them
+                p = canopy_exit(blobs, centre, d, 0.02) - d * 0.06
+                M = T(p, (rng.uniform(-0.2, 0.2), rng.uniform(-0.2, 0.2), rng.uniform(0, TAU)), rng.uniform(1.0, 1.25))
+                if fan:
+                    slots.append(("apple", M))
+                else:
+                    mb.add(sphere(10, 7), M @ T((0, 0, -0.15), scale=0.15), (0.95, 0.20, 0.22))
         else:
-            # melons hanging below
+            # melons hanging on short stalks from under the edge of the canopy
             for k in range(5):
                 a = TAU * k / 5 + rng.uniform(-0.2, 0.2)
-                hang = Vector((math.cos(a) * 0.95, math.sin(a) * 0.95, 1.55))
-                mb.add(tube([hang + Vector((0, 0, 0.45)), hang + Vector((0, 0, 0.12))], 0.02, 4), colour=(0.30, 0.50, 0.15))
-                mel = sphere(14, 9)
-                mb.add(mel, T(hang - Vector((0, 0, 0.12)), (0.2, 0, a), (0.26, 0.24, 0.3)),
-                       lambda p: (0.20, 0.55, 0.18) if math.sin(math.atan2(p[1], p[0]) * 7) > 0.25 else (0.55, 0.85, 0.35))
+                d = Vector((math.cos(a), math.sin(a), -0.3)).normalized()
+                p = canopy_exit(blobs, centre, d, 0.0)
+                top = p - d * 0.12
+                hang = p + Vector((0, 0, -0.12))
+                mb.add(tube([top, hang + Vector((0, 0, 0.02))], [0.025, 0.018], 5), colour=(0.30, 0.50, 0.15))
+                M = T(hang, (rng.uniform(-0.12, 0.12), rng.uniform(-0.12, 0.12), rng.uniform(0, TAU)), rng.uniform(1.15, 1.35))
+                if fan:
+                    slots.append(("melon", M))
+                else:
+                    mb.add(sphere(14, 9), M @ T((0, 0, -0.25), scale=(0.24, 0.24, 0.27)),
+                           lambda p: (0.20, 0.55, 0.18) if math.sin(math.atan2(p[1], p[0]) * 7) > 0.25 else (0.55, 0.85, 0.35))
     return kit(f"Kit_fruit_tree_{kind}", build)
+
+
+def put_tree(kind, mesh, name, loc, rot, scale, pl=None, rng=None):
+    """A fruit tree plus its fruit (and, for apple trees, a couple of windfalls)."""
+    put(mesh, name, loc, rot, scale, "Trees")
+    fan = fan_fruit()
+    if not fan:
+        return
+    W = T(loc, (0, 0, rot), scale)
+    for k, (fruit, M) in enumerate(FRUIT_SLOTS.get(kind, [])):
+        ob = bpy.data.objects.new(f"{name} {fruit} {k}", fan[fruit])
+        ob.matrix_world = W @ M
+        bb.link(ob, "Trees")
+    if kind == 0 and pl is not None and rng is not None:
+        for k in range(rng.randint(1, 3)):
+            a = rng.uniform(0, TAU)
+            r = rng.uniform(0.6, 1.4) * scale
+            x, y = loc[0] + math.cos(a) * r, loc[1] + math.sin(a) * r
+            z = pl.ground(x, y)
+            if z is None or pl.land.path_dist(x, y) < 1.0:
+                continue
+            # lying on its side in the grass
+            ob = bpy.data.objects.new(f"{name} apple fallen {k}", fan["apple"])
+            ob.matrix_world = T((x, y, z + 0.13), (rng.uniform(1.2, 1.9), 0, rng.uniform(0, TAU)), 0.95) @ Matrix.Translation((0, 0, 0.15))
+            bb.link(ob, "Trees")
 
 
 def banana_plant(variant):
@@ -1540,7 +1610,7 @@ def build_props(land, terrain, spans, conf, rng, mesa=None):
             if not pl.ok(x, y, 1.1, path=1.2, occl=(1.1, 1.3, 3.0)):
                 continue
             k = 1 if (name == "grove" and n_tree % 2) or name == "egg" else 0
-            put(fruit[k], f"tree_fruit_{n_tree}", (x, y, pl.ground(x, y) - 0.05), rng.uniform(0, TAU), rng.uniform(0.75, 0.9), "Trees")
+            put_tree(k, fruit[k], f"tree_fruit_{n_tree}", (x, y, pl.ground(x, y) - 0.05), rng.uniform(0, TAU), rng.uniform(0.75, 0.9), pl, rng)
             pl.take(x, y, 1.0)
             n_tree += 1
             want -= 1
@@ -1591,7 +1661,8 @@ def build_props(land, terrain, spans, conf, rng, mesa=None):
             put(palms[k][0], f"tree_palm_top_{i}", (x, y, z - 0.05), rng.uniform(0, TAU), rng.uniform(0.9, 1.15), "Palms")
             pl.take(x, y, 1.0)
         else:
-            put(fruit[rng.randrange(2)], f"tree_fruit_top_{i}", (x, y, z - 0.05), rng.uniform(0, TAU), rng.uniform(0.8, 0.95), "Trees")
+            k = rng.randrange(2)
+            put_tree(k, fruit[k], f"tree_fruit_top_{i}", (x, y, z - 0.05), rng.uniform(0, TAU), rng.uniform(0.8, 0.95), pl, rng)
             pl.take(x, y, 1.3)
 
     # ---- jungle undergrowth: bananas and ferns
