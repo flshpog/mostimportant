@@ -320,7 +320,7 @@ class Land:
         # the cliff itself is its own mesh (see build_mesa): a rounded block
         self.mesa = dict(cx=0.0, cy=self.cliff_y + 2.15, a=6.5, b=2.3, n=2.6)
         # the waterfall: halfway between two spaces on the cliff island, west of centre
-        ring = [s["p"] for s in spaces if s["route"] == "ring" and abs(s["p"][1] - 13.4) < 0.6 and -6.5 < s["p"][0] < -2.0]
+        ring = [s["p"] for s in spaces if s["route"] == "ring" and abs(s["p"][1] - 13.4) < 0.6 and -3.5 < s["p"][0] < 0.0]
         ring.sort()
         fx = (ring[0][0] + ring[1][0]) / 2 if len(ring) >= 2 else -4.2
         self.fall_x = fx
@@ -813,8 +813,26 @@ SHORTCUT_STYLE = {"entry0": "stone", "entry1": "rope", "exit0": "plank", "exit1"
 RING_STYLES = ["plank", "rope", "log", "plank", "rope", "log", "plank", "rope", "log"]
 
 
+def check_bridges(spans, gap=2.4):
+    """Warns about bridges that come too close (decks and rails would overlap). Two
+    bridges meeting end to end on a small islet are fine; anything side by side isn't."""
+    bad = []
+    for i in range(len(spans)):
+        for j in range(i + 1, len(spans)):
+            a, b = spans[i][1], spans[j][1]
+            d = min(math.dist(p, q) for p in a[::2] for q in b[::2])
+            ends = min(math.dist(p, q) for p in (a[0], a[-1]) for q in (b[0], b[-1]))
+            # end to end: the closest points are their ends, and they don't run alongside
+            if d < gap and not (abs(d - ends) < 0.3 and d > 1.6):
+                bad.append((spans[i][0], spans[j][0], round(d, 2), tuple(round(v, 1) for v in a[0])))
+    for b in bad:
+        print("bridges too close:", b)
+    return bad
+
+
 def build_bridges(land):
     spans = find_bridges(land)
+    check_bridges(spans)
     rng = random.Random(3)
     ring_k = 0
     for k, (route, pts) in enumerate(spans):
@@ -1711,8 +1729,8 @@ def build_props(land, terrain, spans, conf, rng, mesa=None):
 
     def smiley(x, y, z, a):
         put(rng.choice(smileys), f"smiley_{len(bpy.data.collections['Flowers'].objects)}", (x, y, z - 0.03), rng.uniform(-0.35, 0.35), rng.uniform(0.9, 1.2), "Flowers")
-    scatter(pl, rng, ["flowers"], 10, 0.4, smiley, path=0.35, occl=(0.45, 0, 1.3))
-    scatter(pl, rng, ["egg", "grove", "beach", "cliff", "dock"], 12, 0.4, smiley, path=0.35, occl=(0.45, 0, 1.3))
+    scatter(pl, rng, ["flowers"], 10, 0.4, smiley, path=1.3, occl=(0.45, 0, 1.3))
+    scatter(pl, rng, ["egg", "grove", "beach", "cliff", "dock"], 12, 0.4, smiley, path=1.3, occl=(0.45, 0, 1.3))
     # a ring of smiley flowers round the egg's nest
     for k in range(9):
         a = math.pi * 0.05 + math.pi * 0.9 * k / 8   # the back half only

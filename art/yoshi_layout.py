@@ -28,7 +28,8 @@ ISLANDS = {
     "jungle":  dict(c=(-15.0, 9.8), r=(5.4, 4.6), rot=-0.6, seed=6),
     "islet_w": dict(c=(-19.2, -0.6), r=(2.4, 2.7), rot=0.0, seed=7),
     "flowers": dict(c=(-14.0, -9.8), r=(4.9, 3.9), rot=0.5, seed=8),
-    "egg":     dict(c=(0.0, 0.3), r=(7.0, 4.7), rot=0.0, seed=9),
+    # long in x, so the shortcuts fork on land at its tips before they reach the water
+    "egg":     dict(c=(0.0, 0.3), r=(9.8, 4.7), rot=0.0, seed=9),
 }
 
 # The ring, anticlockwise from the start on the beach.
@@ -47,8 +48,10 @@ RING = [
 EGG_PATH = [(5.4, -0.9), (2.8, -2.0), (0.0, -2.35), (-2.8, -2.0), (-5.4, -0.9)]
 # Shortcut bridges: (ring point to leave from, bends) into the egg path's first space,
 # and (bends, ring point to join) out of its last.
-ENTRIES = [((14.6, -8.3), [(10.2, -4.4)]), ((14.6, 8.6), [(10.2, 3.6)])]
-EXITS = [([(-10.2, 3.6)], (-14.6, 8.6)), ([(-10.2, -4.4)], (-14.6, -8.3))]
+# The southern pair follow their island's north shore for a bit first, so they leave
+# the land well clear of the main path's bridge next to them.
+ENTRIES = [((14.6, -8.3), [(12.2, -6.4), (9.4, -3.6)]), ((14.6, 8.6), [(10.2, 3.6)])]
+EXITS = [([(-10.2, 3.6)], (-14.6, 8.6)), ([(-9.4, -3.6), (-12.2, -6.4)], (-14.6, -8.3))]
 
 # Space types: each route cycles a pattern, then the specials go where they fit the
 # islands (shops by the dock and in the jungle, events on the islets and by the egg).
