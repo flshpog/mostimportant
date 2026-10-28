@@ -31,6 +31,8 @@ WATER = Y.WATER
 TAU = math.pi * 2
 # the website's overview camera, in Blender coordinates (three.js (0, 31, 30))
 CAMERA = Vector((0.0, -30.0, 31.0))
+# the follow camera sits this far from the token it follows (three.js (0, 8.5, 9.5))
+FOLLOW = Vector((0.0, -9.5, 8.5))
 
 COLLECTIONS = ["Terrain", "Water", "Foam", "Paths", "Bridges", "Palms", "Trees", "Plants", "Flowers", "Grass", "Rocks",
                "Eggs", "Beach", "Dock", "Waterfall", "Shops", "Signposts", "Start", "Sky", "Spaces"]
@@ -166,6 +168,17 @@ def box(lo, hi):
     return v, f
 
 
+def board(sx, sy, sz):
+    """A plank: a box centred on the origin, with its top edges slightly bevelled."""
+    x, y, z, b = sx / 2, sy / 2, sz / 2, min(sx, sz) * 0.25
+    v = [(-x, -y, -z), (x, -y, -z), (x, y, -z), (-x, y, -z),
+         (-x, -y, z - b), (x, -y, z - b), (x, y, z - b), (-x, y, z - b),
+         (-x + b, -y, z), (x - b, -y, z), (x - b, y, z), (-x + b, y, z)]
+    f = [(0, 3, 2, 1), (8, 9, 10, 11), (0, 1, 5, 4), (2, 3, 7, 6), (1, 2, 6, 5), (3, 0, 4, 7),
+         (4, 5, 9, 8), (6, 7, 11, 10), (5, 6, 10, 9), (7, 4, 8, 11)]
+    return v, f
+
+
 def rounded_box(sx, sy, sz, seg=6, rings=6):
     """A pillowy box: a sphere pushed out towards its corners."""
     v, f = sphere(seg * 2, rings)
@@ -295,7 +308,11 @@ class Land:
                     continue
                 if name == "cliff" and y > isl["c"][1] + 0.3:
                     continue
-                self.hills.append((x, y, rng.uniform(1.4, 2.4), rng.uniform(0.5, 1.3)))
+                r, h = rng.uniform(1.4, 2.4), rng.uniform(0.5, 1.3)
+                # a hill must not rise between a space and either camera
+                if Y.hides_a_space(spaces, x, y, r * 0.75, 0.0, h):
+                    continue
+                self.hills.append((x, y, r, h))
                 want -= 1
         cliff = Y.ISLANDS["cliff"]
         self.cliff_y = cliff["c"][1] + 1.0          # the front of the cliff
@@ -371,6 +388,8 @@ class Land:
             hz += h * np.exp(-q * 1.6)
         rolling = np.vectorize(lambda x, y: noise.noise(Vector((x * 0.16, y * 0.16, 2.0))))(X, Yg)
         hz += np.clip(rolling + 0.25, 0, None) * 0.45
+        # overlapping bumps add up; keep the hills gentle rolls, not peaks
+        hz = 1.5 * np.tanh(hz / 1.5)
         if pd is None:
             pd = self.path_dist_grid(X, Yg)
         away = smoothstep(1.15, 2.6, pd) if flatten else 1.0
@@ -678,7 +697,7 @@ def bridge_plank(mb, pts, rng, half=0.9):
         yaw = rng.uniform(-0.04, 0.04)
         c = mix(WOOD, WOOD_LIGHT, rng.uniform(0, 0.6))
         M = Matrix.Translation(p + Vector((0, 0, -0.045))) @ Matrix(((t.x, s.x, 0), (t.y, s.y, 0), (0, 0, 1))).to_4x4() @ Matrix.Rotation(yaw, 4, "Z")
-        mb.add(rounded_box(0.21, half * 2, 0.09, 4, 4), M, c, smooth=False)
+        mb.add(board(0.21, half * 2, 0.09), M, c, smooth=False)
     fr = frames(along(pts, 0.4))
     for side in (-1, 1):
         beam = [tuple(p + s * side * (half - 0.08) + Vector((0, 0, -0.13))) for p, t, s in fr]
@@ -700,7 +719,7 @@ def bridge_rope(mb, pts, rng, half=0.85):
         c = mix(WOOD_LIGHT, WOOD, rng.uniform(0, 0.7))
         yaw = rng.uniform(-0.06, 0.06)
         M = Matrix.Translation(p + Vector((0, 0, -0.04))) @ Matrix(((t.x, s.x, 0), (t.y, s.y, 0), (0, 0, 1))).to_4x4() @ Matrix.Rotation(yaw, 4, "Z")
-        mb.add(rounded_box(0.2, half * 2 - rng.uniform(0, 0.12), 0.07, 4, 4), M, c, smooth=False)
+        mb.add(board(0.2, half * 2 - rng.uniform(0, 0.12), 0.07), M, c, smooth=False)
     fr = frames(along(pts, 0.3))
     for side in (-1, 1):
         under = [tuple(p + s * side * (half - 0.15) + Vector((0, 0, -0.1))) for p, t, s in fr]
@@ -996,7 +1015,7 @@ def put_tree(kind, mesh, name, loc, rot, scale, pl=None, rng=None):
                 continue
             # lying on its side in the grass
             ob = bpy.data.objects.new(f"{name} apple fallen {k}", fan["apple"])
-            ob.matrix_world = T((x, y, z + 0.13), (rng.uniform(1.2, 1.9), 0, rng.uniform(0, TAU)), 0.95) @ Matrix.Translation((0, 0, 0.15))
+            ob.matrix_world = T((x, y, z + 0.06), (rng.uniform(1.2, 1.9), 0, rng.uniform(0, TAU)), 0.95) @ Matrix.Translation((0, 0, 0.15))
             bb.link(ob, "Trees")
 
 
@@ -1441,13 +1460,15 @@ class Placer:
         h = self.hit(x, y)
         return h is not None and h[1] >= limit
 
-    def hides_a_space(self, x, y, r, z0, z1):
-        """True if a cylinder (x, y, radius r, heights z0..z1) stands between a space and the camera."""
+    def hides_a_space(self, x, y, r, z0, z1, follow_r=None):
+        """True if a cylinder (x, y, radius r, heights z0..z1) stands between a space and
+        the overview camera or the follow camera. follow_r: a thinner radius to use for
+        the follow camera, which is close enough to see between palm fronds."""
         c = Vector((x, y))
         gz = max(0.0, self.ground(x, y) or 0.0)
         z0, z1 = z0 + gz, z1 + gz
-        for s in self.spaces:
-            to = CAMERA - s
+        for s, to in ((s, to) for s in self.spaces for to in (CAMERA - s, FOLLOW)):
+            rr = follow_r if (follow_r is not None and to is FOLLOW) else r
             flat = to.xy.length
             up = to.z / flat              # height gained per metre towards the camera
             u = to.xy.normalized()
@@ -1460,12 +1481,13 @@ class Placer:
             b = s.xy + u * h1
             ab = b - a
             t = 0.0 if ab.length_squared < 1e-9 else max(0.0, min(1.0, (c - a).dot(ab) / ab.length_squared))
-            if (a + ab * t - c).length < r + 0.35:
+            if (a + ab * t - c).length < rr + 0.35:
                 return True
         return False
 
     def ok(self, x, y, r, path=1.0, zmin=-0.05, zmax=99, occl=None, water=False):
-        if self.land.path_dist(x, y) < r + path:
+        # never on the path: it's 1.5 m wide and the spaces' discs are 2 m across
+        if self.land.path_dist(x, y) < r + max(path, 0.95):
             return False
         if any((x - a) ** 2 + (y - b) ** 2 < (r + rr) ** 2 for a, b, rr in self.taken):
             return False
@@ -1540,11 +1562,12 @@ def build_props(land, terrain, spans, conf, rng, mesa=None):
     L = bb.Layout("merge")
     start = L.data["startSpace"]
     p, d = L.pos[start], L.direction(start)
-    gate = p - d * 1.0
-    rot = math.atan2(d.y, d.x) - math.pi / 2
-    put("Kit_start_gate", "Start start_gate", (gate.x, gate.y, 0.0), rot, 1.0, "Start")
-    put("StartText", "Start start_text", (gate.x, gate.y, 0.0), rot, 1.0, "Start")
-    pl.take(gate.x, gate.y, 1.4)
+    # the path runs across the screen here, so a gate over it would be seen edge-on;
+    # stand it just behind the start space instead, facing the camera like a banner
+    gate = p + Vector((0, 1.25, 0))
+    put("Kit_start_gate", "Start start_gate", (gate.x, gate.y, pl.ground(gate.x, gate.y) or 0.0), 0.0, 1.0, "Start")
+    put("StartText", "Start start_text", (gate.x, gate.y, pl.ground(gate.x, gate.y) or 0.0), 0.0, 1.0, "Start")
+    pl.take(gate.x, gate.y, 1.5)
     for sid, s in L.spaces.items():
         q = L.pos[sid]
         dd = L.direction(sid)
@@ -1562,6 +1585,10 @@ def build_props(land, terrain, spans, conf, rng, mesa=None):
                     break
             put("Kit_signpost", f"Signpost {sid}", (spot.x, spot.y, (pl.ground(spot.x, spot.y) or 0) - 0.06), math.atan2(dd.y, dd.x) + math.pi / 2, 1.0, "Signposts")
             pl.take(spot.x, spot.y, 0.5)
+
+    # ---- the dock: a pier out to a hut on stilts and a rowboat, before anything else
+    # takes the ground where it comes ashore
+    build_dock(pl, land, rng)
 
     # ---- the giant egg on its nest
     ex, ey = EGG
@@ -1590,7 +1617,7 @@ def build_props(land, terrain, spans, conf, rng, mesa=None):
             ang = base + da
             lean = palms[k][2]
             cx, cy = x + math.cos(ang) * lean, y + math.sin(ang) * lean
-            if pl.hides_a_space(cx, cy, 1.9, h - 0.9, h + 0.6) or pl.hides_a_space(x, y, 0.3, 0, h):
+            if pl.hides_a_space(cx, cy, 1.9, h - 0.9, h + 0.6, follow_r=1.3) or pl.hides_a_space(x, y, 0.3, 0, h, follow_r=0.0):
                 continue
             # seen from straight above (the Discord image) the crown mustn't cover a space
             if land.path_dist(cx, cy) < 1.7 or any(math.hypot(cx - q.x, cy - q.y) < 2.5 for q in pl.spaces):
@@ -1618,7 +1645,7 @@ def build_props(land, terrain, spans, conf, rng, mesa=None):
     # ---- palms round every shore, leaning out over the water
     n_palm = 0
     for name, isl in Y.ISLANDS.items():
-        want = {"beach": 7, "dock": 6, "islet_e": 3, "islet_w": 3, "grove": 3, "cliff": 5, "jungle": 9, "flowers": 5, "egg": 6}[name]
+        want = {"beach": 10, "dock": 6, "islet_e": 3, "islet_w": 3, "grove": 3, "cliff": 5, "jungle": 9, "flowers": 5, "egg": 6}[name]
         for _ in range(want * 40):
             if want <= 0:
                 break
@@ -1746,8 +1773,7 @@ def build_props(land, terrain, spans, conf, rng, mesa=None):
             pl.take(hx, hy, 1.9)
             break
 
-    # ---- the dock: a pier out to a hut on stilts, a rowboat, crates and barrels
-    build_dock(pl, land, rng)
+    # ---- the dock's crates and barrels (the pier itself is built first, below)
     crate, barrel = crate_kit(), barrel_kit()
     scatter(pl, rng, ["dock", "grove"], 5, 0.45, lambda x, y, z, a: put(crate, f"crate_{x:.1f}", (x, y, z - 0.02), rng.uniform(0, TAU), 1.0, "Dock"), path=0.4, occl=(0.45, 0, 0.8))
     scatter(pl, rng, ["dock", "beach"], 4, 0.4, lambda x, y, z, a: put(barrel, f"barrel_{x:.1f}", (x, y, z - 0.02), rng.uniform(0, TAU), 1.0, "Dock"), path=0.4, zmin=-0.3, occl=(0.4, 0, 0.8))
@@ -1779,14 +1805,14 @@ def build_props(land, terrain, spans, conf, rng, mesa=None):
         isl = Y.ISLANDS[rng.choice(list(Y.ISLANDS))]
         x, y, a = next(island_points(isl, rng))
         z = pl.ground(x, y)
-        if z is None or z < -0.03 or land.path_dist(x, y) < 1.05:
+        if z is None or z < -0.03 or land.path_dist(x, y) < 1.25:
             continue
         put(f"Kit_flowers_{rng.randrange(4)}", f"flowers_{i}", (x, y, z - 0.02), rng.uniform(0, TAU), rng.uniform(0.8, 1.2), "Flowers")
     for i in range(800):
         isl = Y.ISLANDS[rng.choice(list(Y.ISLANDS))]
         x, y, a = next(island_points(isl, rng))
         z = pl.ground(x, y)
-        if z is None or z < -0.02 or land.path_dist(x, y) < 0.95:
+        if z is None or z < -0.02 or land.path_dist(x, y) < 1.2:
             continue
         put(rng.choice(grass), f"grass_{i}", (x, y, z - 0.02), rng.uniform(0, TAU), rng.uniform(1.0, 1.6), "Grass")
 
@@ -1885,12 +1911,17 @@ def build_dock(pl, land, rng):
     for t in np.arange(0, length, 0.26):
         p = start + u * t
         M = Matrix.Translation(p + Vector((0, 0, 0.12))) @ Matrix(((u.x, s.x, 0), (u.y, s.y, 0), (0, 0, 1))).to_4x4()
-        mb.add(rounded_box(0.22, 1.5, 0.08, 4, 4), M, mix(WOOD, WOOD_LIGHT, rng.uniform(0, 0.6)), smooth=False)
-    for t in np.arange(0.4, length, 1.2):
-        for sgn in (-1, 1):
+        mb.add(board(0.22, 1.5, 0.08), M, mix(WOOD, WOOD_LIGHT, rng.uniform(0, 0.6)), smooth=False)
+    post_t = list(np.arange(0.4, length, 1.2))
+    for sgn in (-1, 1):
+        tops = []
+        for t in post_t:
             p = start + u * t + s * sgn * 0.8
             mb.add(cyl(8, 0.09, 0.09, 0.6 - WATER + 0.3), T(p + Vector((0, 0, WATER - 0.3))), WOOD_DARK)
             mb.add(sphere(8, 5), T(p + Vector((0, 0, 0.62)), scale=0.1), WOOD)
+            tops.append(p + Vector((0, 0, 0.5)))
+        for a, b in zip(tops, tops[1:]):
+            mb.add(tube(sag(a, b, 0.06), 0.025, 5, caps=False), colour=ROPE)
     # the hut's platform at the end
     hp = end + u * 1.3
     mb.add(cyl(20, 1.75, 1.75, 0.12), T(hp + Vector((0, 0, 0.08))), WOOD)
@@ -1901,10 +1932,15 @@ def build_dock(pl, land, rng):
     bb.link(bpy.data.objects.new("Dock pier", me), "Dock")
     put(hut_kit(), "House hut", (hp.x, hp.y, 0.2), math.atan2(u.y, u.x) + math.pi / 2 + math.pi, 1.0, "Dock")
     put(boat_kit(), "rowboat", tuple(end + s * 1.5 + Vector((0, 0, WATER + 0.12))), math.atan2(u.y, u.x) + 0.3, 1.0, "Dock")
-    put(lifebuoy_kit(), "lifebuoy", tuple(start + u * 2.2 + s * 0.93 + Vector((0, 0, 0.5))), math.atan2(u.y, u.x), 1.0, "Dock", tilt=(math.pi / 2, 0))
+    # hung on the outside of a post, on the side facing the camera
+    side = -s if s.y > 0 else s
+    post = start + u * post_t[2] + side * 0.8
+    put(lifebuoy_kit(), "lifebuoy", tuple(post + side * 0.17 + Vector((0, 0, 0.28))), math.atan2(u.y, u.x), 1.0, "Dock", tilt=(math.pi / 2, 0))
     put(barrel_kit() if "Kit_barrel" not in bpy.data.meshes else bpy.data.meshes["Kit_barrel"], "barrel_pier", tuple(end - u * 0.6 + s * 0.45 + Vector((0, 0, 0.16))), 0.3, 0.8, "Dock")
-    for p in (start, end, hp):
-        pl.take(p.x, p.y, 1.8)
+    for t in np.arange(0, length + 0.01, 0.8):
+        q = start + u * t
+        pl.take(q.x, q.y, 1.1)
+    pl.take(hp.x, hp.y, 2.0)
 
 
 def build_mesa(land):

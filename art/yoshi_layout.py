@@ -28,7 +28,7 @@ ISLANDS = {
     "jungle":  dict(c=(-15.0, 9.8), r=(5.4, 4.6), rot=-0.6, seed=6),
     "islet_w": dict(c=(-19.2, -0.6), r=(2.4, 2.7), rot=0.0, seed=7),
     "flowers": dict(c=(-14.0, -9.8), r=(4.9, 3.9), rot=0.5, seed=8),
-    "egg":     dict(c=(0.0, 0.7), r=(6.6, 4.0), rot=0.0, seed=9),
+    "egg":     dict(c=(0.0, 0.3), r=(7.0, 4.7), rot=0.0, seed=9),
 }
 
 # The ring, anticlockwise from the start on the beach.
@@ -178,11 +178,18 @@ def build_graph():
     return spaces, ring_ids, egg_ids, curves
 
 
-def hides_a_space(spaces, x, y, r, z0, z1):
-    """True if a cylinder at (x, y) stands between any space and the overview camera."""
-    for s in spaces:
+FOLLOW = (0.0, -9.5, 8.5)   # the follow camera's offset from the token it follows
+
+
+def hides_a_space(spaces, x, y, r, z0, z1, cams=("overview", "follow")):
+    """True if a cylinder at (x, y) stands between any space and the overview camera
+    or the follow camera."""
+    for s, cam in ((s, cam) for s in spaces for cam in cams):
         sx, sy = s["p"]
-        tx, ty, tz = CAMERA[0] - sx, CAMERA[1] - sy, CAMERA[2] - 0.3
+        if cam == "overview":
+            tx, ty, tz = CAMERA[0] - sx, CAMERA[1] - sy, CAMERA[2] - 0.3
+        else:
+            tx, ty, tz = FOLLOW
         flat = math.hypot(tx, ty)
         ux, uy, up = tx / flat, ty / flat, tz / flat
         h0, h1 = max(0.0, (z0 - 0.3) / up), max(0.0, (z1 - 0.3) / up)
@@ -214,9 +221,12 @@ def shop_plot(spaces, curves, i, island):
                 continue
             if any(math.dist((x, y), t["p"]) < SHOP_RADIUS + 0.75 for t in spaces):
                 continue
-            if hides_a_space(spaces, x, y, SHOP_RADIUS, 0.0, 3.1):
+            if hides_a_space(spaces, x, y, SHOP_RADIUS, 0.0, 3.1, ("overview",)):
                 continue
             score = (y - sy) * 0.6 - abs(r - 2.9) * 2 + min(pd - 2.5, 1.0) + min(-d - 2.0, 1.0)
+            # strongly prefer a spot the follow camera can see past too
+            if hides_a_space(spaces, x, y, SHOP_RADIUS, 0.0, 3.1, ("follow",)):
+                score -= 5
             if best is None or score > best[0]:
                 best = (score, (x, y))
     return best
