@@ -1055,6 +1055,24 @@ def egg_parts(mb, R, H, spots, spot_col, seg=40, rings=28, M=None):
         mb.add((verts, faces), M, spot_col)
 
 
+FAN_EGGS = ["Kit_yegg_green", "Kit_yegg_blue", "Kit_yegg_pink", "Kit_yegg_yellow"]
+
+
+def small_eggs():
+    """The little eggs dotted round the islands: Yanez-Designs' fan-made Yoshi eggs from
+    Sketchfab (CC BY 4.0, credit in docs/CREDITS.md), appended from art/yoshi-eggs.blend.
+    Falls back to code-built eggs if that file is missing."""
+    path = os.path.join(REPO, "art", "yoshi-eggs.blend")
+    if os.path.exists(path):
+        missing = [n for n in FAN_EGGS if n not in bpy.data.meshes]
+        if missing:
+            with bpy.data.libraries.load(path, link=False) as (src, dst):
+                dst.meshes = missing
+        # green is the classic: give it two goes in the draw
+        return [bpy.data.meshes[n] for n in FAN_EGGS + FAN_EGGS[:1]]
+    return [egg_kit(f"Kit_egg_{k}", c, seed=k) for k, c in enumerate([EGG_GREEN, (0.95, 0.30, 0.35), (0.35, 0.60, 1.0), (1.0, 0.80, 0.2), (1.0, 0.55, 0.75)])]
+
+
 def egg_kit(name, spot_col, R=0.3, H=0.75, seed=1, seg=24, rings=16):
     rng = random.Random(seed)
     spots = [((rng.uniform(-1, 1), rng.uniform(-1, 1), rng.uniform(-0.6, 0.9)), rng.uniform(0.22, 0.34)) for _ in range(7)]
@@ -1488,7 +1506,7 @@ def build_props(land, terrain, spans, conf, rng, mesa=None):
     fern_m = fern()
     bushes = [round_bush(k, True) for k in range(4)] + [round_bush(4, False), round_bush(5, False)]
     smileys = [smiley_flower(k) for k in range(4)]
-    eggs = [egg_kit(f"Kit_egg_{k}", c, seed=k) for k, c in enumerate([EGG_GREEN, (0.95, 0.30, 0.35), (0.35, 0.60, 1.0), (1.0, 0.80, 0.2), (1.0, 0.55, 0.75)])]
+    eggs = small_eggs()
     rocks = [rock_kit(k) for k in range(4)]
     sea_rocks = [sea_rock_kit(k) for k in range(3)]
     grass = [bb.recolour_mesh(f"Kit_grass_{k}", f"Kit_grass_trop_{k}", lambda c: (c[0] * 0.9, min(1, c[1] * 1.12), c[2] * 0.7)).name for k in range(3)]

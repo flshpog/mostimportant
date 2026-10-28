@@ -8,6 +8,12 @@ Third-party assets used by the Season 3 board.
   CC BY 4.0. Changes: parts joined and centred, a faint white glow added.
   Source file: `art/boo.blend`.
 
+- **Small Yoshi eggs** (dotted round the Yoshi's Island merge board):
+  "Yoshieggs (Super Mario Bros)" by **Yanez-Designs** on Sketchfab,
+  https://sketchfab.com/3d-models/af18d376442f478c8edd0739e5bd65f5 , licensed
+  CC BY 4.0. Changes: split into four single eggs (green, blue, pink, yellow), each
+  resized and set upright, textures shrunk to 256px. Source file: `art/yoshi-eggs.blend`.
+
 ## Item models (`apps/web/public/models/items/`, source file `art/items.blend`)
 
 Shown when an item is bought or used on the website.
