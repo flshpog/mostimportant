@@ -336,54 +336,7 @@ function drawPanel(ctx: SKRSContext2D, input: RenderInput, avatars: Map<string, 
   }
   ctx.fillText(fitText(ctx, status, w - 44), pad, 100);
 
-  // leaderboard: stars, then coins
-  const rows = Object.values(state.players).sort((a, b) => b.stars - a.stars || b.coins - a.coins || a.name.localeCompare(b.name));
-  let y = 150;
-  ctx.font = "14px NunitoXB";
-  ctx.fillStyle = "#a397b8";
-  ctx.fillText("STANDINGS", pad, y - 18);
-  let rank = 0;
-  rows.forEach((p, i) => {
-    const prev = rows[i - 1];
-    if (!prev || prev.stars !== p.stars || prev.coins !== p.coins) rank = i + 1;
-    if (i % 2 === 0) {
-      ctx.fillStyle = "#f4ecdc";
-      roundRect(ctx, pad - 10, y - 4, w - 24, 52, 12);
-      ctx.fill();
-    }
-    ctx.fillStyle = "#2b2140";
-    ctx.font = "20px NunitoXB";
-    ctx.textAlign = "center";
-    ctx.fillText(String(rank), pad + 8, y + 29);
-    drawAvatar(ctx, p, { x: pad + 44, y: y + 22 }, 17, avatars.get(p.id), p.id === current && state.started ? "#ffd43b" : "#ffffff", 3);
-    ctx.textAlign = "left";
-    ctx.font = "19px NunitoXB";
-    ctx.fillStyle = "#2b2140";
-    // bags are private, so no item count here
-    ctx.fillText(fitText(ctx, p.name, w - 220), pad + 72, y + 31);
-    // stars and coins, right-aligned
-    const right = x + w - 22;
-    ctx.font = "19px NunitoXB";
-    ctx.textAlign = "right";
-    ctx.fillStyle = "#2b2140";
-    ctx.fillText(String(p.coins), right, y + 31);
-    const coinsW = ctx.measureText(String(p.coins)).width;
-    coinIcon(ctx, right - coinsW - 14, y + 24, 8);
-    const starX = right - coinsW - 40;
-    ctx.fillStyle = "#2b2140";
-    ctx.fillText(String(p.stars), starX, y + 31);
-    const starsW = ctx.measureText(String(p.stars)).width;
-    starPath(ctx, starX - starsW - 13, y + 24, 10, 4.4);
-    ctx.fillStyle = "#ffd43b";
-    ctx.fill();
-    ctx.strokeStyle = "#b07d00";
-    ctx.lineWidth = 1.5;
-    ctx.stroke();
-    ctx.textAlign = "left";
-    y += 58;
-  });
-
-  // legend
+  // legend, in two columns at the foot of the panel
   // one row per shop colour on this board (purple shop, pink shop)
   const variants = [...new Set(input.layout.spaces.map((s) => s.shop).filter((v): v is string => !!v))]
     .map((v) => input.shopVariants?.[v])
@@ -395,20 +348,74 @@ function drawPanel(ctx: SKRSContext2D, input: RenderInput, avatars: Map<string, 
     ...(variants.length ? variants.map((v): [string, string] => [v.colour, v.name.toLowerCase()]) : [[SPACE_FILL.shop, "shop"] as [string, string]]),
     [SPACE_FILL.event, "event"],
   ];
-  let ly = H - 64 - legend.length * 26;
+  const legendRows = Math.ceil(legend.length / 2);
+  const legendY = H - 52 - legendRows * 24;
   ctx.font = "14px NunitoXB";
   ctx.fillStyle = "#a397b8";
-  ctx.fillText("SPACES", pad, ly - 8);
+  ctx.fillText("SPACES", pad, legendY - 8);
   ctx.font = "16px NunitoB";
-  for (const [fill, label] of legend) {
+  legend.forEach(([fill, label], i) => {
+    const lx = pad + (i < legendRows ? 0 : (w - 44) / 2);
+    const ly = legendY + (i % legendRows) * 24;
     ctx.fillStyle = fill;
     ctx.beginPath();
-    ctx.arc(pad + 8, ly + 10, 8, 0, Math.PI * 2);
+    ctx.arc(lx + 8, ly + 10, 8, 0, Math.PI * 2);
     ctx.fill();
     ctx.fillStyle = "#4a3f5c";
-    ctx.fillText(label, pad + 26, ly + 16);
-    ly += 26;
-  }
+    ctx.fillText(label, lx + 26, ly + 16);
+  });
+
+  // leaderboard: stars, then coins. Rows share the room above the legend, shrinking
+  // from their full size when a big board wouldn't otherwise fit.
+  const rows = Object.values(state.players).sort((a, b) => b.stars - a.stars || b.coins - a.coins || a.name.localeCompare(b.name));
+  let y = 150;
+  const k = Math.min(1, (legendY - 30 - y) / (rows.length * 58));
+  ctx.font = "14px NunitoXB";
+  ctx.fillStyle = "#a397b8";
+  ctx.fillText("STANDINGS", pad, y - 18);
+  let rank = 0;
+  rows.forEach((p, i) => {
+    const prev = rows[i - 1];
+    if (!prev || prev.stars !== p.stars || prev.coins !== p.coins) rank = i + 1;
+    if (i % 2 === 0) {
+      ctx.fillStyle = "#f4ecdc";
+      roundRect(ctx, pad - 10, y - 4 * k, w - 24, 52 * k, 12 * k);
+      ctx.fill();
+    }
+    // the text stops shrinking before the rows do, so it stays readable
+    const size = Math.max(14, Math.round(19 * k));
+    const base = y + 22 * k + size * 0.36;
+    ctx.fillStyle = "#2b2140";
+    ctx.font = `${size + 1}px NunitoXB`;
+    ctx.textAlign = "center";
+    ctx.fillText(String(rank), pad + 8, base);
+    drawAvatar(ctx, p, { x: pad + 44, y: y + 22 * k }, 17 * k, avatars.get(p.id), p.id === current && state.started ? "#ffd43b" : "#ffffff", 3 * k);
+    ctx.textAlign = "left";
+    ctx.font = `${size}px NunitoXB`;
+    ctx.fillStyle = "#2b2140";
+    // bags are private, so no item count here
+    ctx.fillText(fitText(ctx, p.name, w - 220), pad + 72, base);
+    // stars and coins, right-aligned
+    const right = x + w - 22;
+    const mid = y + 22 * k;
+    ctx.textAlign = "right";
+    ctx.fillStyle = "#2b2140";
+    ctx.fillText(String(p.coins), right, base);
+    const coinsW = ctx.measureText(String(p.coins)).width;
+    coinIcon(ctx, right - coinsW - 14, mid, 8 * Math.max(k, 0.8));
+    const starX = right - coinsW - 40;
+    ctx.fillStyle = "#2b2140";
+    ctx.fillText(String(p.stars), starX, base);
+    const starsW = ctx.measureText(String(p.stars)).width;
+    starPath(ctx, starX - starsW - 13, mid, 10 * Math.max(k, 0.8), 4.4 * Math.max(k, 0.8));
+    ctx.fillStyle = "#ffd43b";
+    ctx.fill();
+    ctx.strokeStyle = "#b07d00";
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+    ctx.textAlign = "left";
+    y += 58 * k;
+  });
 }
 
 // Draws the board as a PNG. Pure apart from fonts: same input, same image.
